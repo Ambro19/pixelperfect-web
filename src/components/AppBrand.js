@@ -74,30 +74,3 @@ export default function AppBrand({
   );
 }
 
-// ========================================
-// USAGE EXAMPLES:
-// ========================================
-//
-// Basic usage:
-// <AppBrand />
-//
-// Custom size:
-// <AppBrand size={48} />
-//
-// Logo only (no text):
-// <AppBrand showText={false} />
-//
-// Custom label:
-// <AppBrand label="PixelPerfect Screenshots" />
-//
-// Custom destination:
-// <AppBrand to="/" />
-//
-// Full customization:
-// <AppBrand 
-//   size={40}
-//   showText={true}
-//   label="My Screenshot API"
-//   logoSrc="/custom-logo.png"
-//   to="/home"
-// />
