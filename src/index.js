@@ -92,30 +92,3 @@ root.render(
   </React.StrictMode>
 );
 
-/**
- * ========================================
- * PRODUCTION DEPLOYMENT NOTES
- * ========================================
- * 
- * 1. Build Command:
- *    npm run build
- * 
- * 2. Build Output:
- *    build/ directory
- * 
- * 3. Environment Variables:
- *    - Set in .env.production
- *    - Must start with REACT_APP_
- *    - Embedded at build time
- * 
- * 4. Hosting:
- *    - Vercel: vercel.json for SPA routing
- *    - Netlify: _redirects for SPA routing
- *    - All routes must serve index.html
- * 
- * 5. Browser Support:
- *    - Modern browsers (last 2 versions)
- *    - No IE11 support
- * 
- * ========================================
- */
