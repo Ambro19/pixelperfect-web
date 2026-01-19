@@ -4,7 +4,7 @@
    File: src/index.css
    Author: OneTechly
    Purpose: Mobile-optimized global styles
-   Updated: January 2026 - Enhanced for new pages
+   Updated: January 2026 - Enhanced for new pages + API Key Display
 */
 
 @tailwind base;
@@ -440,6 +440,246 @@ html {
 }
 
 /* ========================================
+   API KEY DISPLAY - MOBILE-FIRST DESIGN
+   ======================================== */
+
+/* Main API Key Section Container */
+.api-key-section {
+  @apply card mb-6 animate-slide-in-up;
+}
+
+.api-key-section h3 {
+  @apply text-lg sm:text-xl font-bold text-gray-900 mb-3 flex items-center gap-2;
+}
+
+/* API Key Description */
+.api-key-description {
+  @apply text-sm sm:text-base text-gray-600 mb-4 leading-relaxed;
+}
+
+/* API Key Reveal Section (shown once after generation) */
+.api-key-reveal {
+  @apply bg-yellow-50 border-2 border-yellow-400 rounded-xl p-4 sm:p-5 mb-4;
+  animation: fadeInScale 0.3s ease-out;
+}
+
+/* Warning Alert */
+.alert {
+  @apply rounded-lg p-3 sm:p-4 mb-3;
+}
+
+.alert-warning {
+  @apply bg-yellow-50 border-l-4 border-yellow-500 text-yellow-800;
+}
+
+.alert strong {
+  @apply font-bold block mb-1 text-sm sm:text-base;
+}
+
+/* API Key Display with Copy Button */
+.api-key-display {
+  @apply flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 mt-3;
+}
+
+.api-key-text {
+  @apply flex-1 bg-white px-3 sm:px-4 py-3 border-2 border-gray-300 rounded-lg 
+         font-mono text-xs sm:text-sm text-gray-800 
+         break-all overflow-x-auto
+         focus:ring-2 focus:ring-blue-500 focus:border-transparent
+         transition-all;
+  /* Enable horizontal scrolling on mobile */
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Copy Button Styling */
+.btn-copy {
+  @apply px-4 py-3 bg-green-600 text-white rounded-lg font-semibold
+         hover:bg-green-700 active:bg-green-800
+         transition-colors text-sm sm:text-base
+         min-h-[44px] whitespace-nowrap
+         shadow-sm;
+}
+
+.btn-copy:hover {
+  @apply shadow-md;
+}
+
+/* Key Prefix Display (for existing keys) */
+.key-prefix-display {
+  @apply bg-gray-50 rounded-xl p-4 sm:p-5 mb-4 border border-gray-200;
+}
+
+.key-prefix-display label {
+  @apply block font-semibold text-sm sm:text-base text-gray-700 mb-2;
+}
+
+.key-prefix-display code {
+  @apply inline-block bg-gray-900 text-green-400 px-3 py-2 rounded-md
+         font-mono text-xs sm:text-sm mr-2 
+         border border-gray-700;
+}
+
+.key-hidden-text {
+  @apply text-gray-500 text-xs sm:text-sm italic;
+}
+
+/* Key Metadata */
+.key-metadata {
+  @apply space-y-2 mb-4 bg-gray-50 rounded-lg p-4 border border-gray-200;
+}
+
+.key-metadata p {
+  @apply text-sm sm:text-base text-gray-700 flex flex-col sm:flex-row sm:justify-between;
+}
+
+.key-metadata strong {
+  @apply font-semibold text-gray-900 mb-1 sm:mb-0;
+}
+
+/* Danger Button (Regenerate) */
+.btn-danger {
+  @apply px-4 py-3 bg-red-600 text-white rounded-lg font-semibold
+         hover:bg-red-700 active:bg-red-800
+         transition-colors text-sm sm:text-base
+         min-h-[44px] shadow-sm
+         w-full sm:w-auto;
+}
+
+.btn-danger:hover {
+  @apply shadow-md;
+}
+
+/* No API Key State */
+.no-api-key {
+  @apply text-center py-6 sm:py-8 bg-blue-50 rounded-xl border-2 border-dashed border-blue-300;
+}
+
+.no-api-key p {
+  @apply text-gray-700 mb-4 text-sm sm:text-base;
+}
+
+/* Usage Example Accordion */
+.usage-example {
+  @apply mt-6 border border-gray-300 rounded-xl overflow-hidden 
+         bg-gray-50 hover:border-blue-500 transition-colors;
+}
+
+.usage-example summary {
+  @apply cursor-pointer font-semibold px-4 py-3 sm:px-5 sm:py-4 
+         bg-white hover:bg-gray-50 transition-colors
+         flex items-center gap-2 text-sm sm:text-base
+         min-h-[44px];
+}
+
+.usage-example summary::-webkit-details-marker {
+  display: none;
+}
+
+.usage-example summary::before {
+  content: '▶';
+  @apply inline-block transition-transform mr-2;
+}
+
+.usage-example[open] summary::before {
+  transform: rotate(90deg);
+}
+
+.usage-example pre {
+  @apply bg-gray-900 text-gray-100 p-3 sm:p-4 
+         overflow-x-auto text-xs sm:text-sm 
+         m-0 border-t border-gray-700;
+  /* Better scrolling on mobile */
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Modal Styles - Mobile Optimized */
+.modal-overlay {
+  @apply fixed inset-0 bg-black bg-opacity-50 
+         flex items-center justify-center 
+         z-50 p-4
+         animate-fade-in-scale;
+  backdrop-filter: blur(4px);
+}
+
+.modal {
+  @apply bg-white rounded-2xl p-5 sm:p-8 
+         max-w-md w-full 
+         shadow-2xl
+         max-h-[90vh] overflow-y-auto
+         animate-slide-in-up;
+}
+
+.modal h3 {
+  @apply text-xl sm:text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2;
+}
+
+.modal p {
+  @apply text-sm sm:text-base text-gray-700 mb-3;
+}
+
+.modal strong {
+  @apply text-red-600 font-bold;
+}
+
+.modal-actions {
+  @apply flex flex-col sm:flex-row gap-3 justify-end mt-6 pt-6 border-t border-gray-200;
+}
+
+/* Error State */
+.error-text {
+  @apply text-red-600 font-medium text-sm sm:text-base;
+}
+
+.api-key-section.error {
+  @apply border-2 border-red-200 bg-red-50;
+}
+
+/* Success State Animation */
+@keyframes successPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+.btn-copy.success {
+  animation: successPulse 0.3s ease-in-out;
+}
+
+/* Mobile-specific optimizations for API Key Display */
+@media (max-width: 639px) {
+  .api-key-text {
+    @apply text-xs py-2.5;
+    /* Ensure text doesn't overflow on small screens */
+    word-break: break-all;
+  }
+
+  .usage-example pre {
+    @apply text-xs p-3;
+  }
+
+  .modal {
+    @apply p-4 max-h-[95vh];
+  }
+
+  .modal h3 {
+    @apply text-lg;
+  }
+}
+
+/* Print optimization for API keys */
+@media print {
+  .api-key-reveal,
+  .btn-copy,
+  .btn-danger,
+  .modal-overlay {
+    display: none !important;
+  }
+
+  .api-key-text {
+    @apply border-2 border-black;
+  }
+}
+
+/* ========================================
    UTILITY CLASSES
    ======================================== */
 /* Safe area for notched devices (iPhone X+) */
@@ -575,4 +815,3 @@ html {
   }
   */
 }
-
