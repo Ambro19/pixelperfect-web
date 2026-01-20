@@ -81,16 +81,22 @@ const Pricing = () => {
           </p>
         </div>
 
-        {/* Billing Toggle */}
+        {/* Billing Toggle - FIXED */}
         <div className="flex justify-center items-center gap-4 mb-12">
           <span className={`text-sm font-medium ${billingCycle === 'monthly' ? 'text-gray-900' : 'text-gray-500'}`}>
             Monthly
           </span>
           <button
             onClick={() => setBillingCycle(billingCycle === 'monthly' ? 'annual' : 'monthly')}
-            className={`relative w-14 h-7 rounded-full transition-colors ${billingCycle === 'annual' ? 'bg-blue-600' : 'bg-gray-300'}`}
+            className={`relative w-14 h-8 rounded-full flex items-center px-1 transition-colors duration-300 ease-in-out ${
+              billingCycle === 'annual' ? 'bg-blue-600' : 'bg-gray-300'
+            }`}
           >
-            <div className={`absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full transition-transform ${billingCycle === 'annual' ? 'transform translate-x-7' : ''}`} />
+            <div
+              className={`w-6 h-6 bg-white rounded-full shadow-md transform duration-300 ease-in-out ${
+                billingCycle === 'annual' ? 'translate-x-6' : 'translate-x-0'
+              }`}
+            />
           </button>
           <span className={`text-sm font-medium ${billingCycle === 'annual' ? 'text-gray-900' : 'text-gray-500'}`}>
             Annual
@@ -454,10 +460,11 @@ const Pricing = () => {
 
 export default Pricing;
 
+////////////////////////////////////////////////////////////
 // // ========================================
 // // PRICING PAGE - PIXELPERFECT
 // // ========================================
-// // Comprehensive pricing page matching the exact structure from Image #4
+// // Comprehensive pricing page with perfect card alignment
 // // Production-ready, mobile-responsive
 
 // import React, { useState } from 'react';
@@ -558,23 +565,23 @@ export default Pricing;
 //           )}
 //         </div>
 
-//         {/* Pricing Cards */}
+//         {/* Pricing Cards - Using grid with equal heights */}
 //         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
           
 //           {/* Free Plan - Current Plan Badge */}
-//           <div className="bg-white rounded-xl border-2 border-green-500 shadow-lg relative">
+//           <div className="bg-white rounded-xl border-2 border-green-500 shadow-lg relative flex flex-col">
 //             <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-//               <span className="bg-green-500 text-white px-6 py-1.5 rounded-full text-sm font-semibold">
+//               <span className="bg-green-500 text-white px-6 py-1.5 rounded-full text-sm font-semibold whitespace-nowrap">
 //                 CURRENT PLAN
 //               </span>
 //             </div>
-//             <div className="p-6 pt-10">
+//             <div className="p-6 pt-10 flex flex-col flex-grow">
 //               <h3 className="text-2xl font-bold text-gray-900 text-center mb-2">Free</h3>
 //               <div className="text-center mb-6">
 //                 <span className="text-4xl font-bold text-gray-900">$0</span>
 //               </div>
               
-//               <ul className="space-y-3 mb-8">
+//               <ul className="space-y-3 mb-8 flex-grow">
 //                 <li className="flex items-start gap-2 text-sm">
 //                   <svg className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
 //                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
@@ -609,7 +616,7 @@ export default Pricing;
 
 //               <button
 //                 disabled
-//                 className="w-full py-3 bg-gray-100 text-gray-500 rounded-lg font-semibold cursor-not-allowed"
+//                 className="w-full py-3 bg-gray-100 text-gray-500 rounded-lg font-semibold cursor-not-allowed mt-auto"
 //               >
 //                 ✓ Current Plan
 //               </button>
@@ -617,13 +624,13 @@ export default Pricing;
 //           </div>
 
 //           {/* Pro Plan - Most Popular */}
-//           <div className="bg-white rounded-xl border-2 border-blue-500 shadow-lg relative">
+//           <div className="bg-white rounded-xl border-2 border-blue-500 shadow-lg relative flex flex-col">
 //             <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-//               <span className="bg-blue-500 text-white px-6 py-1.5 rounded-full text-sm font-semibold">
+//               <span className="bg-blue-500 text-white px-6 py-1.5 rounded-full text-sm font-semibold whitespace-nowrap">
 //                 MOST POPULAR
 //               </span>
 //             </div>
-//             <div className="p-6 pt-10">
+//             <div className="p-6 pt-10 flex flex-col flex-grow">
 //               <h3 className="text-2xl font-bold text-gray-900 text-center mb-2">Pro</h3>
 //               <div className="text-center mb-6">
 //                 <span className="text-4xl font-bold text-gray-900">
@@ -632,7 +639,7 @@ export default Pricing;
 //                 <span className="text-gray-600">/month</span>
 //               </div>
               
-//               <ul className="space-y-3 mb-8">
+//               <ul className="space-y-3 mb-8 flex-grow">
 //                 <li className="flex items-start gap-2 text-sm">
 //                   <svg className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
 //                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
@@ -673,7 +680,7 @@ export default Pricing;
 
 //               <button
 //                 onClick={() => navigate('/register?plan=pro')}
-//                 className="w-full py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+//                 className="w-full py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors mt-auto"
 //               >
 //                 Upgrade to Pro
 //               </button>
@@ -681,8 +688,8 @@ export default Pricing;
 //           </div>
 
 //           {/* Business Plan */}
-//           <div className="bg-white rounded-xl border border-gray-200 shadow-md hover:shadow-lg transition-shadow">
-//             <div className="p-6">
+//           <div className="bg-white rounded-xl border border-gray-200 shadow-md hover:shadow-lg transition-shadow flex flex-col">
+//             <div className="p-6 flex flex-col flex-grow">
 //               <h3 className="text-2xl font-bold text-gray-900 text-center mb-2">Business</h3>
 //               <div className="text-center mb-6">
 //                 <span className="text-4xl font-bold text-gray-900">
@@ -691,7 +698,7 @@ export default Pricing;
 //                 <span className="text-gray-600">/month</span>
 //               </div>
               
-//               <ul className="space-y-3 mb-8">
+//               <ul className="space-y-3 mb-8 flex-grow">
 //                 <li className="flex items-start gap-2 text-sm">
 //                   <svg className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
 //                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
@@ -738,7 +745,7 @@ export default Pricing;
 
 //               <button
 //                 onClick={() => navigate('/register?plan=business')}
-//                 className="w-full py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors"
+//                 className="w-full py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors mt-auto"
 //               >
 //                 Upgrade to Business
 //               </button>
@@ -746,8 +753,8 @@ export default Pricing;
 //           </div>
 
 //           {/* Premium Plan */}
-//           <div className="bg-white rounded-xl border border-gray-200 shadow-md hover:shadow-lg transition-shadow">
-//             <div className="p-6">
+//           <div className="bg-white rounded-xl border border-gray-200 shadow-md hover:shadow-lg transition-shadow flex flex-col">
+//             <div className="p-6 flex flex-col flex-grow">
 //               <h3 className="text-2xl font-bold text-gray-900 text-center mb-2">Premium</h3>
 //               <div className="text-center mb-6">
 //                 <span className="text-4xl font-bold text-gray-900">
@@ -756,7 +763,7 @@ export default Pricing;
 //                 <span className="text-gray-600">/month</span>
 //               </div>
               
-//               <ul className="space-y-3 mb-8">
+//               <ul className="space-y-3 mb-8 flex-grow">
 //                 <li className="flex items-start gap-2 text-sm">
 //                   <svg className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
 //                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
@@ -803,7 +810,7 @@ export default Pricing;
 
 //               <button
 //                 onClick={() => navigate('/register?plan=premium')}
-//                 className="w-full py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+//                 className="w-full py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors mt-auto"
 //               >
 //                 Upgrade to Premium
 //               </button>
@@ -909,3 +916,4 @@ export default Pricing;
 // };
 
 // export default Pricing;
+
