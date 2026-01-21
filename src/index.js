@@ -4,9 +4,7 @@
 // File: frontend/src/index.js
 // Author: OneTechly
 // Purpose: React app entry point with providers
-// Updated: January 2026 - Production-ready
-// 
-// ✅ NO CHANGES NEEDED - This file is already perfect!
+// Updated: January 2026 - Production-ready with debug logging
 
 import React from "react";
 import { createRoot } from "react-dom/client";
@@ -18,7 +16,20 @@ import { AuthProvider } from "./contexts/AuthContext";
 import { SubscriptionProvider } from "./contexts/SubscriptionContext";
 import App from "./App";
 
+// ✅ Debug logging for troubleshooting
+console.log('🚀 PixelPerfect App Starting...');
+console.log('📍 Current URL:', window.location.href);
+console.log('🔑 Token exists:', !!localStorage.getItem('auth_token'));
+console.log('🌐 API URL:', process.env.REACT_APP_API_URL || 'http://localhost:8000');
+console.log('🏗️ Environment:', process.env.NODE_ENV);
+
 const rootEl = document.getElementById("root");
+
+if (!rootEl) {
+  console.error('❌ Root element not found! Check your public/index.html');
+  throw new Error('Root element #root not found in DOM');
+}
+
 const root = createRoot(rootEl);
 
 /**
@@ -27,7 +38,7 @@ const root = createRoot(rootEl);
  * ========================================
  * 
  * Provider Hierarchy:
- * 1. React.StrictMode - Development mode checks
+ * 1. React.StrictMode - Development mode checks (double-renders in dev)
  * 2. BrowserRouter - Routing (ONE instance only!)
  * 3. ErrorBoundary - Catches React errors
  * 4. AuthProvider - Authentication state
@@ -37,10 +48,10 @@ const root = createRoot(rootEl);
  * 
  * IMPORTANT:
  * - Do NOT add basename to BrowserRouter in production
- *   (Hosts often set PUBLIC_URL to full URL, breaking routing)
  * - Keep BrowserRouter outside providers that use router hooks
  * - Only ONE BrowserRouter instance in entire app
  * - Only ONE Toaster instance in entire app
+ * - StrictMode causes double-renders in development (expected behavior)
  */
 
 root.render(
@@ -72,7 +83,7 @@ root.render(
                 },
                 // Error toasts (red)
                 error: {
-                  duration: 4000,
+                  duration: 5000, // ✅ Slightly longer for errors
                   iconTheme: {
                     primary: "#ef4444", // Red-500
                     secondary: "#fff",
@@ -94,7 +105,9 @@ root.render(
   </React.StrictMode>
 );
 
-//=============================================================
+console.log('✅ React app rendered successfully');
+
+// // =====================================================
 // // ========================================
 // // INDEX.JS - PIXELPERFECT SCREENSHOT API
 // // ========================================
@@ -102,6 +115,8 @@ root.render(
 // // Author: OneTechly
 // // Purpose: React app entry point with providers
 // // Updated: January 2026 - Production-ready
+// // 
+// // ✅ NO CHANGES NEEDED - This file is already perfect!
 
 // import React from "react";
 // import { createRoot } from "react-dom/client";
@@ -188,4 +203,5 @@ root.render(
 //     </BrowserRouter>
 //   </React.StrictMode>
 // );
+
 
