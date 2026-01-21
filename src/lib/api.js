@@ -1,38 +1,55 @@
-// src/lib/api.js
-// Centralized API client + small helper wrappers.
-// PROD → https://api.onetechly.com     (or set REACT_APP_API_URL on your host)
-// DEV  → REACT_APP_API_URL (if set) else http://localhost:8000
+// frontend/src/lib/api.js
+// Centralized API client + helper wrappers.
+//
+// Recommended:
+// - DEV: set REACT_APP_API_URL (or REACT_APP_API_BASE_URL)
+// - PROD: set REACT_APP_API_URL=https://api.pixelperfectapi.net
+//
+// This file also provides a safe default if env is missing.
 
 import axios from "axios";
 
 const TOKEN_KEY = "auth_token";
 
-// ----- Resolve base URL (env first, then prod default on onetechly.com, else localhost)
-const prodDefault =
-  typeof window !== "undefined" &&
-  window.location.hostname &&
-  window.location.hostname.endsWith("onetechly.com")
-    ? "https://api.onetechly.com"
-    : null;
+// ----- Resolve base URL
+function resolveBaseURL() {
+  const env =
+    (process.env.REACT_APP_API_URL || process.env.REACT_APP_API_BASE_URL || "").trim();
 
-const baseURL =
-  (process.env.REACT_APP_API_URL || process.env.REACT_APP_API_BASE_URL || "").trim() ||
-  prodDefault ||
-  "http://localhost:8000";
+  if (env) return env.replace(/\/+$/, "");
+
+  const hostname =
+    typeof window !== "undefined" && window.location?.hostname
+      ? window.location.hostname
+      : "";
+
+  // If frontend is hosted on pixelperfectapi.net, default to api.pixelperfectapi.net
+  if (hostname.endsWith("pixelperfectapi.net")) {
+    return "https://api.pixelperfectapi.net";
+  }
+
+  // Fallback for local dev
+  return "http://localhost:8000";
+}
+
+const baseURL = resolveBaseURL();
 
 // ----- Axios instance
 export const api = axios.create({
   baseURL,
-  timeout: 30000, // 30s network timeout
+  timeout: Number(process.env.REACT_APP_API_TIMEOUT || 30000),
+  withCredentials: false, // using Bearer tokens, not cookies
 });
 
 // Attach Bearer token from localStorage if present
 api.interceptors.request.use((config) => {
   try {
     const token = localStorage.getItem(TOKEN_KEY);
-    if (token && !config.headers?.Authorization) {
+    if (token) {
       config.headers = config.headers || {};
-      config.headers.Authorization = `Bearer ${token}`;
+      if (!config.headers.Authorization && !config.headers.authorization) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
     }
   } catch {
     /* ignore */
@@ -40,9 +57,8 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// ----- Error normalization (nice messages everywhere)
+// ----- Error normalization
 function normalizeError(err) {
-  // Axios error shapes vary (network vs server)
   const res = err?.response;
   const data = res?.data;
 
@@ -66,37 +82,39 @@ function normalizeError(err) {
   return out;
 }
 
-//Fix: Capture delay value before setTimeout:
-async function withRetry(fn, {
-  attempts = 8,
-  firstDelayMs = 800,
-  maxDelayMs = 6000,
-  shouldRetry = (error) => {
-    const status = error?.response?.status;
-    return !error?.response || status === 429 || status === 503 || status === 504;
-  },
-} = {}) {
+// Retry helper
+async function withRetry(
+  fn,
+  {
+    attempts = Number(process.env.REACT_APP_API_RETRY_ATTEMPTS || 8),
+    firstDelayMs = 800,
+    maxDelayMs = 6000,
+    shouldRetry = (error) => {
+      const status = error?.response?.status;
+      return !error?.response || status === 429 || status === 503 || status === 504;
+    },
+  } = {}
+) {
   let delay = firstDelayMs;
   let lastErr;
+
   for (let i = 0; i < attempts; i++) {
     try {
       return await fn();
     } catch (err) {
       lastErr = err;
       if (i === attempts - 1 || !shouldRetry(err)) break;
-      
-      // Capture current delay value to avoid unsafe reference
+
       const currentDelay = delay;
       await new Promise((r) => setTimeout(r, currentDelay));
-      
       delay = Math.min(maxDelayMs, Math.round(delay * 1.6));
     }
   }
+
   throw normalizeError(lastErr);
 }
 
-
-// ----- JSON helpers (consistent behavior + retries)
+// ----- JSON helpers
 export async function apiGetJson(path, config = {}) {
   return withRetry(async () => {
     try {
@@ -147,7 +165,7 @@ export async function apiDelete(path, config = {}) {
   });
 }
 
-// ----- Wake the API (use on app mount, optional)
+// ----- Wake the API (non-fatal)
 export async function wakeApi() {
   try {
     await withRetry(() => api.get("/health", { validateStatus: () => true }), {
@@ -156,11 +174,188 @@ export async function wakeApi() {
     });
     return true;
   } catch {
-    return false; // Non-fatal; UI can still proceed and show a toast if needed
+    return false;
   }
 }
 
-// Handy getter (used by AuthDebug etc.)
+// Handy getter
 export function currentApiBase() {
   return baseURL;
 }
+
+//////////////////////////////////////////////////
+// // frontend/src/lib/api.js
+// // Centralized API client + helper wrappers.
+// // PROD → set REACT_APP_API_URL on host (recommended)
+// // DEV  → REACT_APP_API_URL (if set) else http://localhost:8000
+
+// import axios from "axios";
+
+// const TOKEN_KEY = "auth_token";
+
+// // ----- Resolve base URL
+// const hostname =
+//   typeof window !== "undefined" && window.location?.hostname
+//     ? window.location.hostname
+//     : "";
+
+// // If you deploy the frontend on pixelperfectapi.net (or www), default API to api.pixelperfectapi.net
+// const prodDefault =
+//   hostname.endsWith("pixelperfectapi.net")
+//     ? "https://api.pixelperfectapi.net"
+//     : hostname.endsWith("onetechly.com")
+//       ? "https://api.onetechly.com"
+//       : null;
+
+// const baseURL =
+//   (process.env.REACT_APP_API_URL || process.env.REACT_APP_API_BASE_URL || "").trim() ||
+//   prodDefault ||
+//   "http://localhost:8000";
+
+// // ----- Axios instance
+// export const api = axios.create({
+//   baseURL,
+//   timeout: 30000,
+//   withCredentials: false,
+// });
+
+// // Attach Bearer token from localStorage if present
+// api.interceptors.request.use((config) => {
+//   try {
+//     const token = localStorage.getItem(TOKEN_KEY);
+//     if (token) {
+//       config.headers = config.headers || {};
+//       if (!config.headers.Authorization && !config.headers.authorization) {
+//         config.headers.Authorization = `Bearer ${token}`;
+//       }
+//     }
+//   } catch {
+//     /* ignore */
+//   }
+//   return config;
+// });
+
+// // ----- Error normalization
+// function normalizeError(err) {
+//   const res = err?.response;
+//   const data = res?.data;
+
+//   const detail =
+//     data?.detail ||
+//     data?.message ||
+//     data?.error ||
+//     (typeof data === "string" ? data : null);
+
+//   const status = res?.status;
+//   const code = err?.code;
+
+//   const msg =
+//     detail ||
+//     (status ? `Request failed with status ${status}` : code ? `Network error (${code})` : "Network error");
+
+//   const out = new Error(msg);
+//   out.status = status;
+//   out.code = code;
+//   out.data = data;
+//   return out;
+// }
+
+// // Retry helper (kept your behavior)
+// async function withRetry(
+//   fn,
+//   {
+//     attempts = 8,
+//     firstDelayMs = 800,
+//     maxDelayMs = 6000,
+//     shouldRetry = (error) => {
+//       const status = error?.response?.status;
+//       return !error?.response || status === 429 || status === 503 || status === 504;
+//     },
+//   } = {}
+// ) {
+//   let delay = firstDelayMs;
+//   let lastErr;
+
+//   for (let i = 0; i < attempts; i++) {
+//     try {
+//       return await fn();
+//     } catch (err) {
+//       lastErr = err;
+//       if (i === attempts - 1 || !shouldRetry(err)) break;
+
+//       const currentDelay = delay;
+//       await new Promise((r) => setTimeout(r, currentDelay));
+//       delay = Math.min(maxDelayMs, Math.round(delay * 1.6));
+//     }
+//   }
+//   throw normalizeError(lastErr);
+// }
+
+// // ----- JSON helpers
+// export async function apiGetJson(path, config = {}) {
+//   return withRetry(async () => {
+//     try {
+//       const res = await api.get(path, config);
+//       return res.data;
+//     } catch (err) {
+//       throw normalizeError(err);
+//     }
+//   });
+// }
+
+// export async function apiPostJson(path, body, config = {}) {
+//   return withRetry(async () => {
+//     try {
+//       const res = await api.post(path, body, {
+//         headers: { "Content-Type": "application/json" },
+//         ...config,
+//       });
+//       return res.data;
+//     } catch (err) {
+//       throw normalizeError(err);
+//     }
+//   });
+// }
+
+// export async function apiPutJson(path, body, config = {}) {
+//   return withRetry(async () => {
+//     try {
+//       const res = await api.put(path, body, {
+//         headers: { "Content-Type": "application/json" },
+//         ...config,
+//       });
+//       return res.data;
+//     } catch (err) {
+//       throw normalizeError(err);
+//     }
+//   });
+// }
+
+// export async function apiDelete(path, config = {}) {
+//   return withRetry(async () => {
+//     try {
+//       const res = await api.delete(path, config);
+//       return res.data;
+//     } catch (err) {
+//       throw normalizeError(err);
+//     }
+//   });
+// }
+
+// // ----- Wake the API
+// export async function wakeApi() {
+//   try {
+//     await withRetry(() => api.get("/health", { validateStatus: () => true }), {
+//       attempts: 6,
+//       firstDelayMs: 600,
+//     });
+//     return true;
+//   } catch {
+//     return false;
+//   }
+// }
+
+// export function currentApiBase() {
+//   return baseURL;
+// }
+
