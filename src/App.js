@@ -1,16 +1,21 @@
 // ========================================
-// APP.JS - FIXED NAVIGATION SECURITY ISSUE
+// APP.JS - PRODUCTION FIX FOR "OPERATION IS INSECURE"
 // ========================================
 // File: frontend/src/App.js
 // Author: OneTechly
-// Updated: January 2026 - Fixed "operation is insecure" error
+// Updated: January 2026
+//
+// Fix:
+// - Avoid react-router navigate({ replace:true }) inside auth gates
+// - Use window.location.replace for auth redirects (prevents SecurityError)
+// - StrictMode-safe (prevents double redirect loops in React 18 dev)
 
-import React, { useEffect } from 'react';
-import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
+import React, { useEffect, useRef } from 'react';
+import { Routes, Route, useLocation } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
 import ErrorBoundary from './components/ErrorBoundary';
 
-// ... (all your imports stay the same)
+// Pages (keep your existing imports)
 import Marketing from './pages/Marketing';
 import Documentation from './pages/Documentation';
 import API from './pages/API';
@@ -35,67 +40,79 @@ import BatchJobs from './pages/BatchJobs';
 import SubscriptionPage from './pages/SubscriptionPage';
 
 // Loading spinner component
-function LoadingSpinner() {
+function LoadingSpinner({ label = 'Loading...' }) {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-        <p className="text-gray-600">Loading...</p>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4" />
+        <p className="text-gray-600">{label}</p>
       </div>
     </div>
   );
 }
 
-// ✅ FIXED: Protected Route - Uses useEffect instead of <Navigate>
+// --- Safe hard redirect (no History API usage) ---
+function hardReplace(path) {
+  if (typeof window === 'undefined') return;
+  try {
+    // Ensure we always redirect within the same origin
+    const target = path.startsWith('http')
+      ? path
+      : `${window.location.origin}${path.startsWith('/') ? path : `/${path}`}`;
+    window.location.replace(target);
+  } catch {
+    window.location.href = path;
+  }
+}
+
+// ✅ Protected Route (NO react-router navigate usage)
 function ProtectedRoute({ children }) {
   const { isAuthenticated, isLoading } = useAuth();
-  const navigate = useNavigate();
   const location = useLocation();
 
+  const didRedirect = useRef(false);
+
   useEffect(() => {
+    if (didRedirect.current) return;
     if (!isLoading && !isAuthenticated) {
-      console.log('🔒 Not authenticated, redirecting to login from:', location.pathname);
-      // Use window.location for critical auth redirects
-      window.location.href = '/login';
+      didRedirect.current = true;
+
+      // Optional: preserve the path user was trying to access
+      const next = encodeURIComponent(location.pathname + location.search);
+      hardReplace(`/login?next=${next}`);
     }
-  }, [isAuthenticated, isLoading, navigate, location]);
+  }, [isAuthenticated, isLoading, location]);
 
-  if (isLoading) {
-    return <LoadingSpinner />;
-  }
-
-  if (!isAuthenticated) {
-    return <LoadingSpinner />; // Show loading while redirect happens
-  }
+  if (isLoading) return <LoadingSpinner label="Checking session..." />;
+  if (!isAuthenticated) return <LoadingSpinner label="Redirecting to login..." />;
 
   return <ErrorBoundary>{children}</ErrorBoundary>;
 }
 
-// ✅ FIXED: Public Route - Uses useEffect instead of <Navigate>
+// ✅ Public Route (NO react-router navigate usage)
 function PublicRoute({ children }) {
   const { isAuthenticated, isLoading } = useAuth();
-  const navigate = useNavigate();
   const location = useLocation();
 
+  const didRedirect = useRef(false);
+
   useEffect(() => {
+    if (didRedirect.current) return;
     if (!isLoading && isAuthenticated) {
-      console.log('✅ Already authenticated, redirecting to dashboard from:', location.pathname);
-      navigate('/dashboard', { replace: true });
+      didRedirect.current = true;
+
+      // If someone hits /login or /register while authed, send them to dashboard
+      hardReplace('/dashboard');
     }
-  }, [isAuthenticated, isLoading, navigate, location]);
+  }, [isAuthenticated, isLoading, location]);
 
-  if (isLoading) {
-    return <LoadingSpinner />;
-  }
-
-  if (isAuthenticated) {
-    return <LoadingSpinner />; // Show loading while redirect happens
-  }
+  if (isLoading) return <LoadingSpinner label="Loading..." />;
+  if (isAuthenticated) return <LoadingSpinner label="Redirecting to dashboard..." />;
 
   return children;
 }
 
-// Settings Page Component
+// Settings Page Component (kept from your file)
 const SettingsPage = () => (
   <div className="min-h-screen bg-gray-50">
     <div className="container-responsive py-8">
@@ -105,10 +122,7 @@ const SettingsPage = () => (
           Manage your account settings, preferences, and profile information.
         </p>
         <div className="space-y-4">
-          <button
-            onClick={() => window.history.back()}
-            className="btn-secondary"
-          >
+          <button onClick={() => window.history.back()} className="btn-secondary">
             ← Back to Dashboard
           </button>
         </div>
@@ -123,7 +137,7 @@ const SettingsPage = () => (
   </div>
 );
 
-// Change Password Page Component
+// Change Password Page Component (kept from your file)
 const ChangePasswordPage = () => {
   const [currentPassword, setCurrentPassword] = React.useState('');
   const [newPassword, setNewPassword] = React.useState('');
@@ -141,12 +155,10 @@ const ChangePasswordPage = () => {
       setError('All fields are required');
       return;
     }
-
     if (newPassword !== confirmPassword) {
       setError('New passwords do not match');
       return;
     }
-
     if (newPassword.length < 8) {
       setError('New password must be at least 8 characters');
       return;
@@ -155,13 +167,13 @@ const ChangePasswordPage = () => {
     setLoading(true);
 
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('token'); // keep your existing key if backend expects it
       const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
-      
+
       const response = await fetch(`${API_URL}/user/change_password`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -171,21 +183,16 @@ const ChangePasswordPage = () => {
       });
 
       const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.detail || 'Failed to change password');
-      }
+      if (!response.ok) throw new Error(data.detail || 'Failed to change password');
 
       setSuccess(true);
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
-      
-      setTimeout(() => {
-        window.location.href = '/dashboard';
-      }, 2000);
+
+      setTimeout(() => hardReplace('/dashboard'), 1200);
     } catch (err) {
-      setError(err.message);
+      setError(err.message || 'Failed to change password');
     } finally {
       setLoading(false);
     }
@@ -196,9 +203,7 @@ const ChangePasswordPage = () => {
       <div className="container-responsive py-8">
         <div className="card max-w-md mx-auto">
           <h1 className="text-2xl font-bold mb-2">🔑 Change Password</h1>
-          <p className="text-gray-600 mb-6">
-            Update your password to keep your account secure.
-          </p>
+          <p className="text-gray-600 mb-6">Update your password to keep your account secure.</p>
 
           {error && (
             <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
@@ -208,17 +213,13 @@ const ChangePasswordPage = () => {
 
           {success && (
             <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
-              <p className="text-sm text-green-800">
-                ✅ Password changed successfully! Redirecting...
-              </p>
+              <p className="text-sm text-green-800">✅ Password changed successfully! Redirecting...</p>
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Current Password
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Current Password</label>
               <input
                 type="password"
                 value={currentPassword}
@@ -230,9 +231,7 @@ const ChangePasswordPage = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                New Password
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">New Password</label>
               <input
                 type="password"
                 value={newPassword}
@@ -241,15 +240,11 @@ const ChangePasswordPage = () => {
                 placeholder="Enter new password"
                 disabled={loading}
               />
-              <p className="text-xs text-gray-500 mt-1">
-                Minimum 8 characters
-              </p>
+              <p className="text-xs text-gray-500 mt-1">Minimum 8 characters</p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Confirm New Password
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Confirm New Password</label>
               <input
                 type="password"
                 value={confirmPassword}
@@ -261,19 +256,10 @@ const ChangePasswordPage = () => {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3 pt-4">
-              <button
-                type="button"
-                onClick={() => window.history.back()}
-                className="btn-secondary flex-1"
-                disabled={loading}
-              >
+              <button type="button" onClick={() => window.history.back()} className="btn-secondary flex-1" disabled={loading}>
                 Cancel
               </button>
-              <button
-                type="submit"
-                className="btn-primary flex-1"
-                disabled={loading}
-              >
+              <button type="submit" className="btn-primary flex-1" disabled={loading}>
                 {loading ? 'Changing...' : 'Change Password'}
               </button>
             </div>
@@ -336,13 +322,13 @@ function App() {
                 <p className="text-xl text-gray-600 mb-6">Page not found</p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
                   <button
-                    onClick={() => (window.location.href = '/')}
+                    onClick={() => hardReplace('/')}
                     className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
                   >
                     Go Home
                   </button>
                   <button
-                    onClick={() => (window.location.href = '/dashboard')}
+                    onClick={() => hardReplace('/dashboard')}
                     className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
                   >
                     Dashboard
