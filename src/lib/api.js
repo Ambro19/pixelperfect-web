@@ -1,55 +1,44 @@
 // frontend/src/lib/api.js
 // Centralized API client + helper wrappers.
-//
-// Recommended:
-// - DEV: set REACT_APP_API_URL (or REACT_APP_API_BASE_URL)
-// - PROD: set REACT_APP_API_URL=https://api.pixelperfectapi.net
-//
-// This file also provides a safe default if env is missing.
+// PROD → https://api.pixelperfectapi.net (or your Render backend URL)
+// DEV  → REACT_APP_API_URL (if set) else http://localhost:8000
 
 import axios from "axios";
 
 const TOKEN_KEY = "auth_token";
 
-// ----- Resolve base URL
 function resolveBaseURL() {
   const env =
     (process.env.REACT_APP_API_URL || process.env.REACT_APP_API_BASE_URL || "").trim();
+  if (env) return env;
 
-  if (env) return env.replace(/\/+$/, "");
+  if (typeof window !== "undefined" && window.location?.hostname) {
+    const host = window.location.hostname;
 
-  const hostname =
-    typeof window !== "undefined" && window.location?.hostname
-      ? window.location.hostname
-      : "";
-
-  // If frontend is hosted on pixelperfectapi.net, default to api.pixelperfectapi.net
-  if (hostname.endsWith("pixelperfectapi.net")) {
-    return "https://api.pixelperfectapi.net";
+    // If you're serving the frontend from pixelperfectapi.net, default to api.pixelperfectapi.net
+    if (host === "pixelperfectapi.net" || host.endsWith(".pixelperfectapi.net")) {
+      return "https://api.pixelperfectapi.net";
+    }
   }
 
-  // Fallback for local dev
+  // Safe dev default
   return "http://localhost:8000";
 }
 
 const baseURL = resolveBaseURL();
 
-// ----- Axios instance
 export const api = axios.create({
   baseURL,
   timeout: Number(process.env.REACT_APP_API_TIMEOUT || 30000),
-  withCredentials: false, // using Bearer tokens, not cookies
 });
 
 // Attach Bearer token from localStorage if present
 api.interceptors.request.use((config) => {
   try {
     const token = localStorage.getItem(TOKEN_KEY);
-    if (token) {
+    if (token && !config.headers?.Authorization) {
       config.headers = config.headers || {};
-      if (!config.headers.Authorization && !config.headers.authorization) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
+      config.headers.Authorization = `Bearer ${token}`;
     }
   } catch {
     /* ignore */
@@ -82,11 +71,10 @@ function normalizeError(err) {
   return out;
 }
 
-// Retry helper
 async function withRetry(
   fn,
   {
-    attempts = Number(process.env.REACT_APP_API_RETRY_ATTEMPTS || 8),
+    attempts = Number(process.env.REACT_APP_API_RETRY_ATTEMPTS || 3) + 5, // keeps your previous "strong retry"
     firstDelayMs = 800,
     maxDelayMs = 6000,
     shouldRetry = (error) => {
@@ -97,7 +85,6 @@ async function withRetry(
 ) {
   let delay = firstDelayMs;
   let lastErr;
-
   for (let i = 0; i < attempts; i++) {
     try {
       return await fn();
@@ -110,11 +97,9 @@ async function withRetry(
       delay = Math.min(maxDelayMs, Math.round(delay * 1.6));
     }
   }
-
   throw normalizeError(lastErr);
 }
 
-// ----- JSON helpers
 export async function apiGetJson(path, config = {}) {
   return withRetry(async () => {
     try {
@@ -165,7 +150,6 @@ export async function apiDelete(path, config = {}) {
   });
 }
 
-// ----- Wake the API (non-fatal)
 export async function wakeApi() {
   try {
     await withRetry(() => api.get("/health", { validateStatus: () => true }), {
@@ -178,56 +162,56 @@ export async function wakeApi() {
   }
 }
 
-// Handy getter
 export function currentApiBase() {
   return baseURL;
 }
 
-//////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////
+
 // // frontend/src/lib/api.js
 // // Centralized API client + helper wrappers.
-// // PROD → set REACT_APP_API_URL on host (recommended)
+// // PROD → https://api.pixelperfectapi.net (or your Render backend URL)
 // // DEV  → REACT_APP_API_URL (if set) else http://localhost:8000
+
+// //Fixes: 
+// // 1. Remove onetechly.com fallback, use pixelperfect defaults
 
 // import axios from "axios";
 
 // const TOKEN_KEY = "auth_token";
 
-// // ----- Resolve base URL
-// const hostname =
-//   typeof window !== "undefined" && window.location?.hostname
-//     ? window.location.hostname
-//     : "";
+// function resolveBaseURL() {
+//   const env =
+//     (process.env.REACT_APP_API_URL || process.env.REACT_APP_API_BASE_URL || "").trim();
+//   if (env) return env;
 
-// // If you deploy the frontend on pixelperfectapi.net (or www), default API to api.pixelperfectapi.net
-// const prodDefault =
-//   hostname.endsWith("pixelperfectapi.net")
-//     ? "https://api.pixelperfectapi.net"
-//     : hostname.endsWith("onetechly.com")
-//       ? "https://api.onetechly.com"
-//       : null;
+//   if (typeof window !== "undefined" && window.location?.hostname) {
+//     const host = window.location.hostname;
 
-// const baseURL =
-//   (process.env.REACT_APP_API_URL || process.env.REACT_APP_API_BASE_URL || "").trim() ||
-//   prodDefault ||
-//   "http://localhost:8000";
+//     // If you're serving the frontend from pixelperfectapi.net, default to api.pixelperfectapi.net
+//     if (host === "pixelperfectapi.net" || host.endsWith(".pixelperfectapi.net")) {
+//       return "https://api.pixelperfectapi.net";
+//     }
+//   }
 
-// // ----- Axios instance
+//   // Safe dev default
+//   return "http://localhost:8000";
+// }
+
+// const baseURL = resolveBaseURL();
+
 // export const api = axios.create({
 //   baseURL,
-//   timeout: 30000,
-//   withCredentials: false,
+//   timeout: Number(process.env.REACT_APP_API_TIMEOUT || 30000),
 // });
 
 // // Attach Bearer token from localStorage if present
 // api.interceptors.request.use((config) => {
 //   try {
 //     const token = localStorage.getItem(TOKEN_KEY);
-//     if (token) {
+//     if (token && !config.headers?.Authorization) {
 //       config.headers = config.headers || {};
-//       if (!config.headers.Authorization && !config.headers.authorization) {
-//         config.headers.Authorization = `Bearer ${token}`;
-//       }
+//       config.headers.Authorization = `Bearer ${token}`;
 //     }
 //   } catch {
 //     /* ignore */
@@ -260,11 +244,10 @@ export function currentApiBase() {
 //   return out;
 // }
 
-// // Retry helper (kept your behavior)
 // async function withRetry(
 //   fn,
 //   {
-//     attempts = 8,
+//     attempts = Number(process.env.REACT_APP_API_RETRY_ATTEMPTS || 3) + 5, // keeps your previous "strong retry"
 //     firstDelayMs = 800,
 //     maxDelayMs = 6000,
 //     shouldRetry = (error) => {
@@ -275,7 +258,6 @@ export function currentApiBase() {
 // ) {
 //   let delay = firstDelayMs;
 //   let lastErr;
-
 //   for (let i = 0; i < attempts; i++) {
 //     try {
 //       return await fn();
@@ -291,7 +273,6 @@ export function currentApiBase() {
 //   throw normalizeError(lastErr);
 // }
 
-// // ----- JSON helpers
 // export async function apiGetJson(path, config = {}) {
 //   return withRetry(async () => {
 //     try {
@@ -342,7 +323,6 @@ export function currentApiBase() {
 //   });
 // }
 
-// // ----- Wake the API
 // export async function wakeApi() {
 //   try {
 //     await withRetry(() => api.get("/health", { validateStatus: () => true }), {
@@ -358,4 +338,5 @@ export function currentApiBase() {
 // export function currentApiBase() {
 //   return baseURL;
 // }
+
 
