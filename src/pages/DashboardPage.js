@@ -11,6 +11,7 @@
 // - Removes duplicate axios calls to /users/me and /subscription_status
 // - Prevents long "checking/loading" loops
 // - FIXED: Consistent UI design with Activity and Screenshot pages
+// - FIXED: Batch Processing disabled for free tier
 // ============================================================================
 
 import React from "react";
@@ -86,6 +87,9 @@ export default function DashboardPage() {
 
   const usage = subscriptionStatus?.usage || {};
   const limits = subscriptionStatus?.limits || {};
+
+  // ✅ Check if batch processing is available
+  const isBatchAvailable = tier !== 'free';
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -212,12 +216,16 @@ export default function DashboardPage() {
               title="Take Screenshot" 
               subtitle="Capture any website" 
             />
+            
+            {/* ✅ FIXED: Batch Processing disabled for free tier */}
             <QuickAction 
-              onClick={() => navigate("/batch")} 
+              onClick={isBatchAvailable ? () => navigate("/batch") : undefined}
               icon="📦" 
               title="Batch Processing" 
-              subtitle="Multiple screenshots" 
+              subtitle={isBatchAvailable ? "Multiple screenshots" : "Pro plan required"}
+              disabled={!isBatchAvailable}
             />
+            
             <QuickAction 
               onClick={() => navigate("/documentation")} 
               icon="📚" 
@@ -316,16 +324,25 @@ function StatCard({ value, label, limit, valueClass }) {
   );
 }
 
-function QuickAction({ onClick, icon, title, subtitle }) {
+function QuickAction({ onClick, icon, title, subtitle, disabled = false }) {
+  const baseClasses = "flex items-center gap-3 p-4 border-2 rounded-lg text-left transition-all";
+  const enabledClasses = "border-gray-200 hover:border-blue-500 hover:bg-blue-50 cursor-pointer";
+  const disabledClasses = "border-gray-200 bg-gray-50 cursor-not-allowed opacity-60";
+  
   return (
     <button
-      onClick={onClick}
-      className="flex items-center gap-3 p-4 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all text-left"
+      onClick={disabled ? undefined : onClick}
+      disabled={disabled}
+      className={`${baseClasses} ${disabled ? disabledClasses : enabledClasses}`}
+      title={disabled ? subtitle : ""}
     >
       <div className="text-3xl">{icon}</div>
       <div>
         <div className="font-semibold text-gray-900">{title}</div>
         <div className="text-sm text-gray-600">{subtitle}</div>
+        {disabled && (
+          <div className="text-xs text-red-600 mt-1">🔒 Upgrade required</div>
+        )}
       </div>
     </button>
   );
@@ -340,10 +357,9 @@ function InfoRow({ label, value }) {
   );
 }
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+///////////////////////////////////////////////////////////////////////////////////////////
 // // ============================================================================
-// // DASHBOARD PAGE - PRODUCTION READY (FIXED AUTH + LOADING)
+// // DASHBOARD PAGE - PRODUCTION READY (FIXED AUTH + LOADING + UI CONSISTENCY)
 // // ============================================================================
 // // File: frontend/src/pages/DashboardPage.js
 // // Author: OneTechly
@@ -354,10 +370,13 @@ function InfoRow({ label, value }) {
 // // - Removes localStorage("token") mismatch (AuthContext uses "auth_token")
 // // - Removes duplicate axios calls to /users/me and /subscription_status
 // // - Prevents long "checking/loading" loops
+// // - FIXED: Consistent UI design with Activity and Screenshot pages
+// // ============================================================================
 
 // import React from "react";
 // import { useNavigate } from "react-router-dom";
 // import ApiKeyDisplay from "../components/ApiKeyDisplay";
+// import PixelPerfectLogo from "../components/PixelPerfectLogo";
 // import { useAuth } from "../contexts/AuthContext";
 // import { useSubscription } from "../contexts/SubscriptionContext";
 
@@ -430,46 +449,50 @@ function InfoRow({ label, value }) {
 
 //   return (
 //     <div className="min-h-screen bg-gray-50">
-//       {/* Header */}
-//       <header className="bg-white border-b border-gray-200 sticky top-0 z-40 shadow-sm">
+//       {/* ============ FIXED: Professional Header with PixelPerfect Logo ============ */}
+//       <header className="bg-white border-b border-gray-200">
 //         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-//           <div className="flex items-center justify-between py-4">
-//             <div className="flex items-center gap-3">
-//               <svg className="w-10 h-10 sm:w-12 sm:h-12" viewBox="0 0 200 200" fill="none">
-//                 <rect width="200" height="200" rx="40" fill="#3B82F6" />
-//                 <path
-//                   d="M60 100L90 70L120 100L150 70"
-//                   stroke="white"
-//                   strokeWidth="12"
-//                   strokeLinecap="round"
-//                   strokeLinejoin="round"
-//                 />
-//                 <circle cx="100" cy="140" r="8" fill="white" />
-//               </svg>
-
-//               <div>
-//                 <h1 className="text-xl sm:text-2xl font-bold text-gray-900">PixelPerfect</h1>
-//                 <p className="text-xs sm:text-sm text-gray-600">Dashboard</p>
-//               </div>
+//           <div className="flex justify-between items-center h-16">
+//             {/* ✅ FIXED: PixelPerfect Logo (Left) - consistent with other pages */}
+//             <div className="cursor-pointer" onClick={() => navigate('/dashboard')}>
+//               <PixelPerfectLogo size={40} showText={true} />
 //             </div>
 
-//             <button
-//               onClick={logout}
-//               className="px-4 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg font-medium transition-colors"
-//             >
-//               Logout
-//             </button>
+//             {/* User info (Right) */}
+//             <div className="flex items-center gap-4">
+//               <span className="text-sm text-gray-600 hidden sm:block">
+//                 {user?.username || 'User'}
+//               </span>
+//               <button
+//                 onClick={logout}
+//                 className="text-blue-600 hover:text-blue-700 text-sm font-medium transition-colors"
+//               >
+//                 Logout
+//               </button>
+//             </div>
 //           </div>
 //         </div>
 //       </header>
 
-//       {/* Main */}
+//       {/* ============ Main Content ============ */}
 //       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-//         {/* Welcome */}
-//         <div className="mb-6 sm:mb-8">
-//           <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
+        
+//         {/* ✅ FIXED: Centered Page Header (matching Activity and Screenshot pages) */}
+//         <div className="text-center mb-6 sm:mb-8">
+//           {/* Centered logo icon */}
+//           <div className="flex justify-center items-center mb-4">
+//             <PixelPerfectLogo size={64} showText={false} />
+//           </div>
+
+//           {/* Page title */}
+//           <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard</h1>
+          
+//           {/* Welcome message */}
+//           <h2 className="text-2xl font-semibold text-gray-800 mb-2">
 //             Welcome back, {user?.username || "User"}! 👋
 //           </h2>
+          
+//           {/* Subtitle */}
 //           <p className="text-gray-600 text-sm sm:text-base">
 //             Manage your API keys, view usage, and configure your account.
 //           </p>
@@ -486,7 +509,9 @@ function InfoRow({ label, value }) {
 //                   ? "bg-blue-100 text-blue-800"
 //                   : tier === "pro"
 //                   ? "bg-purple-100 text-purple-800"
-//                   : "bg-yellow-100 text-yellow-800"
+//                   : tier === "business"
+//                   ? "bg-yellow-100 text-yellow-800"
+//                   : "bg-green-100 text-green-800"
 //               }`}
 //             >
 //               {(tier || "free").toUpperCase()}
@@ -541,12 +566,42 @@ function InfoRow({ label, value }) {
 //           <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">⚡ Quick Actions</h3>
 
 //           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-//             <QuickAction onClick={() => navigate("/screenshot")} icon="📸" title="Take Screenshot" subtitle="Capture any website" />
-//             <QuickAction onClick={() => navigate("/batch")} icon="📦" title="Batch Processing" subtitle="Multiple screenshots" />
-//             <QuickAction onClick={() => navigate("/documentation")} icon="📚" title="Documentation" subtitle="API reference" />
-//             <QuickAction onClick={() => navigate("/activity")} icon="📊" title="Activity Log" subtitle="View your history" />
-//             <QuickAction onClick={() => navigate("/pricing")} icon="💳" title="Pricing Plans" subtitle="View all tiers" />
-//             <QuickAction onClick={() => navigate("/help")} icon="❓" title="Help Center" subtitle="Get support" />
+//             <QuickAction 
+//               onClick={() => navigate("/screenshot")} 
+//               icon="📸" 
+//               title="Take Screenshot" 
+//               subtitle="Capture any website" 
+//             />
+//             <QuickAction 
+//               onClick={() => navigate("/batch")} 
+//               icon="📦" 
+//               title="Batch Processing" 
+//               subtitle="Multiple screenshots" 
+//             />
+//             <QuickAction 
+//               onClick={() => navigate("/documentation")} 
+//               icon="📚" 
+//               title="Documentation" 
+//               subtitle="API reference" 
+//             />
+//             <QuickAction 
+//               onClick={() => navigate("/activity")} 
+//               icon="📊" 
+//               title="Activity Log" 
+//               subtitle="View your history" 
+//             />
+//             <QuickAction 
+//               onClick={() => navigate("/pricing")} 
+//               icon="💳" 
+//               title="Pricing Plans" 
+//               subtitle="View all tiers" 
+//             />
+//             <QuickAction 
+//               onClick={() => navigate("/help")} 
+//               icon="❓" 
+//               title="Help Center" 
+//               subtitle="Get support" 
+//             />
 //           </div>
 //         </div>
 
@@ -590,10 +645,18 @@ function InfoRow({ label, value }) {
 //           <div className="text-center text-sm text-gray-600">
 //             <p className="mb-2">© 2026 PixelPerfect API. Built by OneTechly.</p>
 //             <div className="flex flex-wrap justify-center gap-4">
-//               <button onClick={() => navigate("/terms")} className="hover:text-blue-600 transition-colors">Terms</button>
-//               <button onClick={() => navigate("/privacy")} className="hover:text-blue-600 transition-colors">Privacy</button>
-//               <button onClick={() => navigate("/documentation")} className="hover:text-blue-600 transition-colors">Docs</button>
-//               <button onClick={() => navigate("/contact")} className="hover:text-blue-600 transition-colors">Contact</button>
+//               <button onClick={() => navigate("/terms")} className="hover:text-blue-600 transition-colors">
+//                 Terms
+//               </button>
+//               <button onClick={() => navigate("/privacy")} className="hover:text-blue-600 transition-colors">
+//                 Privacy
+//               </button>
+//               <button onClick={() => navigate("/documentation")} className="hover:text-blue-600 transition-colors">
+//                 Docs
+//               </button>
+//               <button onClick={() => navigate("/contact")} className="hover:text-blue-600 transition-colors">
+//                 Contact
+//               </button>
 //             </div>
 //           </div>
 //         </div>
@@ -636,6 +699,4 @@ function InfoRow({ label, value }) {
 //     </div>
 //   );
 // }
-
-
 
