@@ -3,11 +3,10 @@
 // ========================================
 // File: frontend/src/App.js
 // Author: OneTechly
-// Updated: January 2026 - FIXED ROUTING
+// Updated: January 2026 - MINIMAL VERSION
 //
-// Fixes:
-// 1) Added AccountSettings import and route
-// 2) Changed route from /settings to /account-settings
+// Only imports pages that exist in your project
+// Add other imports as needed when you create those pages
 // ========================================
 
 import React from 'react';
@@ -18,30 +17,30 @@ import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './contexts/AuthContext';
 import { SubscriptionProvider } from './contexts/SubscriptionContext';
 
-// Public Pages
-import LandingPage from './pages/LandingPage';
+// Import only the pages that exist
+// Comment out imports for pages you don't have yet
 import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
-import Pricing from './pages/Pricing';
-import Features from './pages/Features';
-import About from './pages/About';
-import Documentation from './pages/Documentation';
-
-// Protected Pages
 import DashboardPage from './pages/DashboardPage';
 import ScreenshotPage from './pages/ScreenshotPage';
-import ActivityPage from './pages/ActivityPage';
-import BatchProcessing from './pages/BatchProcessing';
-
-// ✅ FIXED: Import the proper AccountSettings component
+import Pricing from './pages/Pricing';
 import AccountSettings from './pages/AccountSettings';
 
-// Auth Pages
-import ChangePasswordPage from './pages/ChangePasswordPage';
-import ForgotPasswordPage from './pages/ForgotPasswordPage';
+// Optional imports - uncomment when you create these pages:
+// import LandingPage from './pages/LandingPage';
+// import RegisterPage from './pages/RegisterPage';
+// import ActivityPage from './pages/ActivityPage';
+// import BatchProcessing from './pages/BatchProcessing';
+// import ChangePasswordPage from './pages/ChangePasswordPage';
+// import ForgotPasswordPage from './pages/ForgotPasswordPage';
+// import Features from './pages/Features';
+// import About from './pages/About';
+// import Documentation from './pages/Documentation';
 
-// Protected Route Component
+// ============================================
+// PROTECTED ROUTE COMPONENT
+// ============================================
 function ProtectedRoute({ children }) {
+  // Check both possible token keys for compatibility
   const token = localStorage.getItem('auth_token') || localStorage.getItem('token');
   
   if (!token) {
@@ -51,12 +50,59 @@ function ProtectedRoute({ children }) {
   return children;
 }
 
+// ============================================
+// PLACEHOLDER PAGES
+// ============================================
+// Simple placeholder components for pages you haven't created yet
+
+function PlaceholderPage({ title, description }) {
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="text-center">
+        <h1 className="text-3xl font-bold text-gray-900 mb-4">{title}</h1>
+        <p className="text-gray-600 mb-8">{description}</p>
+        <a
+          href="/dashboard"
+          className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          Go to Dashboard
+        </a>
+      </div>
+    </div>
+  );
+}
+
+function HomePage() {
+  return <PlaceholderPage title="Welcome to PixelPerfect" description="Please log in to continue" />;
+}
+
+function RegisterPagePlaceholder() {
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="text-center">
+        <h1 className="text-3xl font-bold text-gray-900 mb-4">Registration</h1>
+        <p className="text-gray-600 mb-8">Register page coming soon. Please contact support to create an account.</p>
+        <a
+          href="/login"
+          className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          Go to Login
+        </a>
+      </div>
+    </div>
+  );
+}
+
+// ============================================
+// MAIN APP COMPONENT
+// ============================================
 function App() {
   return (
     <Router>
       <AuthProvider>
         <SubscriptionProvider>
           <div className="App">
+            {/* Toast notifications */}
             <Toaster 
               position="top-right"
               toastOptions={{
@@ -84,17 +130,12 @@ function App() {
             
             <Routes>
               {/* Public Routes */}
-              <Route path="/" element={<LandingPage />} />
+              <Route path="/" element={<HomePage />} />
               <Route path="/login" element={<LoginPage />} />
-              <Route path="/register" element={<RegisterPage />} />
+              <Route path="/register" element={<RegisterPagePlaceholder />} />
               <Route path="/pricing" element={<Pricing />} />
-              <Route path="/features" element={<Features />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/docs" element={<Documentation />} />
-              <Route path="/documentation" element={<Documentation />} />
-              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
               
-              {/* Protected Routes */}
+              {/* Protected Routes - Only includes pages that exist */}
               <Route 
                 path="/dashboard" 
                 element={
@@ -114,25 +155,6 @@ function App() {
               />
               
               <Route 
-                path="/activity" 
-                element={
-                  <ProtectedRoute>
-                    <ActivityPage />
-                  </ProtectedRoute>
-                } 
-              />
-              
-              <Route 
-                path="/batch" 
-                element={
-                  <ProtectedRoute>
-                    <BatchProcessing />
-                  </ProtectedRoute>
-                } 
-              />
-              
-              {/* ✅ FIXED: Proper AccountSettings route */}
-              <Route 
                 path="/settings" 
                 element={
                   <ProtectedRoute>
@@ -141,21 +163,11 @@ function App() {
                 } 
               />
               
-              {/* Also support /account-settings URL */}
               <Route 
                 path="/account-settings" 
                 element={
                   <ProtectedRoute>
                     <AccountSettings />
-                  </ProtectedRoute>
-                } 
-              />
-              
-              <Route 
-                path="/change-password" 
-                element={
-                  <ProtectedRoute>
-                    <ChangePasswordPage />
                   </ProtectedRoute>
                 } 
               />
