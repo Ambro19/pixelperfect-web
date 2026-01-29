@@ -24,32 +24,35 @@ const Privacy = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
+      {/* Header - Mobile Responsive */}
       <header className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            {/* Logo */}
+          <div className="flex justify-between items-center h-14 sm:h-16">
+            {/* Logo - Responsive sizing */}
             <div className="cursor-pointer" onClick={() => navigate('/')}>
-              <PixelPerfectLogo size={40} showText={true} />
+              <PixelPerfectLogo 
+                size={window.innerWidth < 640 ? 32 : 40} 
+                showText={true} 
+              />
             </div>
             
-            {/* Navigation */}
-            <nav className="flex items-center gap-6">
+            {/* Navigation - Hide some on mobile */}
+            <nav className="flex items-center gap-3 sm:gap-6">
               <button
                 onClick={() => navigate('/docs')}
-                className="text-gray-600 hover:text-gray-900 font-medium"
+                className="hidden md:block text-gray-600 hover:text-gray-900 font-medium text-sm"
               >
                 Documentation
               </button>
               <button
                 onClick={() => navigate('/pricing')}
-                className="text-gray-600 hover:text-gray-900 font-medium"
+                className="hidden md:block text-gray-600 hover:text-gray-900 font-medium text-sm"
               >
                 Pricing
               </button>
               <button
                 onClick={() => navigate('/login')}
-                className="text-gray-600 hover:text-gray-900 font-medium"
+                className="px-3 sm:px-4 py-1.5 sm:py-2 text-sm bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700"
               >
                 Sign in
               </button>
