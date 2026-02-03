@@ -3,6 +3,7 @@
 // PURPOSE: Main screenshot capture page with full configuration options
 // UPDATED: February 2026 - Added PDF format support
 // ✅ PRODUCTION READY - PDF format option added
+// ✅ UPDATED: Progress bar usage UI + stronger plan badge styling
 
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -32,7 +33,7 @@ export default function ScreenshotPage() {
 
   // CONVERTED: Website URL input (not YouTube)
   const [websiteUrl, setWebsiteUrl] = useState('');
-  
+
   // CONVERTED: Screenshot configuration options
   const [width, setWidth] = useState(1920);
   const [height, setHeight] = useState(1080);
@@ -72,12 +73,12 @@ export default function ScreenshotPage() {
 
   // CONVERTED: Subscription helpers (simplified for screenshots)
   const limits = useMemo(() => subscriptionStatus?.limits || {}, [subscriptionStatus]);
-  const usage  = useMemo(() => subscriptionStatus?.usage  || {}, [subscriptionStatus]);
+  const usage = useMemo(() => subscriptionStatus?.usage || {}, [subscriptionStatus]);
 
   const isUnlimited = (limit) => limit === 'unlimited' || limit === Infinity;
 
-  const getUsed = (k) => Number(usage?.[k] ?? 0);
-  const getLimit = (k) => limits?.[k];
+  const getUsed = useCallback((k) => Number(usage?.[k] ?? 0), [usage]);
+  const getLimit = useCallback((k) => limits?.[k], [limits]);
 
   const atLimit = (k) => {
     const lim = getLimit(k);
@@ -111,13 +112,7 @@ export default function ScreenshotPage() {
 
   const xUiPrimaryDisabled = isLoading || !xUiValidUrl || atLimit(actionKey);
 
-  const formatResetDate = useCallback(() => {
-    if (!subscriptionStatus?.next_reset) return null;
-    const d = new Date(subscriptionStatus.next_reset);
-    if (Number.isNaN(d.getTime())) return null;
-    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
-  }, [subscriptionStatus]);
-
+  // Reset-date logic still useful for backend sync, but we removed the UI text
   const isResetOverdue = useMemo(() => {
     if (!subscriptionStatus?.next_reset) return false;
     const d = new Date(subscriptionStatus.next_reset);
@@ -125,16 +120,15 @@ export default function ScreenshotPage() {
     return Date.now() > d.getTime();
   }, [subscriptionStatus]);
 
-  const forceRefreshIfNeeded = useCallback(async (reason) => {
-    if (!isAuthenticated || !refreshSubscriptionStatus) return;
-    try {
-      if (isResetOverdue) {
+  const forceRefreshIfNeeded = useCallback(
+    async () => {
+      if (!isAuthenticated || !refreshSubscriptionStatus) return;
+      try {
         await refreshSubscriptionStatus();
-      } else {
-        await refreshSubscriptionStatus();
-      }
-    } catch {}
-  }, [isAuthenticated, refreshSubscriptionStatus, isResetOverdue]);
+      } catch {}
+    },
+    [isAuthenticated, refreshSubscriptionStatus]
+  );
 
   useEffect(() => {
     if (isAuthenticated && refreshSubscriptionStatus) {
@@ -143,9 +137,9 @@ export default function ScreenshotPage() {
   }, [isAuthenticated, refreshSubscriptionStatus]);
 
   useEffect(() => {
-    const onFocus = () => forceRefreshIfNeeded('focus');
+    const onFocus = () => forceRefreshIfNeeded();
     const onVis = () => {
-      if (document.visibilityState === 'visible') forceRefreshIfNeeded('visible');
+      if (document.visibilityState === 'visible') forceRefreshIfNeeded();
     };
     window.addEventListener('focus', onFocus);
     document.addEventListener('visibilitychange', onVis);
@@ -155,24 +149,27 @@ export default function ScreenshotPage() {
     };
   }, [forceRefreshIfNeeded]);
 
-  const pollUsageSync = useCallback(async (beforeUsageMap, keyToObserve) => {
-    const maxTries = 6;
-    let tries = 0;
+  const pollUsageSync = useCallback(
+    async (beforeUsageMap, keyToObserve) => {
+      const maxTries = 6;
+      let tries = 0;
 
-    while (tries < maxTries && !pollStopRef.current) {
-      tries += 1;
-      try {
-        await refreshSubscriptionStatus();
-      } catch {}
-      await new Promise((res) => setTimeout(res, 450));
+      while (tries < maxTries && !pollStopRef.current) {
+        tries += 1;
+        try {
+          await refreshSubscriptionStatus();
+        } catch {}
+        await new Promise((res) => setTimeout(res, 450));
 
-      const currentUsed = getUsed(keyToObserve);
-      const beforeUsed = Number(beforeUsageMap?.[keyToObserve] ?? 0);
+        const currentUsed = getUsed(keyToObserve);
+        const beforeUsed = Number(beforeUsageMap?.[keyToObserve] ?? 0);
 
-      if (currentUsed > beforeUsed) return true;
-    }
-    return false;
-  }, [refreshSubscriptionStatus, getUsed]);
+        if (currentUsed > beforeUsed) return true;
+      }
+      return false;
+    },
+    [refreshSubscriptionStatus, getUsed]
+  );
 
   const handleLogout = () => {
     if (window.confirm('Are you sure you want to logout?')) {
@@ -181,6 +178,31 @@ export default function ScreenshotPage() {
       navigate('/login');
     }
   };
+
+  // ✅ Progress bar helpers (safe for unlimited / missing limits)
+  const screenshotsUsed = getUsed('screenshots');
+  const screenshotsLimit = getLimit('screenshots');
+
+  const screenshotsPercent = useMemo(() => {
+    if (isUnlimited(screenshotsLimit)) return 0;
+    const lim = Number(screenshotsLimit ?? 0);
+    if (!lim || Number.isNaN(lim) || lim <= 0) return 0;
+    return Math.min(100, (screenshotsUsed / lim) * 100);
+  }, [screenshotsLimit, screenshotsUsed]);
+
+  const screenshotsRemainingLabel = useMemo(() => {
+    if (isUnlimited(screenshotsLimit)) return 'Unlimited screenshots';
+    const lim = Number(screenshotsLimit ?? 0);
+    if (!lim || Number.isNaN(lim) || lim <= 0) return '0 remaining';
+    return `${Math.max(0, lim - screenshotsUsed)} remaining`;
+  }, [screenshotsLimit, screenshotsUsed]);
+
+  const screenshotsPercentLabel = useMemo(() => {
+    if (isUnlimited(screenshotsLimit)) return 'Unlimited';
+    const lim = Number(screenshotsLimit ?? 0);
+    if (!lim || Number.isNaN(lim) || lim <= 0) return '0.0% used';
+    return `${screenshotsPercent.toFixed(1)}% used`;
+  }, [screenshotsLimit, screenshotsPercent]);
 
   // CONVERTED: Capture screenshot (main function)
   const handleCapture = async () => {
@@ -194,7 +216,7 @@ export default function ScreenshotPage() {
       pollStopRef.current = false;
 
       if (isResetOverdue) {
-        await forceRefreshIfNeeded('pre-capture');
+        await forceRefreshIfNeeded();
       }
 
       if (!isValidUrl(websiteUrl)) {
@@ -202,7 +224,7 @@ export default function ScreenshotPage() {
       }
 
       const beforeUsage = {
-        screenshots: getUsed('screenshots'),
+        screenshots: getUsed('screenshots')
       };
 
       const payload = {
@@ -212,12 +234,15 @@ export default function ScreenshotPage() {
         format: format,
         full_page: fullPage,
         dark_mode: darkMode,
-        delay: delay,
+        delay: delay
       };
 
       // Add remove_elements if provided
       if (removeElements.trim()) {
-        payload.remove_elements = removeElements.split(',').map(s => s.trim()).filter(Boolean);
+        payload.remove_elements = removeElements
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean);
       }
 
       const res = await fetch(`${API_BASE_URL}/api/v1/screenshot`, {
@@ -248,7 +273,6 @@ export default function ScreenshotPage() {
       toast.success('📸 Screenshot captured!');
 
       await pollUsageSync(beforeUsage, 'screenshots');
-
     } catch (err) {
       setError(err.message || 'Screenshot capture failed');
       toast.error(err.message || 'Screenshot capture failed');
@@ -262,7 +286,7 @@ export default function ScreenshotPage() {
 
   const handleDownload = () => {
     if (!screenshotUrl) return;
-    
+
     const a = document.createElement('a');
     a.href = screenshotUrl;
     a.download = `screenshot_${Date.now()}.${format}`;
@@ -297,9 +321,7 @@ export default function ScreenshotPage() {
 
             {/* User info (Right) */}
             <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-600 hidden sm:block">
-                {user?.username || 'User'}
-              </span>
+              <span className="text-sm text-gray-600 hidden sm:block">{user?.username || 'User'}</span>
               <button
                 onClick={handleLogout}
                 className="text-blue-600 hover:text-blue-700 text-sm font-medium transition-colors"
@@ -313,7 +335,6 @@ export default function ScreenshotPage() {
 
       {/* ============ Main Content ============ */}
       <div className="max-w-4xl mx-auto p-6">
-
         <div className="text-center mb-6">
           {/* Centered logo icon */}
           <div className="flex justify-center items-center mb-4">
@@ -326,25 +347,30 @@ export default function ScreenshotPage() {
             <span className="font-semibold text-blue-600">{user?.username || 'User'}</span> ({user?.email})
           </div>
 
-          {successMessage && <span className="sr-only" aria-live="polite">{successMessage}</span>}
+          {successMessage && (
+            <span className="sr-only" aria-live="polite">
+              {successMessage}
+            </span>
+          )}
 
           {/* Subscription card - SIMPLIFIED for screenshots */}
           <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4 mb-4 mt-4 shadow-sm">
             <div className="flex items-center justify-between mb-2">
               <div className="text-sm">
                 <span className="font-semibold">Current Plan:</span>{' '}
+                {/* ✅ UPDATED: Plan badge bigger / stronger */}
                 <span
-                  className={`ml-1 px-2 py-1 rounded text-xs font-medium ${
+                  className={`ml-1 px-3 py-1.5 rounded-lg text-sm font-bold shadow-sm ${
                     tier === 'free'
-                      ? 'bg-yellow-100 text-yellow-800'
+                      ? 'bg-yellow-100 text-yellow-800 border border-yellow-300'
                       : tier === 'pro'
-                      ? 'bg-blue-100 text-blue-800'
+                      ? 'bg-blue-100 text-blue-800 border border-blue-300'
                       : tier === 'business'
-                      ? 'bg-purple-100 text-purple-800'
-                      : 'bg-green-100 text-green-800'
+                      ? 'bg-purple-100 text-purple-800 border border-purple-300'
+                      : 'bg-green-100 text-green-800 border border-green-300'
                   }`}
                 >
-                  {tier?.charAt(0).toUpperCase() + tier?.slice(1) || 'Free'}
+                  {tier?.toUpperCase() || 'FREE'}
                 </span>
               </div>
 
@@ -385,16 +411,33 @@ export default function ScreenshotPage() {
               <div className="font-medium">📸 Screenshots: {safeFormatUsage('screenshots')}</div>
             </div>
 
-            {subscriptionStatus?.next_reset && (
-              <div className="mt-1 text-xs text-gray-500">
-                Resets {formatResetDate()}
-                {isResetOverdue && (
-                  <span className="ml-2 text-red-600 font-semibold">
-                    (reset passed — refreshing plan status)
-                  </span>
-                )}
+            {/* ✅ NEW: Professional Screenshot Usage Progress Bar */}
+            <div className="mt-4 bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+              {/* Header */}
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm font-semibold text-gray-700">📸 Screenshots Used This Month</span>
+                <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                  {safeFormatUsage('screenshots')}
+                </span>
               </div>
-            )}
+
+              {/* Progress Bar */}
+              <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                <div
+                  className="bg-gradient-to-r from-blue-500 via-blue-600 to-indigo-600 h-3 rounded-full transition-all duration-500 ease-out relative"
+                  style={{ width: `${screenshotsPercent}%` }}
+                >
+                  {/* Shine effect */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-20 animate-pulse"></div>
+                </div>
+              </div>
+
+              {/* Footer Info */}
+              <div className="flex justify-between items-center mt-2">
+                <span className="text-xs text-gray-500">{screenshotsRemainingLabel}</span>
+                <span className="text-xs font-medium text-gray-600">{screenshotsPercentLabel}</span>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -405,7 +448,7 @@ export default function ScreenshotPage() {
             <div>
               <div className="font-medium text-green-700">Example.com</div>
               <div className="text-green-600">Simple test website</div>
-              <button 
+              <button
                 onClick={() => setWebsiteUrl('https://example.com')}
                 className="text-xs text-green-500 hover:text-green-700 underline mt-1"
               >
@@ -415,7 +458,7 @@ export default function ScreenshotPage() {
             <div>
               <div className="font-medium text-green-700">GitHub.com</div>
               <div className="text-green-600">Popular code hosting site</div>
-              <button 
+              <button
                 onClick={() => setWebsiteUrl('https://github.com')}
                 className="text-xs text-green-500 hover:text-green-700 underline mt-1"
               >
@@ -427,9 +470,7 @@ export default function ScreenshotPage() {
 
         {/* URL Input */}
         <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Enter Website URL:
-          </label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Enter Website URL:</label>
           <input
             type="text"
             placeholder="https://example.com"
@@ -449,7 +490,7 @@ export default function ScreenshotPage() {
         {/* Screenshot Configuration */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
           <h3 className="text-lg font-semibold mb-4">📐 Screenshot Configuration</h3>
-          
+
           {/* Viewport Presets */}
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-2">Quick Presets:</label>
@@ -533,7 +574,7 @@ export default function ScreenshotPage() {
           {/* Advanced Options */}
           <div className="border-t border-gray-200 pt-4">
             <h4 className="text-sm font-semibold text-gray-700 mb-3">Advanced Options</h4>
-            
+
             <div className="mb-3">
               <label className="block text-sm text-gray-700 mb-1">Delay before capture (seconds)</label>
               <input
@@ -614,8 +655,8 @@ export default function ScreenshotPage() {
 
             {/* Screenshot Preview */}
             <div className="bg-gray-50 p-4 rounded-lg mb-4">
-              <img 
-                src={screenshotUrl} 
+              <img
+                src={screenshotUrl}
                 alt="Screenshot preview"
                 className="max-w-full h-auto border border-gray-300 rounded shadow-lg mx-auto"
               />
@@ -631,9 +672,7 @@ export default function ScreenshotPage() {
                 </div>
                 <div className="text-sm text-gray-800">Format: {screenshotData.format.toUpperCase()}</div>
                 {screenshotData.size && (
-                  <div className="text-sm text-gray-800">
-                    Size: {(screenshotData.size / 1024).toFixed(2)} KB
-                  </div>
+                  <div className="text-sm text-gray-800">Size: {(screenshotData.size / 1024).toFixed(2)} KB</div>
                 )}
               </div>
             )}
@@ -681,19 +720,19 @@ export default function ScreenshotPage() {
             </button>
           </div>
         </div>
-
       </div>
     </div>
   );
 }
 
 
+/////////////////////////////////////////////////////////////////////////////////
 
-///////////////////////////////////////////////////////////////////////////////////////////
 // // frontend/src/pages/ScreenshotPage.js — PixelPerfect Screenshot API
 // // CONVERTED FROM: YCD Download.js
 // // PURPOSE: Main screenshot capture page with full configuration options
-// // UPDATED: January 2026 - Fixed logo consistency (removed AppBrand, using PixelPerfectLogo)
+// // UPDATED: February 2026 - Added PDF format support
+// // ✅ PRODUCTION READY - PDF format option added
 
 // import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 // import { useNavigate } from 'react-router-dom';
@@ -1183,7 +1222,7 @@ export default function ScreenshotPage() {
 //             </div>
 //           </div>
 
-//           {/* Format Selection */}
+//           {/* ✅ Format Selection - PDF ADDED */}
 //           <div className="mb-4">
 //             <label className="block text-sm font-medium text-gray-700 mb-2">Format</label>
 //             <select
@@ -1194,6 +1233,7 @@ export default function ScreenshotPage() {
 //               <option value="png">PNG (lossless, larger file)</option>
 //               <option value="jpeg">JPEG (lossy, smaller file)</option>
 //               <option value="webp">WebP (best compression)</option>
+//               <option value="pdf">PDF (document format)</option>
 //             </select>
 //           </div>
 
@@ -1376,5 +1416,4 @@ export default function ScreenshotPage() {
 //     </div>
 //   );
 // }
-
 

@@ -4,7 +4,7 @@
    File: src/index.css
    Author: OneTechly
    Purpose: Mobile-optimized global styles
-   Updated: January 2026 - Enhanced for new pages + API Key Display
+   Updated: February 2026 - Enhanced with code syntax highlighting
 */
 
 @tailwind base;
@@ -79,6 +79,137 @@ pre code {
 /* Inline code styling */
 code:not(pre code) {
   @apply bg-gray-100 text-red-600 px-1.5 py-0.5 rounded text-sm font-mono;
+}
+
+/* ========================================
+   CODE SYNTAX HIGHLIGHTING - CRITICAL!
+   ========================================
+   ✅ REQUIRED FOR DOCUMENTATION PAGES
+   Without this CSS, code blocks won't be visible!
+   ======================================== */
+
+.code-block {
+  background: #1e293b;
+  border-radius: 0.5rem;
+  padding: 1.25rem;
+  overflow-x: auto;
+  margin: 1.5rem 0;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  position: relative;
+  /* Enable momentum scrolling on iOS */
+  -webkit-overflow-scrolling: touch;
+}
+
+.code-block code {
+  color: #e2e8f0;
+  font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+  font-size: 0.875rem;
+  line-height: 1.7;
+  display: block;
+  white-space: pre;
+}
+
+/* Mobile-optimized code block text size */
+@media (max-width: 639px) {
+  .code-block code {
+    font-size: 0.75rem;
+  }
+}
+
+/* Syntax Highlighting Colors */
+.code-command { 
+  color: #22c55e; 
+  font-weight: 600; 
+}
+
+.code-flag { 
+  color: #60a5fa; 
+}
+
+.code-string { 
+  color: #fbbf24; 
+}
+
+.code-url { 
+  color: #38bdf8; 
+  text-decoration: underline; 
+}
+
+.code-operator { 
+  color: #f472b6; 
+}
+
+.code-keyword { 
+  color: #a78bfa; 
+  font-weight: 600; 
+}
+
+.code-function { 
+  color: #34d399; 
+}
+
+.code-property { 
+  color: #60a5fa; 
+}
+
+.code-number { 
+  color: #fb923c; 
+}
+
+.code-boolean { 
+  color: #fb923c; 
+  font-weight: 600; 
+}
+
+.code-constant { 
+  color: #fde047; 
+}
+
+.code-built-in { 
+  color: #8b5cf6; 
+  font-weight: 500; 
+}
+
+.code-comment { 
+  color: #64748b; 
+  font-style: italic; 
+}
+
+.code-template { 
+  color: #fde047; 
+}
+
+/* Code block scrollbar styling */
+.code-block::-webkit-scrollbar {
+  height: 8px;
+}
+
+.code-block::-webkit-scrollbar-track {
+  background: #0f172a;
+  border-radius: 0.25rem;
+}
+
+.code-block::-webkit-scrollbar-thumb {
+  background: #475569;
+  border-radius: 0.25rem;
+}
+
+.code-block::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
+/* Language label (optional) */
+.code-language-label {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: #374151;
+  color: #9ca3af;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
 }
 
 /* ========================================

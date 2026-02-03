@@ -4,7 +4,7 @@
 // File: frontend/src/pages/API.js
 // Author: OneTechly
 // Purpose: API playground and interactive documentation
-// Updated: January 2026 - Added logo + all language code examples
+// Updated: February 2026 - ✅ Added PHP, Ruby, Go language support
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -15,7 +15,7 @@ export default function API() {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const [selectedEndpoint, setSelectedEndpoint] = useState('screenshot');
-  const [selectedLanguage, setSelectedLanguage] = useState('curl'); // curl, python, javascript
+  const [selectedLanguage, setSelectedLanguage] = useState('curl'); // curl, python, javascript, php, ruby, go
 
   const endpoints = {
     screenshot: {
@@ -44,7 +44,7 @@ export default function API() {
     }
   };
 
-  // Code examples for each language
+  // Code examples for each language - ✅ NOW WITH PHP, RUBY, GO!
   const getCodeExample = () => {
     const examples = {
       curl: {
@@ -162,6 +162,164 @@ const batch = await axios.post(
 );
 
 console.log(batch.data.batch_id);`
+      },
+      // ========================================
+      // ✅ NEW: PHP CODE EXAMPLES
+      // ========================================
+      php: {
+        screenshot: `<?php
+require 'vendor/autoload.php';
+
+use GuzzleHttp\\Client;
+
+$client = new Client();
+$response = $client->post('https://api.pixelperfectapi.net/v1/screenshot', [
+    'headers' => [
+        'Authorization' => 'Bearer YOUR_API_KEY',
+        'Content-Type' => 'application/json'
+    ],
+    'json' => [
+        'url' => 'https://example.com',
+        'width' => 1920,
+        'height' => 1080,
+        'format' => 'png'
+    ]
+]);
+
+$data = json_decode($response->getBody(), true);
+echo $data['screenshot_url'];`,
+        batch: `<?php
+$response = $client->post('https://api.pixelperfectapi.net/v1/batch/submit', [
+    'headers' => [
+        'Authorization' => 'Bearer YOUR_API_KEY',
+        'Content-Type' => 'application/json'
+    ],
+    'json' => [
+        'urls' => [
+            'https://example.com',
+            'https://github.com',
+            'https://google.com'
+        ],
+        'width' => 1920,
+        'height' => 1080,
+        'format' => 'png'
+    ]
+]);
+
+$data = json_decode($response->getBody(), true);
+echo $data['batch_id'];`
+      },
+      // ========================================
+      // ✅ NEW: RUBY CODE EXAMPLES
+      // ========================================
+      ruby: {
+        screenshot: `require 'httparty'
+
+response = HTTParty.post(
+  'https://api.pixelperfectapi.net/v1/screenshot',
+  headers: {
+    'Authorization' => 'Bearer YOUR_API_KEY',
+    'Content-Type' => 'application/json'
+  },
+  body: {
+    url: 'https://example.com',
+    width: 1920,
+    height: 1080,
+    format: 'png'
+  }.to_json
+)
+
+data = JSON.parse(response.body)
+puts data['screenshot_url']`,
+        batch: `response = HTTParty.post(
+  'https://api.pixelperfectapi.net/v1/batch/submit',
+  headers: {
+    'Authorization' => 'Bearer YOUR_API_KEY',
+    'Content-Type' => 'application/json'
+  },
+  body: {
+    urls: [
+      'https://example.com',
+      'https://github.com',
+      'https://google.com'
+    ],
+    width: 1920,
+    height: 1080,
+    format: 'png'
+  }.to_json
+)
+
+data = JSON.parse(response.body)
+puts data['batch_id']`
+      },
+      // ========================================
+      // ✅ NEW: GO CODE EXAMPLES
+      // ========================================
+      go: {
+        screenshot: `package main
+
+import (
+    "bytes"
+    "encoding/json"
+    "fmt"
+    "io"
+    "net/http"
+)
+
+func main() {
+    url := "https://api.pixelperfectapi.net/v1/screenshot"
+    
+    payload := map[string]interface{}{
+        "url":    "https://example.com",
+        "width":  1920,
+        "height": 1080,
+        "format": "png",
+    }
+    
+    jsonData, _ := json.Marshal(payload)
+    
+    req, _ := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
+    req.Header.Set("Authorization", "Bearer YOUR_API_KEY")
+    req.Header.Set("Content-Type", "application/json")
+    
+    client := &http.Client{}
+    resp, _ := client.Do(req)
+    defer resp.Body.Close()
+    
+    body, _ := io.ReadAll(resp.Body)
+    
+    var result map[string]interface{}
+    json.Unmarshal(body, &result)
+    fmt.Println(result["screenshot_url"])
+}`,
+        batch: `payload := map[string]interface{}{
+    "urls": []string{
+        "https://example.com",
+        "https://github.com",
+        "https://google.com",
+    },
+    "width":  1920,
+    "height": 1080,
+    "format": "png",
+}
+
+jsonData, _ := json.Marshal(payload)
+
+req, _ := http.NewRequest("POST", 
+    "https://api.pixelperfectapi.net/v1/batch/submit", 
+    bytes.NewBuffer(jsonData))
+req.Header.Set("Authorization", "Bearer YOUR_API_KEY")
+req.Header.Set("Content-Type", "application/json")
+
+client := &http.Client{}
+resp, _ := client.Do(req)
+defer resp.Body.Close()
+
+body, _ := io.ReadAll(resp.Body)
+
+var result map[string]interface{}
+json.Unmarshal(body, &result)
+fmt.Println(result["batch_id"])`
       }
     };
     
@@ -229,7 +387,7 @@ console.log(batch.data.batch_id);`
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Hero Section with Logo */}
         <div className="text-center mb-12">
-          {/* ✅ Logo added at top center */}
+          {/* Logo at top center */}
           <div className="flex justify-center items-center mb-6">
             <PixelPerfectLogo size={64} showText={false} />
           </div>
@@ -340,8 +498,10 @@ console.log(batch.data.batch_id);`
           <div className="bg-white rounded-xl shadow-lg p-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Code Example</h2>
 
-            {/* Language Tabs - ✅ All functional */}
-            <div className="flex gap-2 mb-4">
+            {/* ========================================
+                LANGUAGE TABS - ✅ NOW WITH 6 LANGUAGES!
+                ======================================== */}
+            <div className="flex flex-wrap gap-2 mb-4">
               <button 
                 onClick={() => setSelectedLanguage('curl')}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
@@ -372,16 +532,49 @@ console.log(batch.data.batch_id);`
               >
                 JavaScript
               </button>
+              {/* ✅ NEW: PHP BUTTON */}
+              <button 
+                onClick={() => setSelectedLanguage('php')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  selectedLanguage === 'php' 
+                    ? 'bg-gray-900 text-white' 
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                PHP
+              </button>
+              {/* ✅ NEW: RUBY BUTTON */}
+              <button 
+                onClick={() => setSelectedLanguage('ruby')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  selectedLanguage === 'ruby' 
+                    ? 'bg-gray-900 text-white' 
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                Ruby
+              </button>
+              {/* ✅ NEW: GO BUTTON */}
+              <button 
+                onClick={() => setSelectedLanguage('go')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  selectedLanguage === 'go' 
+                    ? 'bg-gray-900 text-white' 
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                Go
+              </button>
             </div>
 
-            {/* Code Block - ✅ All languages visible */}
+            {/* Code Block - Now displays all 6 languages! */}
             <div className="bg-gray-900 text-white rounded-lg p-4 overflow-x-auto mb-6">
               <pre className="text-sm">
                 <code>{getCodeExample()}</code>
               </pre>
             </div>
 
-            {/* Response Example - ✅ Fixed visibility + domain */}
+            {/* Response Example */}
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-3">Response:</h3>
               <div className="bg-gray-900 rounded-lg p-4 overflow-x-auto">
@@ -454,7 +647,8 @@ console.log(batch.data.batch_id);`
   );
 }
 
-////////////////////////////////////////////////////////
+
+// //-=======================================================================
 // // ========================================
 // // API PAGE - PIXELPERFECT SCREENSHOT API
 // // ========================================
@@ -838,14 +1032,14 @@ console.log(batch.data.batch_id);`
 //               </pre>
 //             </div>
 
-//             {/* Response Example - ✅ Fixed visibility */}
+//             {/* Response Example - ✅ Fixed visibility + domain */}
 //             <div>
 //               <h3 className="text-lg font-semibold text-gray-900 mb-3">Response:</h3>
 //               <div className="bg-gray-900 rounded-lg p-4 overflow-x-auto">
 //                 <pre className="text-sm text-gray-100">
 // {`{
 //   "screenshot_id": "abc123",
-//   "screenshot_url": "https://cdn.pixelperfect.com/abc123.png",
+//   "screenshot_url": "https://cdn.pixelperfectapi.net/abc123.png",
 //   "width": 1920,
 //   "height": 1080,
 //   "format": "png",
