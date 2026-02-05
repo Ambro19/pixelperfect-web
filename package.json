@@ -1,5 +1,5 @@
 {
-  "name": "pixelperfect-screenshot-api",
+  "name": "youtube-transcript-downloader",
   "version": "0.1.0",
   "private": true,
   "homepage": "/",
@@ -36,7 +36,7 @@
   },
   "scripts": {
     "start": "cross-env GENERATE_SOURCEMAP=false react-scripts start",
-    "start:lan": "cross-env GENERATE_SOURCEMAP=false REACT_APP_API_URL=http://192.168.1.185:8000 REACT_APP_API_BASE_URL=http://192.168.1.185:8000 react-scripts start",
+    "start:lan": "cross-env GENERATE_SOURCEMAP=false REACT_APP_API_URL=http://192.168.1.185:8000 REACT_APP_API_BASE_URL=http://192.168.1.185:8000 REACT_APP_DEBUG=true REACT_APP_VERBOSE_API_LOGS=true react-scripts start",
     "build": "cross-env GENERATE_SOURCEMAP=false ESLINT_NO_DEV_ERRORS=true react-scripts build"
   },
   "eslintConfig": {

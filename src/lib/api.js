@@ -5,14 +5,10 @@
 // Author: OneTechly
 // Updated: Feb 2026 - Production-ready
 //
-// Fixes:
-// ✅ Prevents accidental LAN lock when developing on localhost
-// ✅ Env override supported (REACT_APP_API_URL / REACT_APP_API_BASE_URL)
-// ✅ Auto-detects localhost vs LAN vs production domain
-// ✅ Preserves FastAPI error messages (400/401 detail) instead of "Network error"
-// ✅ Retry logic only retries on real network/429/503/504 (NOT 400/401)
-// ✅ Supports BOTH token keys: "auth_token" (new) and "token" (legacy)
-// ✅ Better FastAPI/Pydantic error parsing (detail string or detail array)
+// Key fixes:
+// ✅ Correct API base when frontend is opened via LAN IP (192.168.x.x)
+// ✅ Env var override still works (REACT_APP_API_URL / REACT_APP_API_BASE_URL)
+// ✅ Keeps your FastAPI error detail parsing + safe retry rules
 // ========================================
 
 import axios from "axios";
@@ -20,51 +16,58 @@ import axios from "axios";
 const TOKEN_KEY = "auth_token";
 const LEGACY_TOKEN_KEY = "token";
 
-function normalizeUrl(u) {
+function isIpv4(host) {
+  return /^(\d{1,3}\.){3}\d{1,3}$/.test(host);
+}
+
+function stripSlash(u) {
   return String(u || "").trim().replace(/\/+$/, "");
 }
 
 function resolveBaseURL() {
-  // 1) Explicit env override wins (intended behavior)
-  const env = normalizeUrl(
-    process.env.REACT_APP_API_URL || process.env.REACT_APP_API_BASE_URL || ""
-  );
-  if (env) return env;
+  // 1) Explicit env override (preferred for CI/production builds)
+  const env =
+    (process.env.REACT_APP_API_URL || process.env.REACT_APP_API_BASE_URL || "").trim();
+  if (env) return stripSlash(env);
 
-  // 2) Browser auto-detect (dev + prod)
-  if (typeof window !== "undefined" && window.location?.hostname) {
-    const host = window.location.hostname;
-    const proto = window.location.protocol === "https:" ? "https" : "http";
+  // 2) Browser-derived auto mode
+  if (typeof window !== "undefined" && window.location) {
+    const host = window.location.hostname; // no port
+    const protocol = window.location.protocol; // http: or https:
 
-    // Production domain → prod API
+    // Prod domains → prod API
     if (host === "pixelperfectapi.net" || host.endsWith(".pixelperfectapi.net")) {
       return "https://api.pixelperfectapi.net";
     }
 
-    // Localhost → local API
+    // LAN IP → point to SAME host on :8000
+    if (isIpv4(host)) {
+      return `http://${host}:8000`;
+    }
+
+    // Localhost
     if (host === "localhost" || host === "127.0.0.1") {
       return "http://localhost:8000";
     }
 
-    // IPv4 LAN → same host on :8000
-    // Example: http://192.168.1.185:3000 → http://192.168.1.185:8000
-    const isIpV4 = /^(\d{1,3}\.){3}\d{1,3}$/.test(host);
-    if (isIpV4) {
-      // keep protocol aligned (http in LAN dev; https if you ever serve https on LAN)
-      return `${proto}://${host}:8000`;
+    // If someone serves frontend on a hostname in a LAN, try same hostname on :8000
+    // (Keeps HTTP to match most local FastAPI dev setups)
+    if (protocol === "http:") {
+      return `http://${host}:8000`;
     }
   }
 
-  // 3) Safe default
+  // 3) Safe dev default
   return "http://localhost:8000";
 }
 
-const baseURL = normalizeUrl(resolveBaseURL());
+const baseURL = stripSlash(resolveBaseURL());
 
-if (process.env.REACT_APP_VERBOSE_API_LOGS === "true") {
-  // eslint-disable-next-line no-console
-  console.log("[PixelPerfect] API baseURL =", baseURL);
-}
+console.log("[PixelPerfect] API baseURL =", baseURL, {
+  envApiUrl: process.env.REACT_APP_API_URL,
+  envApiBaseUrl: process.env.REACT_APP_API_BASE_URL,
+  page: typeof window !== "undefined" ? window.location.href : "(no-window)",
+});
 
 // -----------------------
 // Axios instance
@@ -107,7 +110,6 @@ function pickFastApiDetail(data) {
       .join(", ");
     return msg || "";
   }
-
   return "";
 }
 
@@ -147,9 +149,10 @@ async function withRetry(
     shouldRetry = (rawAxiosErr) => {
       const status = rawAxiosErr?.response?.status;
 
-      // No response => network/CORS/DNS/timeout
+      // No response => network/CORS/DNS/timeout, etc.
       if (!rawAxiosErr?.response) return true;
 
+      // Retry only transient cases
       return status === 429 || status === 503 || status === 504;
     },
   } = {}
@@ -162,7 +165,6 @@ async function withRetry(
       return await fn();
     } catch (err) {
       lastErr = err;
-
       const canRetry = i < attempts - 1 && shouldRetry(err);
       if (!canRetry) break;
 
