@@ -1,12 +1,11 @@
 {
-  "name": "youtube-transcript-downloader",
+  "name": "pixelperfect-screenshot-api",
   "version": "0.1.0",
   "private": true,
   "homepage": "/",
   "engines": {
     "node": "20.x"
   },
-  "proxy": "http://localhost:8000",
   "dependencies": {
     "@stripe/react-stripe-js": "^2.9.0",
     "@stripe/stripe-js": "^2.4.0",
@@ -36,8 +35,9 @@
     "webpack-bundle-analyzer": "^4.7.0"
   },
   "scripts": {
-    "start": "set GENERATE_SOURCEMAP=false && react-scripts start",
-    "build": "set GENERATE_SOURCEMAP=false && set ESLINT_NO_DEV_ERRORS=true && react-scripts build"
+    "start": "cross-env GENERATE_SOURCEMAP=false react-scripts start",
+    "start:lan": "cross-env GENERATE_SOURCEMAP=false REACT_APP_API_URL=http://192.168.1.185:8000 REACT_APP_API_BASE_URL=http://192.168.1.185:8000 react-scripts start",
+    "build": "cross-env GENERATE_SOURCEMAP=false ESLINT_NO_DEV_ERRORS=true react-scripts build"
   },
   "eslintConfig": {
     "extends": [
