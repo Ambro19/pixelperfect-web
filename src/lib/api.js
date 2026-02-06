@@ -8,6 +8,7 @@
 // Key fixes:
 // ✅ Correct API base when frontend is opened via LAN IP (192.168.x.x)
 // ✅ Env var override still works (REACT_APP_API_URL / REACT_APP_API_BASE_URL)
+// ✅ Enhanced logging for debugging
 // ✅ Keeps your FastAPI error detail parsing + safe retry rules
 // ========================================
 
@@ -28,45 +29,65 @@ function resolveBaseURL() {
   // 1) Explicit env override (preferred for CI/production builds)
   const env =
     (process.env.REACT_APP_API_URL || process.env.REACT_APP_API_BASE_URL || "").trim();
-  if (env) return stripSlash(env);
+  if (env) {
+    const url = stripSlash(env);
+    console.log("[PixelPerfect API] Using env override:", url);
+    return url;
+  }
 
   // 2) Browser-derived auto mode
   if (typeof window !== "undefined" && window.location) {
     const host = window.location.hostname; // no port
+    const port = window.location.port;
     const protocol = window.location.protocol; // http: or https:
+
+    console.log("[PixelPerfect API] Detecting environment:", { host, port, protocol });
 
     // Prod domains → prod API
     if (host === "pixelperfectapi.net" || host.endsWith(".pixelperfectapi.net")) {
+      console.log("[PixelPerfect API] Production domain detected");
       return "https://api.pixelperfectapi.net";
     }
 
-    // LAN IP → point to SAME host on :8000
-    if (isIpv4(host)) {
-      return `http://${host}:8000`;
+    // ✅ CRITICAL: Localhost detection (127.0.0.1 or localhost)
+    if (host === "localhost" || host === "127.0.0.1") {
+      const apiUrl = "http://localhost:8000";
+      console.log("[PixelPerfect API] Localhost detected →", apiUrl);
+      return apiUrl;
     }
 
-    // Localhost
-    if (host === "localhost" || host === "127.0.0.1") {
-      return "http://localhost:8000";
+    // ✅ CRITICAL: LAN IP → point to SAME host on :8000
+    if (isIpv4(host)) {
+      const apiUrl = `http://${host}:8000`;
+      console.log("[PixelPerfect API] LAN IP detected →", apiUrl);
+      return apiUrl;
     }
 
     // If someone serves frontend on a hostname in a LAN, try same hostname on :8000
     // (Keeps HTTP to match most local FastAPI dev setups)
     if (protocol === "http:") {
-      return `http://${host}:8000`;
+      const apiUrl = `http://${host}:8000`;
+      console.log("[PixelPerfect API] HTTP hostname detected →", apiUrl);
+      return apiUrl;
     }
+
+    // Fallback for HTTPS on unknown hostname (shouldn't happen)
+    console.warn("[PixelPerfect API] Unknown hostname, using HTTPS fallback");
+    return `https://${host}:8000`;
   }
 
-  // 3) Safe dev default
+  // 3) Safe dev default (SSR or node environment)
+  console.log("[PixelPerfect API] No window, using default");
   return "http://localhost:8000";
 }
 
 const baseURL = stripSlash(resolveBaseURL());
 
-console.log("[PixelPerfect] API baseURL =", baseURL, {
-  envApiUrl: process.env.REACT_APP_API_URL,
-  envApiBaseUrl: process.env.REACT_APP_API_BASE_URL,
-  page: typeof window !== "undefined" ? window.location.href : "(no-window)",
+console.log("[PixelPerfect] ✅ API baseURL configured:", baseURL);
+console.log("[PixelPerfect] Environment check:", {
+  envApiUrl: process.env.REACT_APP_API_URL || "(not set)",
+  envApiBaseUrl: process.env.REACT_APP_API_BASE_URL || "(not set)",
+  currentPage: typeof window !== "undefined" ? window.location.href : "(no-window)",
 });
 
 // -----------------------
@@ -86,12 +107,38 @@ api.interceptors.request.use((config) => {
     if (token && !config.headers?.Authorization) {
       config.headers = config.headers || {};
       config.headers.Authorization = `Bearer ${token}`;
+      console.log(`[PixelPerfect API] 🔐 Token attached to ${config.method?.toUpperCase()} ${config.url}`);
+    } else if (!token) {
+      console.log(`[PixelPerfect API] 🔓 No token for ${config.method?.toUpperCase()} ${config.url}`);
     }
-  } catch {
-    /* ignore */
+  } catch (e) {
+    console.warn("[PixelPerfect API] Failed to attach token:", e);
   }
   return config;
 });
+
+// Response interceptor for debugging
+api.interceptors.response.use(
+  (response) => {
+    console.log(
+      `[PixelPerfect API] ✅ ${response.config.method?.toUpperCase()} ${response.config.url} → ${response.status}`
+    );
+    return response;
+  },
+  (error) => {
+    const status = error?.response?.status;
+    const method = error?.config?.method?.toUpperCase();
+    const url = error?.config?.url;
+    
+    if (status) {
+      console.error(`[PixelPerfect API] ❌ ${method} ${url} → ${status}`);
+    } else {
+      console.error(`[PixelPerfect API] ❌ ${method} ${url} → Network Error`);
+    }
+    
+    return Promise.reject(error);
+  }
+);
 
 // -----------------------
 // Error normalization
@@ -150,10 +197,17 @@ async function withRetry(
       const status = rawAxiosErr?.response?.status;
 
       // No response => network/CORS/DNS/timeout, etc.
-      if (!rawAxiosErr?.response) return true;
+      if (!rawAxiosErr?.response) {
+        console.log("[PixelPerfect API] 🔄 No response, will retry (network/CORS/timeout)");
+        return true;
+      }
 
       // Retry only transient cases
-      return status === 429 || status === 503 || status === 504;
+      const canRetry = status === 429 || status === 503 || status === 504;
+      if (canRetry) {
+        console.log(`[PixelPerfect API] 🔄 Status ${status}, will retry`);
+      }
+      return canRetry;
     },
   } = {}
 ) {
@@ -162,17 +216,22 @@ async function withRetry(
 
   for (let i = 0; i < attempts; i++) {
     try {
+      if (i > 0) {
+        console.log(`[PixelPerfect API] Retry attempt ${i + 1}/${attempts}`);
+      }
       return await fn();
     } catch (err) {
       lastErr = err;
       const canRetry = i < attempts - 1 && shouldRetry(err);
       if (!canRetry) break;
 
+      console.log(`[PixelPerfect API] ⏱️ Waiting ${delay}ms before retry...`);
       await new Promise((r) => setTimeout(r, delay));
       delay = Math.min(maxDelayMs, Math.round(delay * 1.6));
     }
   }
 
+  console.error("[PixelPerfect API] ❌ All retry attempts exhausted");
   throw normalizeError(lastErr);
 }
 
@@ -214,13 +273,16 @@ export async function apiDelete(path, config = {}) {
 }
 
 export async function wakeApi() {
+  console.log("[PixelPerfect API] 🔔 Waking up API...");
   try {
     await withRetry(
       () => api.get("/health", { validateStatus: () => true }),
       { attempts: 6, firstDelayMs: 600 }
     );
+    console.log("[PixelPerfect API] ✅ API is awake");
     return true;
-  } catch {
+  } catch (e) {
+    console.warn("[PixelPerfect API] ⚠️ API wake failed:", e.message);
     return false;
   }
 }
@@ -229,8 +291,8 @@ export function currentApiBase() {
   return baseURL;
 }
 
+// // ============================================
 
-// // ===============================================================
 // // ========================================
 // // API CLIENT - PIXELPERFECT SCREENSHOT API
 // // ========================================
@@ -238,16 +300,10 @@ export function currentApiBase() {
 // // Author: OneTechly
 // // Updated: Feb 2026 - Production-ready
 // //
-// // Fixes:
-// // ✅ Preserves FastAPI error messages (400/401 detail) instead of "Network error"
-// // ✅ Retry logic only retries on real network/429/503/504 (NOT 400/401)
-// // ✅ Supports BOTH token keys: "auth_token" (new) and "token" (legacy)
-// // ✅ Better FastAPI/Pydantic error parsing (detail string or detail array)
-// // ✅ Keeps centralized axios client + wrappers (Get/Post/Put/Delete)
-// //
-// // Notes:
-// // - We DO NOT normalize inside apiGetJson/apiPostJson before retry.
-// //   Normalization happens ONLY at the end so status/detail is preserved.
+// // Key fixes:
+// // ✅ Correct API base when frontend is opened via LAN IP (192.168.x.x)
+// // ✅ Env var override still works (REACT_APP_API_URL / REACT_APP_API_BASE_URL)
+// // ✅ Keeps your FastAPI error detail parsing + safe retry rules
 // // ========================================
 
 // import axios from "axios";
@@ -255,39 +311,58 @@ export function currentApiBase() {
 // const TOKEN_KEY = "auth_token";
 // const LEGACY_TOKEN_KEY = "token";
 
+// function isIpv4(host) {
+//   return /^(\d{1,3}\.){3}\d{1,3}$/.test(host);
+// }
+
+// function stripSlash(u) {
+//   return String(u || "").trim().replace(/\/+$/, "");
+// }
+
 // function resolveBaseURL() {
-//   const env = (
-//     process.env.REACT_APP_API_URL ||
-//     process.env.REACT_APP_API_BASE_URL ||
-//     ""
-//   ).trim();
-//   if (env) return env;
+//   // 1) Explicit env override (preferred for CI/production builds)
+//   const env =
+//     (process.env.REACT_APP_API_URL || process.env.REACT_APP_API_BASE_URL || "").trim();
+//   if (env) return stripSlash(env);
 
-//   if (typeof window !== "undefined" && window.location?.hostname) {
-//     const host = window.location.hostname;
+//   // 2) Browser-derived auto mode
+//   if (typeof window !== "undefined" && window.location) {
+//     const host = window.location.hostname; // no port
+//     const protocol = window.location.protocol; // http: or https:
 
-//     // Production domain → prod API
+//     // Prod domains → prod API
 //     if (host === "pixelperfectapi.net" || host.endsWith(".pixelperfectapi.net")) {
 //       return "https://api.pixelperfectapi.net";
 //     }
 
-//     // If frontend is opened via LAN IP, point API to SAME host on port 8000
-//     // Example: http://192.168.1.185:3000 → http://192.168.1.185:8000
-//     const isIpV4 = /^(\d{1,3}\.){3}\d{1,3}$/.test(host);
-//     if (isIpV4) return `http://${host}:8000`;
+//     // LAN IP → point to SAME host on :8000
+//     if (isIpv4(host)) {
+//       return `http://${host}:8000`;
+//     }
 
-//     // Localhost case
-//     if (host === "localhost" || host === "127.0.0.1") return "http://localhost:8000";
+//     // Localhost
+//     if (host === "localhost" || host === "127.0.0.1") {
+//       return "http://localhost:8000";
+//     }
+
+//     // If someone serves frontend on a hostname in a LAN, try same hostname on :8000
+//     // (Keeps HTTP to match most local FastAPI dev setups)
+//     if (protocol === "http:") {
+//       return `http://${host}:8000`;
+//     }
 //   }
 
-//   // Safe dev default
+//   // 3) Safe dev default
 //   return "http://localhost:8000";
 // }
 
+// const baseURL = stripSlash(resolveBaseURL());
 
-// const baseURL = resolveBaseURL().replace(/\/+$/, "");
-
-// console.log("[PixelPerfect] API baseURL =", baseURL);
+// console.log("[PixelPerfect] API baseURL =", baseURL, {
+//   envApiUrl: process.env.REACT_APP_API_URL,
+//   envApiBaseUrl: process.env.REACT_APP_API_BASE_URL,
+//   page: typeof window !== "undefined" ? window.location.href : "(no-window)",
+// });
 
 // // -----------------------
 // // Axios instance
@@ -317,15 +392,12 @@ export function currentApiBase() {
 // // Error normalization
 // // -----------------------
 // function pickFastApiDetail(data) {
-//   // FastAPI often returns: { detail: "..." } OR { detail: [ {msg: "..."} ] }
 //   if (!data) return "";
-
 //   if (typeof data === "string") return data;
 
 //   const d = data?.detail ?? data?.message ?? data?.error ?? "";
 //   if (typeof d === "string") return d;
 
-//   // Pydantic validation list
 //   if (Array.isArray(d)) {
 //     const msg = d
 //       .map((x) => x?.msg || x?.message || "")
@@ -333,12 +405,10 @@ export function currentApiBase() {
 //       .join(", ");
 //     return msg || "";
 //   }
-
 //   return "";
 // }
 
 // function normalizeError(err) {
-//   // Axios error shape: err.response?.status, err.response?.data, err.code, err.message
 //   const res = err?.response;
 //   const data = res?.data;
 
@@ -348,13 +418,17 @@ export function currentApiBase() {
 //   const detail = pickFastApiDetail(data);
 //   const msg =
 //     detail ||
-//     (status ? `Request failed with status ${status}` : code ? `Network error (${code})` : "Network error");
+//     (status
+//       ? `Request failed with status ${status}`
+//       : code
+//       ? `Network error (${code})`
+//       : "Network error");
 
 //   const out = new Error(msg);
-//   out.status = status;      // number | undefined
-//   out.code = code;          // e.g. ERR_NETWORK, ECONNABORTED
-//   out.data = data;          // server payload (if any)
-//   out.original = err;       // keep raw error for debugging
+//   out.status = status;
+//   out.code = code;
+//   out.data = data;
+//   out.original = err;
 //   return out;
 // }
 
@@ -368,13 +442,12 @@ export function currentApiBase() {
 //     firstDelayMs = 800,
 //     maxDelayMs = 6000,
 //     shouldRetry = (rawAxiosErr) => {
-//       // IMPORTANT: this function receives the RAW axios error, not a normalized Error.
 //       const status = rawAxiosErr?.response?.status;
 
-//       // If there's no response, it's likely a network error, DNS, CORS block, timeout, etc.
+//       // No response => network/CORS/DNS/timeout, etc.
 //       if (!rawAxiosErr?.response) return true;
 
-//       // Retry only on transient server/rate limit cases
+//       // Retry only transient cases
 //       return status === 429 || status === 503 || status === 504;
 //     },
 //   } = {}
@@ -387,7 +460,6 @@ export function currentApiBase() {
 //       return await fn();
 //     } catch (err) {
 //       lastErr = err;
-
 //       const canRetry = i < attempts - 1 && shouldRetry(err);
 //       if (!canRetry) break;
 
@@ -436,7 +508,6 @@ export function currentApiBase() {
 //   });
 // }
 
-// // Wake /health without throwing on non-2xx
 // export async function wakeApi() {
 //   try {
 //     await withRetry(
