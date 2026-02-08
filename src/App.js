@@ -1,10 +1,10 @@
 // ========================================
-// APP.JS - UPDATED WITH BLOG ROUTES
+// APP.JS - UPDATED WITH BLOG & GUIDE ROUTES
 // ========================================
 // File: frontend/src/App.js
 // Author: OneTechly
-// Updated: January 2026
-// ✅ NEW: Added PixelPerfect Blog routes (/blog, /blog/:slug)
+// Updated: February 2026
+// ✅ UPDATED: Added Guide Detail route (/guides/:guideId)
 
 import React, { useEffect, useRef } from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
@@ -19,6 +19,7 @@ import About from './pages/About';
 import Features from './pages/Features';
 import Pricing from './pages/Pricing';
 import Guides from './pages/Guides';
+import GuideDetail from './pages/GuideDetail'; // ✅ NEW: Guide detail page
 import ApiStatus from './pages/ApiStatus';
 import HelpCenter from './pages/HelpCenter';
 import Contact from './pages/Contact';
@@ -36,7 +37,7 @@ import BatchJobs from './pages/BatchJobs';
 import SubscriptionPage from './pages/SubscriptionPage';
 import AccountSettings from './pages/AccountSettings';
 
-// ✅ NEW: Blog pages
+// Blog pages
 import BlogList from './pages/BlogList';
 import BlogPost from './pages/BlogPost';
 
@@ -253,7 +254,11 @@ function App() {
         <Route path="/pricing" element={<Pricing />} />
         <Route path="/docs" element={<Documentation />} />
         <Route path="/documentation" element={<Documentation />} />
+        
+        {/* ✅ Guide Routes - IMPORTANT: Specific route BEFORE generic */}
+        <Route path="/guides/:guideId" element={<GuideDetail />} />
         <Route path="/guides" element={<Guides />} />
+        
         <Route path="/status" element={<ApiStatus />} />
         <Route path="/api-status" element={<ApiStatus />} />
         <Route path="/help" element={<HelpCenter />} />
@@ -265,7 +270,7 @@ function App() {
         <Route path="/terms" element={<Terms />} />
         <Route path="/cookies" element={<Cookies />} />
 
-        {/* ✅ NEW: Blog Routes */}
+        {/* Blog Routes */}
         <Route path="/blog" element={<BlogList />} />
         <Route path="/blog/:slug" element={<BlogPost />} />
 
@@ -318,4 +323,3 @@ function App() {
 }
 
 export default App;
-
