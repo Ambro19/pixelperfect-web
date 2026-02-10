@@ -1,4 +1,4 @@
-# ============================================================================
+<!-- # ============================================================================
 # PIXELPERFECT PRODUCTION ROUTING
 # ============================================================================
 
@@ -18,6 +18,43 @@
 /screenshots/*  https://api.pixelperfectapi.net/screenshots/:splat 200
 /users/*        https://api.pixelperfectapi.net/users/:splat   200
 /subscription_status  https://api.pixelperfectapi.net/subscription_status  200
+
+# Frontend routes (MUST COME LAST)
+/*    /index.html   200 -->
+
+
+<!-- # Backend routes (using Render default URL - works immediately)
+/docs           https://pixelperfect-api-mi7t.onrender.com/docs           301
+/api/*          https://pixelperfect-api-mi7t.onrender.com/api/:splat     200
+/health         https://pixelperfect-api-mi7t.onrender.com/health         200
+/screenshots/*  https://pixelperfect-api-mi7t.onrender.com/screenshots/:splat 200
+/users/*        https://pixelperfect-api-mi7t.onrender.com/users/:splat   200
+/subscription_status  https://pixelperfect-api-mi7t.onrender.com/subscription_status  200
+
+# Frontend routes (must be last)
+/*    /index.html   200 -->
+
+
+# ===========================
+# PIXELPERFECT PRODUCTION ROUTING
+# ===============================
+
+# Backend routes (MUST COME FIRST)
+/docs           https://pixelperfect-api-mi7t.onrender.com/docs           301
+/docs/*         https://pixelperfect-api-mi7t.onrender.com/docs/:splat    301
+/redoc          https://pixelperfect-api-mi7t.onrender.com/redoc          301
+/openapi.json   https://pixelperfect-api-mi7t.onrender.com/openapi.json   200
+
+# API routes
+/api/*          https://pixelperfect-api-mi7t.onrender.com/api/:splat     200
+/health         https://pixelperfect-api-mi7t.onrender.com/health         200
+/token          https://pixelperfect-api-mi7t.onrender.com/token          200
+/token_json     https://pixelperfect-api-mi7t.onrender.com/token_json     200
+/register       https://pixelperfect-api-mi7t.onrender.com/register       200
+/webhook/*      https://pixelperfect-api-mi7t.onrender.com/webhook/:splat 200
+/screenshots/*  https://pixelperfect-api-mi7t.onrender.com/screenshots/:splat 200
+/users/*        https://pixelperfect-api-mi7t.onrender.com/users/:splat   200
+/subscription_status  https://pixelperfect-api-mi7t.onrender.com/subscription_status  200
 
 # Frontend routes (MUST COME LAST)
 /*    /index.html   200
