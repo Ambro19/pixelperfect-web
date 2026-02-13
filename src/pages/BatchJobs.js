@@ -431,7 +431,7 @@ export default function BatchJob() {
   );
 }
 
-//////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////
 // // ============================================================================
 // // BATCH JOB PAGE - PRODUCTION READY
 // // ============================================================================
@@ -445,6 +445,7 @@ export default function BatchJob() {
 // // - CSV/TXT/TSV file support
 // // - Batch processing up to 50 URLs
 // // - Consistent UI design with other pages
+// // - PDF format support added to dropdown
 // // ============================================================================
 
 // import React, { useState } from 'react';
@@ -539,7 +540,7 @@ export default function BatchJob() {
 //         }
 //       );
 
-//       setMessage(`✅ Batch job submitted successfully! Job ID: ${response.data.job_id}`);
+//       setMessage(`✅ Batch job submitted successfully! Job ID: ${response.data.id}`);
       
 //       // Clear form after 2 seconds
 //       setTimeout(() => {
@@ -589,25 +590,22 @@ export default function BatchJob() {
 //       {/* Main Content */}
 //       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
-//         {/* ✅ Centered Page Header with PixelPerfect Logo */}
+//         {/* Centered Page Header with PixelPerfect Logo */}
 //         <div className="text-center mb-8">
-//           {/* Centered PixelPerfect logo - REPLACES camera emoji */}
 //           <div className="flex justify-center items-center mb-4">
 //             <PixelPerfectLogo size={64} showText={false} />
 //           </div>
 
-//           {/* Page title */}
 //           <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
 //             Batch Screenshot Jobs
 //           </h1>
           
-//           {/* Subtitle */}
 //           <p className="text-gray-600 text-sm sm:text-base">
 //             Capture screenshots of multiple websites at once. Process up to 50 URLs per batch.
 //           </p>
           
 //           <p className="text-sm text-gray-500 mt-2">
-//             Pro-up to 50 URLs per batch
+//             Pro · up to 50 URLs per batch
 //           </p>
 //         </div>
 
@@ -685,9 +683,24 @@ export default function BatchJob() {
 //                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent mb-3"
 //                   >
 //                     <option value="png">PNG (lossless)</option>
-//                     <option value="jpg">JPG (compressed)</option>
+//                     <option value="jpeg">JPEG (compressed)</option>
 //                     <option value="webp">WebP (modern)</option>
+//                     <option value="pdf">PDF (document)</option>
 //                   </select>
+
+//                   {/* Quality hint for JPEG/WebP */}
+//                   {(format === 'jpeg' || format === 'webp') && (
+//                     <p className="text-xs text-blue-600 mb-3">
+//                       💡 {format.toUpperCase()} uses optimized quality settings automatically.
+//                     </p>
+//                   )}
+
+//                   {/* PDF hint */}
+//                   {format === 'pdf' && (
+//                     <p className="text-xs text-blue-600 mb-3">
+//                       💡 PDF captures the full page as a printable document.
+//                     </p>
+//                   )}
 
 //                   <label className="flex items-center gap-2 cursor-pointer">
 //                     <input
@@ -725,7 +738,7 @@ export default function BatchJob() {
 //                   </p>
 //                 </div>
 
-//                 {/* File Upload Section - IMPROVED */}
+//                 {/* File Upload Section */}
 //                 <div>
 //                   <label className="block text-sm font-medium text-gray-700 mb-2">
 //                     Upload File (CSV/TXT/TSV)
@@ -851,4 +864,3 @@ export default function BatchJob() {
 //     </div>
 //   );
 // }
-
