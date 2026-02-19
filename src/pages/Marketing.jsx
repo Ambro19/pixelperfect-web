@@ -1,4 +1,4 @@
-// ========================================
+// // ========================================
 // MARKETING PAGE - FULLY WIRED WITH BLOG
 // ========================================
 // File: frontend/src/pages/Marketing.jsx
@@ -8,6 +8,7 @@
 // ✅ FIXED: All footer links now properly wired with navigate()
 // ✅ FIXED: Blog link now points to /blog route
 // ✅ FIXED: Consistent styling (no more blue vs white links)
+// ✅ FIXED: GitHub link updated to official repo: Ambro19/pixelperfect
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -380,7 +381,7 @@ export default function Marketing() {
                   </svg>
                 </a>
                 <a
-                  href="https://github.com/pixelperfect"
+                  href="https://github.com/Ambro19/pixelperfect"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-gray-400 hover:text-white transition-colors p-2"
@@ -420,4 +421,3 @@ export default function Marketing() {
     </div>
   );
 }
-
