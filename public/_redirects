@@ -13,14 +13,13 @@
 /health         https://api.pixelperfectapi.net/health         200
 /token          https://api.pixelperfectapi.net/token          200
 /token_json     https://api.pixelperfectapi.net/token_json     200
-/register       https://api.pixelperfectapi.net/register       200
 /webhook/*      https://api.pixelperfectapi.net/webhook/:splat 200
 /screenshots/*  https://api.pixelperfectapi.net/screenshots/:splat 200
 /users/*        https://api.pixelperfectapi.net/users/:splat   200
 /subscription_status  https://api.pixelperfectapi.net/subscription_status  200
 
-# Frontend routes (MUST COME LAST)
-/*    /index.html   200 -->
+# Frontend SPA catch-all (MUST COME LAST)
+/*    /index.html   200
 
 
 <!-- # Backend routes (using Render default URL - works immediately)
