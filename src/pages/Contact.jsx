@@ -234,7 +234,7 @@ const Contact = () => {
               <div className="text-gray-600 space-y-2">
                 <p className="font-medium text-gray-900">PixelPerfect API</p>
                 <p>OneTechly</p>
-                <p>New York, NY</p>
+                <p>Albany, NY</p>
                 <p>United States</p>
               </div>
             </div>
