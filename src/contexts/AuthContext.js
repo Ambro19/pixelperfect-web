@@ -5,27 +5,19 @@
 // Author: OneTechly
 // Updated: February 2026 - PRODUCTION READY
 //
-// ✅ FIXES APPLIED:
+// ✅ FIXES APPLIED (preserved):
 // - Consistent token storage (auth_token)
 // - Firefox compatibility (credentials: 'include')
 // - Proper error handling
 // - localStorage fallback detection
-// - Unmount guard (prevents setState on unmounted component)
+// - Unmount guard
 // - StrictMode double-invocation guard (didInit ref)
-// - Internal _clearAuth helper decouples logout from fetchUser
+// - Internal _clearAuth helper
+// - AbortController + timeouts + safety-net
 //
-// ✅ IMPORTANT FIX (Member Since / user hydration):
-// - isLoading stays true until /users/me has returned (or failed)
-// - user is merged safely to avoid partial/undefined fields (created_at)
-//
-// ✅ NEW (stability):
-// - login() always ends loading state even if backend returns data.user
-// - avoids race-y double-loading states
-//
-// ✅ FIX (Feb 2026) - Stuck "Loading..." on login page:
-// - Added AbortController + 10s timeout to fetchUser fetch
-// - Added 15s safety-net timer to force-clear isLoading
-//   (prevents permanent spinner if network hangs or backend is restarting)
+// ✅ NEW (this patch):
+// - Production-safe API_URL fallback => https://api.pixelperfectapi.net
+//   (prevents accidental localhost calls in production)
 // ========================================
 
 import React, {
@@ -40,14 +32,35 @@ import React, {
 
 const AuthContext = createContext();
 
-const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8000";
+function resolveApiUrl() {
+  const env = process.env.REACT_APP_API_URL;
+
+  // If env is set, always trust it
+  if (env && typeof env === "string" && env.trim()) return env.trim();
+
+  // Production-safe fallback (IMPORTANT)
+  if (typeof window !== "undefined") {
+    const host = window.location.hostname;
+    const isLocal =
+      host === "localhost" ||
+      host === "127.0.0.1" ||
+      host.startsWith("192.168.") ||
+      host.endsWith(".local");
+
+    if (!isLocal) return "https://api.pixelperfectapi.net";
+  }
+
+  // Local dev fallback
+  return "http://localhost:8000";
+}
+
+const API_URL = resolveApiUrl();
 const TOKEN_KEY = "auth_token";
 
 // Timeout for /users/me validation (ms). Must be less than safety net below.
 const FETCH_USER_TIMEOUT_MS = 10_000; // 10 seconds
 
 // Absolute safety net: if isLoading is still true after this, force it false.
-// Protects against any unforeseen hang (e.g. backend mid-restart, network drop).
 const LOADING_SAFETY_NET_MS = 15_000; // 15 seconds
 
 // ✅ FIREFOX FIX: Detect if localStorage is available (blocked in private mode)
@@ -102,7 +115,6 @@ export function AuthProvider({ children }) {
   const didInit = useRef(false);
 
   // ✅ Safety net: force-clear isLoading if still stuck after LOADING_SAFETY_NET_MS.
-  // This is the last line of defense against any permanent spinner regardless of cause.
   useEffect(() => {
     const safetyTimer = setTimeout(() => {
       if (isMounted.current) {
@@ -118,7 +130,7 @@ export function AuthProvider({ children }) {
     }, LOADING_SAFETY_NET_MS);
 
     return () => clearTimeout(safetyTimer);
-  }, []); // runs once on mount
+  }, []);
 
   // Internal clear (stable)
   const _clearAuth = useCallback(() => {
@@ -130,7 +142,7 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  // Merge user safely (prevents losing created_at if response is partial)
+  // Merge user safely
   const _setUserMerged = useCallback((incoming) => {
     if (!isMounted.current) return;
 
@@ -150,8 +162,6 @@ export function AuthProvider({ children }) {
         return;
       }
 
-      // ✅ FIX: AbortController with timeout prevents indefinite hang
-      // when backend is restarting or network is unresponsive.
       const controller = new AbortController();
       const timeoutId = setTimeout(
         () => controller.abort(),
@@ -166,10 +176,10 @@ export function AuthProvider({ children }) {
             "Content-Type": "application/json",
           },
           credentials: "include",
-          signal: controller.signal, // ✅ attached abort signal
+          signal: controller.signal,
         });
 
-        clearTimeout(timeoutId); // ✅ clear timeout on success
+        clearTimeout(timeoutId);
 
         if (!isMounted.current) return;
 
@@ -177,21 +187,18 @@ export function AuthProvider({ children }) {
           setApiStatus("healthy");
           const userData = await safeJson(response);
 
-          // ✅ Set token (confirmed valid) + merge user
           if (isMounted.current) {
             setToken(authToken);
             _setUserMerged(userData);
           }
         } else {
-          // Token invalid/expired
           console.warn("❌ Token validation failed, clearing auth");
           _clearAuth();
         }
       } catch (error) {
-        clearTimeout(timeoutId); // ✅ clear timeout on error too
+        clearTimeout(timeoutId);
 
         if (error.name === "AbortError") {
-          // ✅ Timeout hit: backend unreachable / too slow
           console.warn(
             `⚠️ fetchUser timed out after ${FETCH_USER_TIMEOUT_MS}ms — backend may be restarting`
           );
@@ -202,14 +209,13 @@ export function AuthProvider({ children }) {
         if (isMounted.current) setApiStatus("unreachable");
         _clearAuth();
       } finally {
-        // ✅ Always runs — guarantees isLoading becomes false
         if (isMounted.current) setIsLoading(false);
       }
     },
     [_clearAuth, _setUserMerged]
   );
 
-  // Init: load stored token and validate it (keeps loading true until done)
+  // Init
   useEffect(() => {
     if (didInit.current) return;
     didInit.current = true;
@@ -217,7 +223,6 @@ export function AuthProvider({ children }) {
     const storedToken = storage.getItem(TOKEN_KEY);
 
     if (storedToken) {
-      // Keep isLoading true until fetchUser finishes (or times out)
       fetchUser(storedToken);
     } else {
       if (isMounted.current) setIsLoading(false);
@@ -229,7 +234,6 @@ export function AuthProvider({ children }) {
     async (username, password) => {
       if (isMounted.current) setIsLoading(true);
 
-      // ✅ Safety: login requests also respect a timeout
       const controller = new AbortController();
       const timeoutId = setTimeout(
         () => controller.abort(),
@@ -263,11 +267,9 @@ export function AuthProvider({ children }) {
 
         if (!isMounted.current) return;
 
-        // Optimistic update for fast UI
         setToken(newToken);
         if (data.user) _setUserMerged(data.user);
 
-        // Always hydrate canonical profile (ensures created_at etc.)
         await fetchUser(newToken);
       } catch (error) {
         clearTimeout(timeoutId);
@@ -364,7 +366,8 @@ export function useAuth() {
 
 export default AuthContext;
 
-///////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////
+
 // // ========================================
 // // AUTH CONTEXT - PIXELPERFECT SCREENSHOT API
 // // ========================================
@@ -388,6 +391,11 @@ export default AuthContext;
 // // ✅ NEW (stability):
 // // - login() always ends loading state even if backend returns data.user
 // // - avoids race-y double-loading states
+// //
+// // ✅ FIX (Feb 2026) - Stuck "Loading..." on login page:
+// // - Added AbortController + 10s timeout to fetchUser fetch
+// // - Added 15s safety-net timer to force-clear isLoading
+// //   (prevents permanent spinner if network hangs or backend is restarting)
 // // ========================================
 
 // import React, {
@@ -404,6 +412,13 @@ export default AuthContext;
 
 // const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8000";
 // const TOKEN_KEY = "auth_token";
+
+// // Timeout for /users/me validation (ms). Must be less than safety net below.
+// const FETCH_USER_TIMEOUT_MS = 10_000; // 10 seconds
+
+// // Absolute safety net: if isLoading is still true after this, force it false.
+// // Protects against any unforeseen hang (e.g. backend mid-restart, network drop).
+// const LOADING_SAFETY_NET_MS = 15_000; // 15 seconds
 
 // // ✅ FIREFOX FIX: Detect if localStorage is available (blocked in private mode)
 // const isLocalStorageAvailable = () => {
@@ -456,6 +471,25 @@ export default AuthContext;
 //   // StrictMode guard
 //   const didInit = useRef(false);
 
+//   // ✅ Safety net: force-clear isLoading if still stuck after LOADING_SAFETY_NET_MS.
+//   // This is the last line of defense against any permanent spinner regardless of cause.
+//   useEffect(() => {
+//     const safetyTimer = setTimeout(() => {
+//       if (isMounted.current) {
+//         setIsLoading((prev) => {
+//           if (prev) {
+//             console.warn(
+//               `⚠️ AuthContext: isLoading still true after ${LOADING_SAFETY_NET_MS}ms — force-clearing.`
+//             );
+//           }
+//           return false;
+//         });
+//       }
+//     }, LOADING_SAFETY_NET_MS);
+
+//     return () => clearTimeout(safetyTimer);
+//   }, []); // runs once on mount
+
 //   // Internal clear (stable)
 //   const _clearAuth = useCallback(() => {
 //     storage.removeItem(TOKEN_KEY);
@@ -486,6 +520,14 @@ export default AuthContext;
 //         return;
 //       }
 
+//       // ✅ FIX: AbortController with timeout prevents indefinite hang
+//       // when backend is restarting or network is unresponsive.
+//       const controller = new AbortController();
+//       const timeoutId = setTimeout(
+//         () => controller.abort(),
+//         FETCH_USER_TIMEOUT_MS
+//       );
+
 //       try {
 //         const response = await fetch(`${API_URL}/users/me`, {
 //           method: "GET",
@@ -494,7 +536,10 @@ export default AuthContext;
 //             "Content-Type": "application/json",
 //           },
 //           credentials: "include",
+//           signal: controller.signal, // ✅ attached abort signal
 //         });
+
+//         clearTimeout(timeoutId); // ✅ clear timeout on success
 
 //         if (!isMounted.current) return;
 
@@ -513,10 +558,21 @@ export default AuthContext;
 //           _clearAuth();
 //         }
 //       } catch (error) {
-//         console.error("❌ Failed to fetch user:", error);
+//         clearTimeout(timeoutId); // ✅ clear timeout on error too
+
+//         if (error.name === "AbortError") {
+//           // ✅ Timeout hit: backend unreachable / too slow
+//           console.warn(
+//             `⚠️ fetchUser timed out after ${FETCH_USER_TIMEOUT_MS}ms — backend may be restarting`
+//           );
+//         } else {
+//           console.error("❌ Failed to fetch user:", error);
+//         }
+
 //         if (isMounted.current) setApiStatus("unreachable");
 //         _clearAuth();
 //       } finally {
+//         // ✅ Always runs — guarantees isLoading becomes false
 //         if (isMounted.current) setIsLoading(false);
 //       }
 //     },
@@ -531,7 +587,7 @@ export default AuthContext;
 //     const storedToken = storage.getItem(TOKEN_KEY);
 
 //     if (storedToken) {
-//       // Keep isLoading true until fetchUser finishes
+//       // Keep isLoading true until fetchUser finishes (or times out)
 //       fetchUser(storedToken);
 //     } else {
 //       if (isMounted.current) setIsLoading(false);
@@ -543,13 +599,23 @@ export default AuthContext;
 //     async (username, password) => {
 //       if (isMounted.current) setIsLoading(true);
 
+//       // ✅ Safety: login requests also respect a timeout
+//       const controller = new AbortController();
+//       const timeoutId = setTimeout(
+//         () => controller.abort(),
+//         FETCH_USER_TIMEOUT_MS
+//       );
+
 //       try {
 //         const response = await fetch(`${API_URL}/token_json`, {
 //           method: "POST",
 //           headers: { "Content-Type": "application/json" },
 //           credentials: "include",
 //           body: JSON.stringify({ username, password }),
+//           signal: controller.signal,
 //         });
+
+//         clearTimeout(timeoutId);
 
 //         if (!response.ok) {
 //           const errorData = await safeJson(response);
@@ -574,6 +640,15 @@ export default AuthContext;
 //         // Always hydrate canonical profile (ensures created_at etc.)
 //         await fetchUser(newToken);
 //       } catch (error) {
+//         clearTimeout(timeoutId);
+
+//         if (error.name === "AbortError") {
+//           console.warn("⚠️ Login request timed out — backend may be slow");
+//           _clearAuth();
+//           if (isMounted.current) setIsLoading(false);
+//           throw new Error("Login timed out. Please try again.");
+//         }
+
 //         console.error("❌ Login error:", error);
 //         _clearAuth();
 //         if (isMounted.current) setIsLoading(false);
@@ -658,4 +733,5 @@ export default AuthContext;
 // }
 
 // export default AuthContext;
+
 
