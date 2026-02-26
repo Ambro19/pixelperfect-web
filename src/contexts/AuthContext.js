@@ -21,6 +21,11 @@
 // ✅ NEW (stability):
 // - login() always ends loading state even if backend returns data.user
 // - avoids race-y double-loading states
+//
+// ✅ FIX (Feb 2026) - Stuck "Loading..." on login page:
+// - Added AbortController + 10s timeout to fetchUser fetch
+// - Added 15s safety-net timer to force-clear isLoading
+//   (prevents permanent spinner if network hangs or backend is restarting)
 // ========================================
 
 import React, {
@@ -37,6 +42,13 @@ const AuthContext = createContext();
 
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8000";
 const TOKEN_KEY = "auth_token";
+
+// Timeout for /users/me validation (ms). Must be less than safety net below.
+const FETCH_USER_TIMEOUT_MS = 10_000; // 10 seconds
+
+// Absolute safety net: if isLoading is still true after this, force it false.
+// Protects against any unforeseen hang (e.g. backend mid-restart, network drop).
+const LOADING_SAFETY_NET_MS = 15_000; // 15 seconds
 
 // ✅ FIREFOX FIX: Detect if localStorage is available (blocked in private mode)
 const isLocalStorageAvailable = () => {
@@ -89,6 +101,25 @@ export function AuthProvider({ children }) {
   // StrictMode guard
   const didInit = useRef(false);
 
+  // ✅ Safety net: force-clear isLoading if still stuck after LOADING_SAFETY_NET_MS.
+  // This is the last line of defense against any permanent spinner regardless of cause.
+  useEffect(() => {
+    const safetyTimer = setTimeout(() => {
+      if (isMounted.current) {
+        setIsLoading((prev) => {
+          if (prev) {
+            console.warn(
+              `⚠️ AuthContext: isLoading still true after ${LOADING_SAFETY_NET_MS}ms — force-clearing.`
+            );
+          }
+          return false;
+        });
+      }
+    }, LOADING_SAFETY_NET_MS);
+
+    return () => clearTimeout(safetyTimer);
+  }, []); // runs once on mount
+
   // Internal clear (stable)
   const _clearAuth = useCallback(() => {
     storage.removeItem(TOKEN_KEY);
@@ -119,6 +150,14 @@ export function AuthProvider({ children }) {
         return;
       }
 
+      // ✅ FIX: AbortController with timeout prevents indefinite hang
+      // when backend is restarting or network is unresponsive.
+      const controller = new AbortController();
+      const timeoutId = setTimeout(
+        () => controller.abort(),
+        FETCH_USER_TIMEOUT_MS
+      );
+
       try {
         const response = await fetch(`${API_URL}/users/me`, {
           method: "GET",
@@ -127,7 +166,10 @@ export function AuthProvider({ children }) {
             "Content-Type": "application/json",
           },
           credentials: "include",
+          signal: controller.signal, // ✅ attached abort signal
         });
+
+        clearTimeout(timeoutId); // ✅ clear timeout on success
 
         if (!isMounted.current) return;
 
@@ -146,10 +188,21 @@ export function AuthProvider({ children }) {
           _clearAuth();
         }
       } catch (error) {
-        console.error("❌ Failed to fetch user:", error);
+        clearTimeout(timeoutId); // ✅ clear timeout on error too
+
+        if (error.name === "AbortError") {
+          // ✅ Timeout hit: backend unreachable / too slow
+          console.warn(
+            `⚠️ fetchUser timed out after ${FETCH_USER_TIMEOUT_MS}ms — backend may be restarting`
+          );
+        } else {
+          console.error("❌ Failed to fetch user:", error);
+        }
+
         if (isMounted.current) setApiStatus("unreachable");
         _clearAuth();
       } finally {
+        // ✅ Always runs — guarantees isLoading becomes false
         if (isMounted.current) setIsLoading(false);
       }
     },
@@ -164,7 +217,7 @@ export function AuthProvider({ children }) {
     const storedToken = storage.getItem(TOKEN_KEY);
 
     if (storedToken) {
-      // Keep isLoading true until fetchUser finishes
+      // Keep isLoading true until fetchUser finishes (or times out)
       fetchUser(storedToken);
     } else {
       if (isMounted.current) setIsLoading(false);
@@ -176,13 +229,23 @@ export function AuthProvider({ children }) {
     async (username, password) => {
       if (isMounted.current) setIsLoading(true);
 
+      // ✅ Safety: login requests also respect a timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(
+        () => controller.abort(),
+        FETCH_USER_TIMEOUT_MS
+      );
+
       try {
         const response = await fetch(`${API_URL}/token_json`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
           body: JSON.stringify({ username, password }),
+          signal: controller.signal,
         });
+
+        clearTimeout(timeoutId);
 
         if (!response.ok) {
           const errorData = await safeJson(response);
@@ -207,6 +270,15 @@ export function AuthProvider({ children }) {
         // Always hydrate canonical profile (ensures created_at etc.)
         await fetchUser(newToken);
       } catch (error) {
+        clearTimeout(timeoutId);
+
+        if (error.name === "AbortError") {
+          console.warn("⚠️ Login request timed out — backend may be slow");
+          _clearAuth();
+          if (isMounted.current) setIsLoading(false);
+          throw new Error("Login timed out. Please try again.");
+        }
+
         console.error("❌ Login error:", error);
         _clearAuth();
         if (isMounted.current) setIsLoading(false);
@@ -292,7 +364,7 @@ export function useAuth() {
 
 export default AuthContext;
 
-//////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////
 // // ========================================
 // // AUTH CONTEXT - PIXELPERFECT SCREENSHOT API
 // // ========================================
@@ -304,7 +376,6 @@ export default AuthContext;
 // // - Consistent token storage (auth_token)
 // // - Firefox compatibility (credentials: 'include')
 // // - Proper error handling
-// // - Token validation before redirect
 // // - localStorage fallback detection
 // // - Unmount guard (prevents setState on unmounted component)
 // // - StrictMode double-invocation guard (didInit ref)
@@ -313,6 +384,10 @@ export default AuthContext;
 // // ✅ IMPORTANT FIX (Member Since / user hydration):
 // // - isLoading stays true until /users/me has returned (or failed)
 // // - user is merged safely to avoid partial/undefined fields (created_at)
+// //
+// // ✅ NEW (stability):
+// // - login() always ends loading state even if backend returns data.user
+// // - avoids race-y double-loading states
 // // ========================================
 
 // import React, {
@@ -322,7 +397,7 @@ export default AuthContext;
 //   useEffect,
 //   useRef,
 //   useCallback,
-//   useMemo
+//   useMemo,
 // } from "react";
 
 // const AuthContext = createContext();
@@ -338,7 +413,9 @@ export default AuthContext;
 //     localStorage.removeItem(test);
 //     return true;
 //   } catch (e) {
-//     console.warn("⚠️ localStorage not available (Firefox private mode?), using sessionStorage");
+//     console.warn(
+//       "⚠️ localStorage not available (Firefox private mode?), using sessionStorage"
+//     );
 //     return false;
 //   }
 // };
@@ -364,6 +441,9 @@ export default AuthContext;
 
 //   const [isLoading, setIsLoading] = useState(true);
 
+//   // Optional: expose basic api status if you ever want to show it
+//   const [apiStatus, setApiStatus] = useState("unknown"); // "unknown" | "healthy" | "unreachable"
+
 //   // Unmount guard
 //   const isMounted = useRef(true);
 //   useEffect(() => {
@@ -382,6 +462,7 @@ export default AuthContext;
 //     if (isMounted.current) {
 //       setToken(null);
 //       setUser(null);
+//       setApiStatus("unknown");
 //     }
 //   }, []);
 
@@ -410,14 +491,15 @@ export default AuthContext;
 //           method: "GET",
 //           headers: {
 //             Authorization: `Bearer ${authToken}`,
-//             "Content-Type": "application/json"
+//             "Content-Type": "application/json",
 //           },
-//           credentials: "include"
+//           credentials: "include",
 //         });
 
 //         if (!isMounted.current) return;
 
 //         if (response.ok) {
+//           setApiStatus("healthy");
 //           const userData = await safeJson(response);
 
 //           // ✅ Set token (confirmed valid) + merge user
@@ -432,6 +514,7 @@ export default AuthContext;
 //         }
 //       } catch (error) {
 //         console.error("❌ Failed to fetch user:", error);
+//         if (isMounted.current) setApiStatus("unreachable");
 //         _clearAuth();
 //       } finally {
 //         if (isMounted.current) setIsLoading(false);
@@ -458,43 +541,38 @@ export default AuthContext;
 //   // Login
 //   const login = useCallback(
 //     async (username, password) => {
-//       setIsLoading(true);
+//       if (isMounted.current) setIsLoading(true);
 
 //       try {
 //         const response = await fetch(`${API_URL}/token_json`, {
 //           method: "POST",
 //           headers: { "Content-Type": "application/json" },
 //           credentials: "include",
-//           body: JSON.stringify({ username, password })
+//           body: JSON.stringify({ username, password }),
 //         });
 
 //         if (!response.ok) {
 //           const errorData = await safeJson(response);
-//           const errorMessage = errorData.detail || `Login failed: ${response.status}`;
+//           const errorMessage =
+//             errorData.detail || `Login failed: ${response.status}`;
 //           throw new Error(errorMessage);
 //         }
 
 //         const data = await safeJson(response);
 
-//         // Expect: data.access_token and (maybe) data.user
 //         const newToken = data.access_token;
 //         if (!newToken) throw new Error("Login failed: missing access token");
 
 //         storage.setItem(TOKEN_KEY, newToken);
 
-//         if (isMounted.current) {
-//           setToken(newToken);
+//         if (!isMounted.current) return;
 
-//           // If backend returns user, store it immediately (fast UI),
-//           // BUT still optionally refresh via /users/me for canonical profile.
-//           if (data.user) {
-//             _setUserMerged(data.user);
-//             // If created_at sometimes missing, fetch canonical profile in background
-//             fetchUser(newToken);
-//           } else {
-//             await fetchUser(newToken);
-//           }
-//         }
+//         // Optimistic update for fast UI
+//         setToken(newToken);
+//         if (data.user) _setUserMerged(data.user);
+
+//         // Always hydrate canonical profile (ensures created_at etc.)
+//         await fetchUser(newToken);
 //       } catch (error) {
 //         console.error("❌ Login error:", error);
 //         _clearAuth();
@@ -508,19 +586,20 @@ export default AuthContext;
 //   // Register
 //   const register = useCallback(
 //     async (username, email, password) => {
-//       setIsLoading(true);
+//       if (isMounted.current) setIsLoading(true);
 
 //       try {
 //         const response = await fetch(`${API_URL}/register`, {
 //           method: "POST",
 //           headers: { "Content-Type": "application/json" },
 //           credentials: "include",
-//           body: JSON.stringify({ username, email, password })
+//           body: JSON.stringify({ username, email, password }),
 //         });
 
 //         if (!response.ok) {
 //           const errorData = await safeJson(response);
-//           const errorMessage = errorData.detail || `Registration failed: ${response.status}`;
+//           const errorMessage =
+//             errorData.detail || `Registration failed: ${response.status}`;
 //           throw new Error(errorMessage);
 //         }
 
@@ -544,16 +623,30 @@ export default AuthContext;
 //     return token || storage.getItem(TOKEN_KEY);
 //   }, [token]);
 
-//   const value = {
-//     token,
-//     user,
-//     isAuthenticated,
-//     isLoading,
-//     login,
-//     register,
-//     logout,
-//     getToken
-//   };
+//   const value = useMemo(
+//     () => ({
+//       token,
+//       user,
+//       isAuthenticated,
+//       isLoading,
+//       apiStatus,
+//       login,
+//       register,
+//       logout,
+//       getToken,
+//     }),
+//     [
+//       token,
+//       user,
+//       isAuthenticated,
+//       isLoading,
+//       apiStatus,
+//       login,
+//       register,
+//       logout,
+//       getToken,
+//     ]
+//   );
 
 //   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 // }
@@ -565,3 +658,4 @@ export default AuthContext;
 // }
 
 // export default AuthContext;
+
