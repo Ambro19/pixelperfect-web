@@ -4,42 +4,91 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#3B82F6" />
-    
-    <!-- Favicons - PixelPerfect Camera Shutter Icon -->
-    <!--<link rel="icon" href="%PUBLIC_URL%/favicon.ico" /> -->
-    <link rel="icon" type="image/png" href="%PUBLIC_URL%/favicon.png" />
-    <link rel="icon" type="image/png" sizes="32x32" href="%PUBLIC_URL%/favicons/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="%PUBLIC_URL%/favicons/favicon-16x16.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="%PUBLIC_URL%/favicons/apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="192x192" href="%PUBLIC_URL%/favicons/android-chrome-192x192.png">
-    <link rel="icon" type="image/png" sizes="512x512" href="%PUBLIC_URL%/favicons/android-chrome-512x512.png">
-    
+
     <!-- Primary Meta Tags -->
     <title>PixelPerfect - Screenshot API</title>
     <meta name="title" content="PixelPerfect - Screenshot API" />
-    <meta name="description" content="Pixel-perfect screenshots, every time. Fast, reliable, and developer-friendly screenshot API." />
-    
+    <meta
+      name="description"
+      content="Pixel-perfect screenshots, every time. Fast, reliable, and developer-friendly screenshot API."
+    />
+    <meta name="robots" content="index,follow" />
+    <link rel="canonical" href="https://pixelperfectapi.net/" />
+
+    <!-- Preconnect (optional, helps performance) -->
+    <link rel="preconnect" href="https://api.pixelperfectapi.net" />
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/png" href="%PUBLIC_URL%/favicon.png" />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="%PUBLIC_URL%/favicons/favicon-32x32.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="16x16"
+      href="%PUBLIC_URL%/favicons/favicon-16x16.png"
+    />
+    <link
+      rel="apple-touch-icon"
+      sizes="180x180"
+      href="%PUBLIC_URL%/favicons/apple-touch-icon.png"
+    />
+
+    <!-- These should NOT be rel="icon" in most setups, but leaving them is fine.
+         The key is: paths must be correct. -->
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="192x192"
+      href="%PUBLIC_URL%/favicons/android-chrome-192x192.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="512x512"
+      href="%PUBLIC_URL%/favicons/android-chrome-512x512.png"
+    />
+
+    <!-- Web App Manifest -->
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+
     <!-- OpenGraph / Facebook -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://pixelperfectapi.net/" />
     <meta property="og:title" content="PixelPerfect - Screenshot API" />
-    <meta property="og:description" content="Pixel-perfect screenshots, every time. Fast, reliable, and developer-friendly." />
-    <meta property="og:image" content="https://pixelperfectapi.net/social-media/pixelperfect-og-image.png" />
-    
+    <meta
+      property="og:description"
+      content="Pixel-perfect screenshots, every time. Fast, reliable, and developer-friendly."
+    />
+    <!-- ✅ FIXED PATH (matches your /favicons/social-media folder) -->
+    <meta
+      property="og:image"
+      content="https://pixelperfectapi.net/favicons/social-media/pixelperfect-og-image.png"
+    />
+
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image" />
     <meta property="twitter:url" content="https://pixelperfectapi.net/" />
     <meta property="twitter:title" content="PixelPerfect - Screenshot API" />
-    <meta property="twitter:description" content="Pixel-perfect screenshots, every time" />
-    <meta property="twitter:image" content="https://pixelperfectapi.net/social-media/pixelperfect-twitter-card.png" />
-    
-    <!-- Web App Manifest -->
-    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+    <meta
+      property="twitter:description"
+      content="Pixel-perfect screenshots, every time"
+    />
+    <!-- ✅ FIXED PATH (matches your /favicons/social-media folder) -->
+    <meta
+      property="twitter:image"
+      content="https://pixelperfectapi.net/favicons/social-media/pixelperfect-twitter-card.png"
+    />
   </head>
+
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
-    
-    <!-- ✅ React app mounts here -->
+
+    <!-- React app mounts here -->
     <div id="root"></div>
   </body>
 </html>
