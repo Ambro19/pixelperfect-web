@@ -350,7 +350,7 @@ export default function DashboardPage() {
           {/* Mobile "Visit Blog" button */}
           <div className="mt-4 sm:hidden">
             <a
-              href="https://onetechly.com"
+              href="https://pixelperfectapi.net"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-700 transition-colors"
