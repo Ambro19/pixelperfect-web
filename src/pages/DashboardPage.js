@@ -44,22 +44,22 @@ const BLOG_POSTS = [
     icon: "🔗",
   },
   {
-    title: "SPA Routing Problems: Why Your React App Returns 404 on Refresh",
-    excerpt: "The definitive guide to fixing client-side routing on Netlify, Render, Nginx, and Apache — with production-ready config examples.",
-    tag: "React",
-    tagColor: "bg-blue-100 text-blue-700",
-    url: "https://onetechly.com/spa-routing-404-fix",
-    date: "Dec 10, 2024",
-    icon: "⚛️",
+    title: "Implementing AdSense and Google Analytics: A Complete Guide to Website Monetization and Tracking",
+    excerpt: "Understanding your audience and generating revenue are two pillars of a successful online presence. Learn how to integrate Google AdSense and GA4 into any web project.",
+    tag: "Analytics",
+    tagColor: "bg-orange-100 text-orange-700",
+    url: "https://onetechlyambr19.blogspot.com/2025/12/blog-post_29.html",
+    date: "Dec 29, 2025",
+    icon: "📊",
   },
   {
-    title: "FastAPI + PostgreSQL on Render: Database Configuration Guide",
-    excerpt: "From SQLite to PostgreSQL in production — environment variables, connection strings, migrations, and common pitfalls explained.",
-    tag: "Backend",
-    tagColor: "bg-green-100 text-green-700",
-    url: "https://onetechly.com/fastapi-postgresql-render-guide",
-    date: "Jan 15, 2025",
-    icon: "🐍",
+    title: "Cross-Platform npm Scripts: Why Your Windows Commands Fail on macOS/Linux (and How to Fix Them)",
+    excerpt: "npm scripts using Windows-style 'set VARIABLE=value &&' break on macOS and Linux. Discover how cross-env solves this and how to write truly cross-platform build scripts.",
+    tag: "Node.js",
+    tagColor: "bg-lime-100 text-lime-700",
+    url: "https://onetechlyambr19.blogspot.com/2026/02/cross-platform-npm-scripts-why-your.html",
+    date: "Feb 04, 2026",
+    icon: "⚙️",
   },
 ];
 
@@ -350,7 +350,7 @@ export default function DashboardPage() {
           {/* Mobile "Visit Blog" button */}
           <div className="mt-4 sm:hidden">
             <a
-              href="https://pixelperfectapi.net"
+              href="https://onetechlyambr19.blogspot.com"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-700 transition-colors"
@@ -449,8 +449,7 @@ function InfoRow({ label, value }) {
   );
 }
 
-// ===========================================================================================
-
+//===============================================================================================
 
 // // ============================================================================
 // // DASHBOARD PAGE - PRODUCTION READY
@@ -493,7 +492,7 @@ function InfoRow({ label, value }) {
 //     excerpt: "Explore how P2P systems underpin everything from BitTorrent to blockchain, and why decentralized architectures are reshaping the web.",
 //     tag: "Architecture",
 //     tagColor: "bg-purple-100 text-purple-700",
-//     url: "https://onetechly.com/p2p-technology-powering-decentralization",
+//     url: "https://onetechlyambr19.blogspot.com/2024/11/peer-to-peer-peer-to-peer-p2p.html",
 //     date: "Nov 02, 2024",
 //     icon: "🔗",
 //   },
@@ -804,7 +803,7 @@ function InfoRow({ label, value }) {
 //           {/* Mobile "Visit Blog" button */}
 //           <div className="mt-4 sm:hidden">
 //             <a
-//               href="https://onetechly.com"
+//               href="https://pixelperfectapi.net"
 //               target="_blank"
 //               rel="noopener noreferrer"
 //               className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-700 transition-colors"
@@ -902,4 +901,6 @@ function InfoRow({ label, value }) {
 //     </div>
 //   );
 // }
+
+// ===========================================================================================
 
