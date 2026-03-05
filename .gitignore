@@ -28,3 +28,6 @@ pnpm-debug.log*
 !.env.example
 !.env.production
 !.env.lan.example
+
+# README-Internal file
+INTERNAL.md
