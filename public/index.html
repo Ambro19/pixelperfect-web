@@ -15,17 +15,27 @@
     <meta name="robots" content="index,follow" />
     <link rel="canonical" href="https://pixelperfectapi.net/" />
 
-    <!-- Preconnect (optional, helps performance) -->
+    <!-- Preconnect -->
     <link rel="preconnect" href="https://api.pixelperfectapi.net" />
 
-    <!-- Favicons -->
-    <link rel="icon" type="image/png" href="%PUBLIC_URL%/favicon.png" />
+    <!-- =====================================================================
+         FAVICONS
+         Root cause of wrong browser-tab icons: the old primary favicon pointed
+         to "%PUBLIC_URL%/favicon.png" which does NOT exist in public/.
+         The browser fell back unpredictably (screenshot thumbnail, cached icon).
+         Fix: point all favicon refs to the actual files in public/favicons/.
+         The 32x32 PNG is declared first so browsers pick it up as the tab icon.
+    ====================================================================== -->
+
+    <!-- ✅ Primary tab icon — must exist; 32x32 is the standard browser tab size -->
     <link
       rel="icon"
       type="image/png"
       sizes="32x32"
       href="%PUBLIC_URL%/favicons/favicon-32x32.png"
     />
+
+    <!-- Smaller sizes for legacy browsers / high-DPI fallback -->
     <link
       rel="icon"
       type="image/png"
@@ -33,13 +43,32 @@
       href="%PUBLIC_URL%/favicons/favicon-16x16.png"
     />
     <link
+      rel="icon"
+      type="image/png"
+      sizes="48x48"
+      href="%PUBLIC_URL%/favicons/favicon-48x48.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="64x64"
+      href="%PUBLIC_URL%/favicons/favicon-64x64.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="128x128"
+      href="%PUBLIC_URL%/favicons/favicon-128x128.png"
+    />
+
+    <!-- Apple Touch Icon (iOS home screen) -->
+    <link
       rel="apple-touch-icon"
       sizes="180x180"
       href="%PUBLIC_URL%/favicons/apple-touch-icon.png"
     />
 
-    <!-- These should NOT be rel="icon" in most setups, but leaving them is fine.
-         The key is: paths must be correct. -->
+    <!-- Android Chrome -->
     <link
       rel="icon"
       type="image/png"
@@ -64,7 +93,6 @@
       property="og:description"
       content="Pixel-perfect screenshots, every time. Fast, reliable, and developer-friendly."
     />
-    <!-- ✅ FIXED PATH (matches your /favicons/social-media folder) -->
     <meta
       property="og:image"
       content="https://pixelperfectapi.net/favicons/social-media/pixelperfect-og-image.png"
@@ -78,7 +106,6 @@
       property="twitter:description"
       content="Pixel-perfect screenshots, every time"
     />
-    <!-- ✅ FIXED PATH (matches your /favicons/social-media folder) -->
     <meta
       property="twitter:image"
       content="https://pixelperfectapi.net/favicons/social-media/pixelperfect-twitter-card.png"
