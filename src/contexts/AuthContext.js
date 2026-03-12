@@ -34,25 +34,54 @@ const AuthContext = createContext();
 
 function resolveApiUrl() {
   const env = process.env.REACT_APP_API_URL;
-
-  // If env is set, always trust it
   if (env && typeof env === "string" && env.trim()) return env.trim();
 
-  // Production-safe fallback (IMPORTANT)
   if (typeof window !== "undefined") {
     const host = window.location.hostname;
-    const isLocal =
-      host === "localhost" ||
-      host === "127.0.0.1" ||
-      host.startsWith("192.168.") ||
-      host.endsWith(".local");
 
-    if (!isLocal) return "https://api.pixelperfectapi.net";
+    // Production domain → production API
+    if (host === "pixelperfectapi.net" || host.endsWith(".pixelperfectapi.net")) {
+      return "https://api.pixelperfectapi.net";
+    }
+
+    // True localhost → localhost backend
+    if (host === "localhost" || host === "127.0.0.1") {
+      return "http://localhost:8000";
+    }
+
+    // ✅ LAN IP (e.g. 192.168.1.185 on mobile) → use same IP for backend
+    if (/^(\d{1,3}\.){3}\d{1,3}$/.test(host)) {
+      return `http://${host}:8000`;
+    }
+
+    // Generic hostname fallback
+    return `${window.location.protocol}//${host}:8000`;
   }
 
-  // Local dev fallback
   return "http://localhost:8000";
 }
+
+// function resolveApiUrl() {
+//   const env = process.env.REACT_APP_API_URL;
+
+//   // If env is set, always trust it
+//   if (env && typeof env === "string" && env.trim()) return env.trim();
+
+//   // Production-safe fallback (IMPORTANT)
+//   if (typeof window !== "undefined") {
+//     const host = window.location.hostname;
+//     const isLocal =
+//       host === "localhost" ||
+//       host === "127.0.0.1" ||
+//       host.startsWith("192.168.") ||
+//       host.endsWith(".local");
+
+//     if (!isLocal) return "https://api.pixelperfectapi.net";
+//   }
+
+//   // Local dev fallback
+//   return "http://localhost:8000";
+// }
 
 const API_URL = resolveApiUrl();
 const TOKEN_KEY = "auth_token";
