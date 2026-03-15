@@ -109,7 +109,7 @@ REACT_APP_STRIPE_PUBLISHABLE_KEY=pk_live_...
 
 ## License
 
-Copyright © 2026 [OneTechly](https://onetechlyambr19.blogspot.com/2024/11/peer-to-peer-peer-to-peer-p2p.html)  
+Copyright © 2026 [OneTechly](https://onetechlyambr19.blogspot.com/2025/04/exploring-unixlinux-based-environments.html)  
 All rights reserved.
 
 This is proprietary software. Unauthorized copying, modification, or distribution is strictly prohibited.
