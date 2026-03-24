@@ -1,23 +1,57 @@
-<!-- # =========================================================
+# =========================================================
+# Render / Netlify _headers file
+# File: frontend/public/_headers
+# Author: OneTechly
+# Updated: March 2026
+#
+# Format rules:
+#   - Lines starting with # are comments (NOT <!-- -->)
+#   - Each route block starts with a path pattern
+#   - Headers follow indented below the path
+#   - Applies to the static frontend host only
+#     (pixelperfectapi.net, NOT api.pixelperfectapi.net)
+#
+# ✅ FIX: Original file used HTML <!-- --> comments which
+#    are NOT valid here — the host silently ignored all
+#    directives, so zero headers were being set.
+# =========================================================
+
+
+# =========================================================
 # Global security headers (apply to all routes)
 # =========================================================
 /*
   X-Content-Type-Options: nosniff
   X-Frame-Options: DENY
-  X-XSS-Protection: 1; mode=block
+  X-XSS-Protection: 0
   Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+
+  # ✅ CRITICAL: Content-Security-Policy for the frontend page.
+  # connect-src MUST include api.pixelperfectapi.net — without it the
+  # browser blocks every fetch() call to the API subdomain with
+  # "Failed to fetch", even though the backend CORS is correct.
+  # img-src includes the API subdomain so screenshot previews load.
+  # frame-src includes the API subdomain for PDF iframe previews.
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://js.stripe.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://api.pixelperfectapi.net; connect-src 'self' https://api.pixelperfectapi.net https://api.stripe.com; frame-src https://js.stripe.com https://checkout.stripe.com https://api.pixelperfectapi.net; font-src 'self' data:; frame-ancestors 'none'; base-uri 'self';
 
 
 # =========================================================
 # SPA entry point — NEVER cache index.html
-# This prevents blank pages after deploy + refresh
+# Prevents blank pages after deploy + stale JS references
 # =========================================================
 /index.html
   Cache-Control: no-cache, no-store, must-revalidate
 
+# Same rule for the root path
+/
+  Cache-Control: no-cache, no-store, must-revalidate
+
 
 # =========================================================
-# Static JS/CSS assets — cache forever (hashed filenames)
+# Static JS/CSS/media assets — cache forever
+# Safe because CRA gives all these files content-hashed names
+# e.g. main.a3f2c1.js — if content changes, filename changes
 # =========================================================
 /static/*
   Cache-Control: public, max-age=31536000, immutable
@@ -27,4 +61,13 @@
 # Favicon & misc images — cache for 1 week
 # =========================================================
 /favicon_io/*
-  Cache-Control: public, max-age=604800 -->
+  Cache-Control: public, max-age=604800
+
+/assets/*
+  Cache-Control: public, max-age=604800
+
+/*.png
+  Cache-Control: public, max-age=604800
+
+/*.ico
+  Cache-Control: public, max-age=604800
