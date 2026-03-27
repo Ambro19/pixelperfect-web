@@ -4,9 +4,11 @@
 // Comprehensive FAQ with expandable questions
 // Production-ready, mobile-responsive
 //
-// ✅ UPDATE (Feb 2026):
-// - Added OFFICIAL PixelPerfect logo centered above the main page title
-//   (matches ScreenshotPage.js layout)
+// ✅ UPDATED (March 2026):
+// - Corrected full-page screenshot plan availability
+// - Updated supported programming languages
+// - Fixed status page link
+// - Kept official PixelPerfect logo centered above the main page title
 
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -16,8 +18,9 @@ const FAQ = () => {
   const navigate = useNavigate();
   const [openQuestion, setOpenQuestion] = useState(null);
 
-  // Safer than reading window.innerWidth during render (works cleanly on hydration too)
+  // Safer than reading window.innerWidth during render
   const [isMobile, setIsMobile] = useState(false);
+
   useEffect(() => {
     const update = () => setIsMobile(window.innerWidth < 640);
     update();
@@ -31,7 +34,7 @@ const FAQ = () => {
       questions: [
         {
           q: 'How do I get started with PixelPerfect?',
-          a: "Getting started is easy! Simply sign up for a free account, get your API key from the dashboard, and make your first API request. Our Quick Start guide walks you through the entire process in under 5 minutes."
+          a: 'Getting started is easy! Simply sign up for a free account, get your API key from the dashboard, and make your first API request. Our Quick Start guide walks you through the entire process in under 5 minutes.'
         },
         {
           q: 'Do I need a credit card to sign up?',
@@ -39,7 +42,7 @@ const FAQ = () => {
         },
         {
           q: 'What programming languages do you support?',
-          a: 'PixelPerfect works with any programming language that can make HTTP requests. We provide official SDKs and code examples for JavaScript/Node.js, Python, Ruby, PHP, and Go.'
+          a: 'PixelPerfect works with any programming language that can make HTTP requests. We provide official SDKs and code examples for JavaScript/Node.js, Python, Java, C, PHP, and Go.'
         }
       ]
     },
@@ -54,12 +57,10 @@ const FAQ = () => {
           q: 'What happens if I exceed my monthly limit?',
           a: "We'll send you an email notification when you reach 80% of your quota. If you exceed your limit, additional screenshots are charged at $0.02 per screenshot, or you can upgrade to a higher tier."
         },
-        // ✅ UPDATED REFUND POLICY (NO REFUNDS)
         {
           q: 'Do you offer refunds?',
-          a: "We do not offer refunds, which is why we encourage users to start with our Free tier before upgrading. This allows you to test all features and capabilities risk-free with 100 screenshots per month. Once you upgrade to a paid plan (Pro, Business, or Premium), your subscription remains active until the end of your current billing period, and you can continue using all paid features and your remaining screenshot quota throughout that time. You can cancel anytime, and you'll retain access until your paid period expires."
+          a: 'We do not offer refunds, which is why we encourage users to start with our Free tier before upgrading. This allows you to test the platform risk-free with 100 screenshots per month. Once you upgrade to a paid plan (Pro, Business, or Premium), your subscription remains active until the end of your current billing period, and you can continue using all paid features and your remaining screenshot quota throughout that time. You can cancel anytime, and you will retain access until your paid period expires.'
         },
-        // ✅ ADDED / UPDATED CANCELATION POLICY QUESTION
         {
           q: 'What happens if I cancel my subscription?',
           a: "If you cancel your paid subscription, you'll retain full access to your paid tier features until the end of your current billing period. After that, your account will automatically downgrade to the Free tier (100 screenshots/month). All your API keys, settings, and screenshot history will be preserved. You can re-upgrade at any time."
@@ -87,7 +88,7 @@ const FAQ = () => {
         },
         {
           q: 'Do you support full-page screenshots?',
-          a: 'Yes! Full-page screenshots are available on Pro tier and above. Simply set the full_page parameter to true in your API request to capture the entire page length.'
+          a: 'Yes! Full-page screenshots are supported, including on the Free plan and Pro plan, not just Business and Premium. You can enable full-page capture to screenshot the entire scrollable page instead of only the visible viewport.'
         }
       ]
     },
@@ -117,7 +118,7 @@ const FAQ = () => {
       questions: [
         {
           q: 'Is my data secure?',
-          a: 'Absolutely! We use enterprise-grade encryption (TLS/SSL) for all requests, store passwords with bcrypt hashing, and maintain SOC 2 Type II compliance. Your data is always protected.'
+          a: 'Absolutely! We use enterprise-grade encryption (TLS/SSL) for all requests, store passwords with bcrypt hashing, and maintain strong security practices to protect your data.'
         },
         {
           q: 'Do you store the websites I screenshot?',
@@ -138,11 +139,11 @@ const FAQ = () => {
         },
         {
           q: 'Do you have a status page?',
-          a: 'Yes! Visit status.pixelperfectapi.net to see real-time system status, historical uptime, and any ongoing incidents. You can also subscribe to receive email notifications.'
+          a: 'Yes! Visit https://pixelperfectapi.net/api-status to see real-time system status, uptime information, and any ongoing incidents.'
         },
         {
           q: 'Where can I find the documentation?',
-          a: 'Our complete API documentation is available at pixelperfectapi.net/docs. It includes detailed endpoint references, code examples, and integration guides.'
+          a: 'Our complete API documentation is available at https://pixelperfectapi.net/docs. It includes detailed endpoint references, code examples, and integration guides.'
         }
       ]
     }
@@ -199,7 +200,6 @@ const FAQ = () => {
       {/* Hero */}
       <section className="bg-gradient-to-b from-blue-50 to-white py-12 sm:py-16">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          {/* ✅ NEW: Centered official PixelPerfect logo icon (matches ScreenshotPage.js) */}
           <div className="flex justify-center items-center mb-4">
             <PixelPerfectLogo size={64} showText={false} />
           </div>
@@ -236,7 +236,12 @@ const FAQ = () => {
                         stroke="currentColor"
                         viewBox="0 0 24 24"
                       >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 9l-7 7-7-7"
+                        />
                       </svg>
                     </button>
                     {isOpen && (
@@ -253,8 +258,12 @@ const FAQ = () => {
 
         {/* Still Have Questions CTA */}
         <section className="mt-16 bg-blue-50 rounded-2xl p-8 sm:p-12 text-center">
-          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">Still have questions?</h2>
-          <p className="text-lg text-gray-600 mb-8">Can't find what you're looking for? We're here to help!</p>
+          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">
+            Still have questions?
+          </h2>
+          <p className="text-lg text-gray-600 mb-8">
+            Can&apos;t find what you&apos;re looking for? We&apos;re here to help!
+          </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button
               onClick={() => navigate('/contact')}
@@ -299,5 +308,4 @@ const FAQ = () => {
 };
 
 export default FAQ;
-// END of FAQ
 
