@@ -845,7 +845,7 @@ export default function BatchJobs() {
   );
 }
 
-//////////////////////////////////////////////////////////////////////////////////////
+///////////THIS FILE BELOW IS A GOOD OME TOO: IT PRECISELY FIXED PHONE UI ALIGNMENT ////////////////////
 
 // // frontend/src/pages/BatchJobs.js — PixelPerfect Screenshot API
 // // UPDATED: March 2026
@@ -855,8 +855,9 @@ export default function BatchJobs() {
 // //   ✅ Per-item screenshot_url resolved to correct absolute URL
 // //   ✅ File upload (CSV/TXT/TSV) + textarea URL input
 // //   ✅ Retry failed items + delete job
-// //   ✅ NEW: Cancel button for queued/processing jobs
+// //   ✅ Cancel button for queued/processing jobs
 // //   ✅ MOBILE FIX: resolveScreenshotUrl handles localhost URLs on LAN devices
+// //   ✅ MOBILE UI FIX: JobCard fully stacked layout — no overlapping badges/buttons
 
 // import React, { useState, useEffect, useCallback, useRef } from 'react';
 // import { useNavigate } from 'react-router-dom';
@@ -891,7 +892,7 @@ export default function BatchJobs() {
 //   if (!rawUrl || typeof rawUrl !== 'string') return null;
 //   const t = rawUrl.trim();
 //   if (!t) return null;
-//   // ✅ MOBILE FIX: rewrite http://localhost:8000/... to the correct LAN host
+//   // ✅ MOBILE FIX: rewrite http://localhost:8000/... to the correct LAN/prod host
 //   if (/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?/.test(t)) {
 //     return t.replace(/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?/, API_BASE_URL.replace(/\/$/, ''));
 //   }
@@ -965,9 +966,9 @@ export default function BatchJobs() {
 //       </div>
 //       <div className="flex justify-between items-center mt-2 text-xs text-gray-500">
 //         <span>
-//           {job.queued > 0    && `${job.queued} queued`}
+//           {job.queued > 0     && `${job.queued} queued`}
 //           {job.processing > 0 && ` · ${job.processing} processing`}
-//           {job.failed > 0    && ` · ${job.failed} failed`}
+//           {job.failed > 0     && ` · ${job.failed} failed`}
 //         </span>
 //         <span className="font-medium text-gray-600">{pct}% done</span>
 //       </div>
@@ -976,10 +977,23 @@ export default function BatchJobs() {
 // }
 
 // // ── Single Job Card ───────────────────────────────────────────────────────────
+// // ✅ MOBILE UI FIX:
+// //   Old layout used `flex flex-wrap items-start justify-between` for the header,
+// //   which caused the status badge to float into / overlap the action buttons on
+// //   narrow viewports (< 400 px).
+// //
+// //   New layout uses four clearly separated rows:
+// //     Row 1 — Job ID (truncated) + Format pill, space-between
+// //     Row 2 — Status badge (standalone)
+// //     Row 3 — Created / Finished timestamps
+// //     Row 4 — Action buttons (flex-wrap, full touch targets)
+// //   Progress bar is always below these rows inside its own block.
+// //
+// //   This eliminates all overlap on mobile while remaining clean on desktop.
 // function JobCard({ job, token, onRetry, onDelete }) {
-//   const [expanded, setExpanded] = useState(false);
-//   const [retrying,  setRetrying]  = useState(false);
-//   const [deleting,  setDeleting]  = useState(false);
+//   const [expanded,   setExpanded]   = useState(false);
+//   const [retrying,   setRetrying]   = useState(false);
+//   const [deleting,   setDeleting]   = useState(false);
 //   const [cancelling, setCancelling] = useState(false);
 
 //   const isActive  = job.status === 'processing' || job.status === 'queued';
@@ -1038,71 +1052,110 @@ export default function BatchJobs() {
 
 //   return (
 //     <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-4">
-//       <div className="p-5">
-//         <div className="flex flex-wrap items-start justify-between gap-3">
-//           <div className="flex-1 min-w-0">
-//             <div className="flex flex-wrap items-center gap-2 mb-1">
-//               <span className="font-mono text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
-//                 {job.id}
-//               </span>
-//               <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${statusColor(job.status)}`}>
-//                 {jobStatusLabel(job)}
-//               </span>
-//               <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
-//                 {(job.format || 'png').toUpperCase()}
-//               </span>
-//             </div>
-//             <div className="text-xs text-gray-500 mt-1">
-//               Created: {new Date(job.created_at + 'Z').toLocaleString()}
-//               {job.completed_at && ` · Finished: ${new Date(job.completed_at + 'Z').toLocaleString()}`}
-//             </div>
-//           </div>
-//           <div className="flex flex-wrap gap-2 flex-shrink-0">
-//             {/* ✅ NEW: Cancel button — visible only when job is queued or processing */}
-//             {isActive && (
-//               <button
-//                 onClick={handleCancel}
-//                 disabled={cancelling}
-//                 className="px-3 py-1.5 bg-red-50 text-red-600 border border-red-200 rounded-lg
-//                            hover:bg-red-100 text-xs font-semibold transition-colors
-//                            disabled:opacity-50 disabled:cursor-not-allowed"
-//                 title="Stop this batch job"
-//               >
-//                 {cancelling ? '⏳ Cancelling…' : '✕ Cancel'}
-//               </button>
-//             )}
-//             {hasFailed && !isActive && (
-//               <button
-//                 onClick={handleRetry}
-//                 disabled={retrying}
-//                 className="px-3 py-1.5 bg-yellow-50 text-yellow-700 border border-yellow-200 rounded-lg
-//                            hover:bg-yellow-100 text-xs font-medium transition-colors disabled:opacity-50"
-//               >
-//                 {retrying ? '↺ Retrying...' : '↺ Retry Failed'}
-//               </button>
-//             )}
-//             <button
-//               onClick={() => setExpanded(v => !v)}
-//               className="px-3 py-1.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg
-//                          hover:bg-blue-100 text-xs font-medium transition-colors"
-//             >
-//               {expanded ? '▲ Collapse' : '▼ View Items'}
-//             </button>
-//             {!isActive && (
-//               <button
-//                 onClick={handleDelete}
-//                 disabled={deleting}
-//                 className="px-3 py-1.5 bg-red-50 text-red-700 border border-red-200 rounded-lg
-//                            hover:bg-red-100 text-xs font-medium transition-colors disabled:opacity-50"
-//               >
-//                 {deleting ? '...' : '🗑'}
-//               </button>
-//             )}
-//           </div>
+//       <div className="p-4 sm:p-5">
+
+//         {/* ── Row 1: Job ID (left, truncated) + Format pill (right) ── */}
+//         <div className="flex items-center justify-between gap-2 mb-2">
+//           <span
+//             className="font-mono text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded
+//                        truncate max-w-[60%] sm:max-w-none"
+//             title={job.id}
+//           >
+//             {job.id}
+//           </span>
+//           <span className="flex-shrink-0 px-2.5 py-0.5 rounded-full text-xs font-semibold
+//                            bg-indigo-100 text-indigo-800">
+//             {(job.format || 'png').toUpperCase()}
+//           </span>
 //         </div>
+
+//         {/* ── Row 2: Status badge ── */}
+//         <div className="mb-2">
+//           <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full
+//                             text-xs font-semibold ${statusColor(job.status)}`}>
+//             {jobStatusLabel(job)}
+//           </span>
+//         </div>
+
+//         {/* ── Row 3: Timestamps ── */}
+//         <p className="text-xs text-gray-500 mb-3 leading-relaxed">
+//           Created: {new Date(job.created_at + 'Z').toLocaleString()}
+//           {job.completed_at && (
+//             <>
+//               {' '}·{' '}
+//               Finished: {new Date(job.completed_at + 'Z').toLocaleString()}
+//             </>
+//           )}
+//         </p>
+
+//         {/* ── Row 4: Action buttons ── */}
+//         {/*   Each button is sized for comfortable touch (py-2 px-3, min 44 px tall   */}
+//         {/*   on most screens). They wrap naturally on very small displays.            */}
+//         <div className="flex flex-wrap items-center gap-2">
+//           {/* Cancel — only when active */}
+//           {isActive && (
+//             <button
+//               onClick={handleCancel}
+//               disabled={cancelling}
+//               className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold
+//                          bg-red-50 text-red-600 border border-red-200
+//                          hover:bg-red-100 active:bg-red-200
+//                          disabled:opacity-50 disabled:cursor-not-allowed
+//                          transition-colors"
+//               title="Stop this batch job"
+//             >
+//               {cancelling ? '⏳ Cancelling…' : '✕ Cancel'}
+//             </button>
+//           )}
+
+//           {/* Retry — only when finished with failures */}
+//           {hasFailed && !isActive && (
+//             <button
+//               onClick={handleRetry}
+//               disabled={retrying}
+//               className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold
+//                          bg-yellow-50 text-yellow-700 border border-yellow-200
+//                          hover:bg-yellow-100 active:bg-yellow-200
+//                          disabled:opacity-50 disabled:cursor-not-allowed
+//                          transition-colors"
+//             >
+//               {retrying ? '↺ Retrying...' : '↺ Retry Failed'}
+//             </button>
+//           )}
+
+//           {/* View / Collapse */}
+//           <button
+//             onClick={() => setExpanded(v => !v)}
+//             className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold
+//                        bg-blue-50 text-blue-700 border border-blue-200
+//                        hover:bg-blue-100 active:bg-blue-200
+//                        transition-colors"
+//           >
+//             {expanded ? '▲ Collapse' : '▼ View Items'}
+//           </button>
+
+//           {/* Delete — only when not active */}
+//           {!isActive && (
+//             <button
+//               onClick={handleDelete}
+//               disabled={deleting}
+//               className="inline-flex items-center justify-center w-9 h-9 rounded-lg text-sm
+//                          bg-red-50 text-red-600 border border-red-200
+//                          hover:bg-red-100 active:bg-red-200
+//                          disabled:opacity-50 disabled:cursor-not-allowed
+//                          transition-colors"
+//               title="Delete this batch job"
+//             >
+//               {deleting ? '…' : '🗑'}
+//             </button>
+//           )}
+//         </div>
+
+//         {/* ── Progress bar ── */}
 //         <JobProgressBar job={job} />
 //       </div>
 
+//       {/* ── Expanded item list ── */}
 //       {expanded && (
 //         <div className="border-t border-gray-100 divide-y divide-gray-50">
 //           {(job.items || []).map((item) => {
@@ -1110,48 +1163,66 @@ export default function BatchJobs() {
 //             return (
 //               <div
 //                 key={item.idx}
-//                 className={`px-5 py-3 flex flex-wrap items-center gap-3 ${
+//                 className={`px-4 sm:px-5 py-3 ${
 //                   item.status === 'failed'    ? 'bg-red-50'      :
 //                   item.status === 'completed' ? 'bg-green-50/40' : ''
 //                 }`}
 //               >
-//                 <span className="text-xs text-gray-400 w-6 flex-shrink-0">#{item.idx + 1}</span>
-//                 <span className={`w-2 h-2 rounded-full flex-shrink-0 ${
-//                   item.status === 'completed'  ? 'bg-green-500' :
-//                   item.status === 'failed'     ? 'bg-red-500'   :
-//                   item.status === 'processing' ? 'bg-blue-500 animate-pulse' :
-//                   'bg-gray-300'
-//                 }`} />
-//                 <span className="text-sm text-gray-700 flex-1 min-w-0 truncate" title={item.url}>
-//                   {item.url}
-//                 </span>
-//                 <div className="flex items-center gap-3 flex-shrink-0 text-xs text-gray-500">
-//                   {item.file_size       && <span>📏 {formatSize(item.file_size)}</span>}
-//                   {item.processing_time && <span>⏱ {item.processing_time}s</span>}
-//                   <span className={`px-2 py-0.5 rounded-full font-medium ${statusColor(item.status)}`}>
-//                     {item.status}
+//                 {/* Item top row: index dot + URL */}
+//                 <div className="flex items-center gap-2 mb-1.5">
+//                   <span className="text-xs text-gray-400 w-6 flex-shrink-0 font-mono">
+//                     #{item.idx + 1}
+//                   </span>
+//                   <span className={`w-2 h-2 rounded-full flex-shrink-0 ${
+//                     item.status === 'completed'  ? 'bg-green-500' :
+//                     item.status === 'failed'     ? 'bg-red-500'   :
+//                     item.status === 'processing' ? 'bg-blue-500 animate-pulse' :
+//                     'bg-gray-300'
+//                   }`} />
+//                   <span
+//                     className="text-sm text-gray-700 flex-1 min-w-0 truncate"
+//                     title={item.url}
+//                   >
+//                     {item.url}
 //                   </span>
 //                 </div>
-//                 {viewUrl ? (
-//                   <a
-//                     href={viewUrl}
-//                     target="_blank"
-//                     rel="noopener noreferrer"
-//                     className="flex-shrink-0 inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50
-//                                text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-100
-//                                text-xs font-medium transition-colors"
-//                   >
-//                     <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-//                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-//                         d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-//                     </svg>
-//                     View
-//                   </a>
-//                 ) : item.status === 'failed' ? (
-//                   <span className="flex-shrink-0 text-xs text-red-500 max-w-xs truncate" title={item.message}>
-//                     ⚠ {item.message || 'Failed'}
+
+//                 {/* Item bottom row: meta + status badge + view link */}
+//                 <div className="flex flex-wrap items-center gap-2 pl-8">
+//                   {item.file_size       && (
+//                     <span className="text-xs text-gray-400">📏 {formatSize(item.file_size)}</span>
+//                   )}
+//                   {item.processing_time && (
+//                     <span className="text-xs text-gray-400">⏱ {item.processing_time}s</span>
+//                   )}
+//                   <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusColor(item.status)}`}>
+//                     {item.status}
 //                   </span>
-//                 ) : null}
+
+//                   {viewUrl ? (
+//                     <a
+//                       href={viewUrl}
+//                       target="_blank"
+//                       rel="noopener noreferrer"
+//                       className="inline-flex items-center gap-1 px-2.5 py-1
+//                                  bg-blue-50 text-blue-700 border border-blue-200 rounded-lg
+//                                  hover:bg-blue-100 text-xs font-medium transition-colors"
+//                     >
+//                       <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+//                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+//                           d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+//                       </svg>
+//                       View
+//                     </a>
+//                   ) : item.status === 'failed' ? (
+//                     <span
+//                       className="text-xs text-red-500 max-w-[200px] truncate"
+//                       title={item.message}
+//                     >
+//                       ⚠ {item.message || 'Failed'}
+//                     </span>
+//                   ) : null}
+//                 </div>
 //               </div>
 //             );
 //           })}
@@ -1167,19 +1238,19 @@ export default function BatchJobs() {
 //   const { token, isAuthenticated } = useAuth();
 //   const { tier }  = useSubscription();
 
-//   const [urlText,       setUrlText]       = useState('');
-//   const [format,        setFormat]        = useState('png');
-//   const [width,         setWidth]         = useState(1920);
-//   const [height,        setHeight]        = useState(1080);
-//   const [fullPage,      setFullPage]      = useState(false);
-//   const [uploadedFile,  setUploadedFile]  = useState(null);
-//   const [dragOver,      setDragOver]      = useState(false);
+//   const [urlText,        setUrlText]        = useState('');
+//   const [format,         setFormat]         = useState('png');
+//   const [width,          setWidth]          = useState(1920);
+//   const [height,         setHeight]         = useState(1080);
+//   const [fullPage,       setFullPage]       = useState(false);
+//   const [uploadedFile,   setUploadedFile]   = useState(null);
+//   const [dragOver,       setDragOver]       = useState(false);
 //   const fileInputRef = useRef(null);
 
-//   const [jobs,          setJobs]          = useState([]);
-//   const [submitting,    setSubmitting]    = useState(false);
-//   const [submittedJobId,setSubmittedJobId]= useState(null);
-//   const [loadingJobs,   setLoadingJobs]   = useState(false);
+//   const [jobs,           setJobs]           = useState([]);
+//   const [submitting,     setSubmitting]     = useState(false);
+//   const [submittedJobId, setSubmittedJobId] = useState(null);
+//   const [loadingJobs,    setLoadingJobs]    = useState(false);
 
 //   const pollRef    = useRef(null);
 //   const mountedRef = useRef(true);
@@ -1194,9 +1265,9 @@ export default function BatchJobs() {
 //     };
 //   }, []);
 
-//   const tierLower = (tier || '').toLowerCase();
-//   const hasAccess = tierLower !== 'free';
-//   const tierLimit = tierLower === 'business' ? 200 : tierLower === 'premium' ? 1000 : hasAccess ? 50 : 0;
+//   const tierLower  = (tier || '').toLowerCase();
+//   const hasAccess  = tierLower !== 'free';
+//   const tierLimit  = tierLower === 'business' ? 200 : tierLower === 'premium' ? 1000 : hasAccess ? 50 : 0;
 
 //   const parsedUrls = urlText
 //     .split('\n')
@@ -1357,15 +1428,19 @@ export default function BatchJobs() {
 //             <div className="cursor-pointer" onClick={() => navigate('/dashboard')}>
 //               <PixelPerfectLogo size={40} showText={true} />
 //             </div>
-//             <div className="flex items-center gap-4">
-//               <button onClick={() => navigate('/dashboard')} className="text-sm text-gray-600 hover:text-gray-900">
-//                 ← Back to Dashboard
+//             <div className="flex items-center gap-3 sm:gap-4">
+//               <button
+//                 onClick={() => navigate('/dashboard')}
+//                 className="text-sm text-gray-600 hover:text-gray-900"
+//               >
+//                 ← Back
 //               </button>
 //               <button
 //                 onClick={() => navigate('/subscription')}
-//                 className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 font-medium transition-colors"
+//                 className="px-3 sm:px-4 py-2 bg-blue-600 text-white text-sm rounded-lg
+//                            hover:bg-blue-700 font-medium transition-colors"
 //               >
-//                 Manage Subscription
+//                 Manage Plan
 //               </button>
 //             </div>
 //           </div>
@@ -1374,9 +1449,14 @@ export default function BatchJobs() {
 
 //       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 //         <div className="text-center mb-8">
-//           <div className="flex justify-center mb-4"><PixelPerfectLogo size={64} showText={false} /></div>
+//           <div className="flex justify-center mb-4">
+//             <PixelPerfectLogo size={64} showText={false} />
+//           </div>
 //           <h1 className="text-3xl font-bold text-gray-900 mb-2">Batch Screenshot Jobs</h1>
-//           <p className="text-gray-600">Capture screenshots of multiple websites at once. Process up to {tierLimit} URLs per batch.</p>
+//           <p className="text-gray-600">
+//             Capture screenshots of multiple websites at once.
+//             Process up to {tierLimit} URLs per batch.
+//           </p>
 //           <p className="text-sm text-gray-500 mt-1">
 //             {hasAccess
 //               ? `${tier?.charAt(0).toUpperCase() + tier?.slice(1)} · up to ${tierLimit} URLs per batch`
@@ -1388,9 +1468,13 @@ export default function BatchJobs() {
 //           <div className="mb-6 bg-amber-50 border border-amber-200 rounded-xl p-5 text-center">
 //             <div className="text-3xl mb-2">🔒</div>
 //             <h3 className="font-semibold text-amber-800 mb-1">Pro Plan Required</h3>
-//             <p className="text-sm text-amber-700 mb-3">Batch processing is available on Pro and Business plans.</p>
-//             <button onClick={() => navigate('/subscription')}
-//               className="px-5 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 text-sm font-medium">
+//             <p className="text-sm text-amber-700 mb-3">
+//               Batch processing is available on Pro and Business plans.
+//             </p>
+//             <button
+//               onClick={() => navigate('/subscription')}
+//               className="px-5 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 text-sm font-medium"
+//             >
 //               Upgrade Now
 //             </button>
 //           </div>
@@ -1407,21 +1491,30 @@ export default function BatchJobs() {
 //                 <div className="space-y-3">
 //                   <div>
 //                     <label className="block text-xs text-gray-500 mb-1">Width (px)</label>
-//                     <input type="number" value={width} min={320} max={7680}
+//                     <input
+//                       type="number" value={width} min={320} max={7680}
 //                       onChange={e => setWidth(parseInt(e.target.value) || 1920)}
-//                       className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+//                       className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm
+//                                  focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+//                     />
 //                   </div>
 //                   <div>
 //                     <label className="block text-xs text-gray-500 mb-1">Height (px)</label>
-//                     <input type="number" value={height} min={240} max={4320}
+//                     <input
+//                       type="number" value={height} min={240} max={4320}
 //                       onChange={e => setHeight(parseInt(e.target.value) || 1080)}
-//                       className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+//                       className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm
+//                                  focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+//                     />
 //                   </div>
 //                   {/* ✅ Preset buttons — each fires toast matching ScreenshotPage.js */}
 //                   <div className="flex flex-wrap gap-2 pt-1">
 //                     {VIEWPORT_PRESETS.map(p => (
-//                       <button key={p.label} onClick={() => applyPreset(p)}
-//                         className="px-2.5 py-1 bg-gray-100 hover:bg-gray-200 rounded text-xs text-gray-700 transition-colors">
+//                       <button
+//                         key={p.label}
+//                         onClick={() => applyPreset(p)}
+//                         className="px-2.5 py-1 bg-gray-100 hover:bg-gray-200 rounded text-xs text-gray-700 transition-colors"
+//                       >
 //                         {p.label}
 //                       </button>
 //                     ))}
@@ -1431,8 +1524,12 @@ export default function BatchJobs() {
 
 //               <div>
 //                 <h3 className="text-sm font-medium text-gray-700 mb-3">Format</h3>
-//                 <select value={format} onChange={e => setFormat(e.target.value)}
-//                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mb-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+//                 <select
+//                   value={format}
+//                   onChange={e => setFormat(e.target.value)}
+//                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mb-3
+//                              focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+//                 >
 //                   <option value="png">PNG (lossless)</option>
 //                   <option value="jpeg">JPEG (compressed)</option>
 //                   <option value="webp">WebP (best ratio)</option>
@@ -1440,8 +1537,11 @@ export default function BatchJobs() {
 //                 </select>
 
 //                 <label className="flex items-center gap-2 cursor-pointer mb-4">
-//                   <input type="checkbox" checked={fullPage} onChange={e => setFullPage(e.target.checked)}
-//                     className="w-4 h-4 rounded border-gray-300 text-blue-600" />
+//                   <input
+//                     type="checkbox" checked={fullPage}
+//                     onChange={e => setFullPage(e.target.checked)}
+//                     className="w-4 h-4 rounded border-gray-300 text-blue-600"
+//                   />
 //                   <span className="text-sm text-gray-700">Capture full page (scrolling)</span>
 //                 </label>
 
@@ -1465,16 +1565,26 @@ export default function BatchJobs() {
 
 //           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
 //             <div>
-//               <label className="block text-sm font-medium text-gray-700 mb-2">Website URLs (one per line)</label>
-//               <textarea value={urlText} onChange={e => setUrlText(e.target.value)}
+//               <label className="block text-sm font-medium text-gray-700 mb-2">
+//                 Website URLs (one per line)
+//               </label>
+//               <textarea
+//                 value={urlText}
+//                 onChange={e => setUrlText(e.target.value)}
 //                 placeholder={'https://example.com\nhttps://another-site.com'}
 //                 rows={8}
-//                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-y" />
-//               <p className="text-xs text-gray-500 mt-1">Enter up to {tierLimit} URLs, one per line</p>
+//                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono
+//                            focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-y"
+//               />
+//               <p className="text-xs text-gray-500 mt-1">
+//                 Enter up to {tierLimit} URLs, one per line
+//               </p>
 //             </div>
 
 //             <div>
-//               <label className="block text-sm font-medium text-gray-700 mb-2">Upload File (CSV/TXT/TSV)</label>
+//               <label className="block text-sm font-medium text-gray-700 mb-2">
+//                 Upload File (CSV/TXT/TSV)
+//               </label>
 //               <div
 //                 onDragOver={e => { e.preventDefault(); setDragOver(true); }}
 //                 onDragLeave={() => setDragOver(false)}
@@ -1482,17 +1592,29 @@ export default function BatchJobs() {
 //                 onClick={() => fileInputRef.current?.click()}
 //                 className={`relative border-2 border-dashed rounded-lg p-6 text-center cursor-pointer
 //                             transition-colors flex flex-col items-center justify-center min-h-[200px]
-//                             ${dragOver ? 'border-blue-400 bg-blue-50' : 'border-gray-300 hover:border-gray-400 bg-gray-50'}`}
+//                             ${dragOver
+//                               ? 'border-blue-400 bg-blue-50'
+//                               : 'border-gray-300 hover:border-gray-400 bg-gray-50'}`}
 //               >
-//                 <input ref={fileInputRef} type="file" accept=".csv,.txt,.tsv" className="hidden"
-//                   onChange={e => handleFile(e.target.files?.[0])} />
+//                 <input
+//                   ref={fileInputRef}
+//                   type="file"
+//                   accept=".csv,.txt,.tsv"
+//                   className="hidden"
+//                   onChange={e => handleFile(e.target.files?.[0])}
+//                 />
 //                 {uploadedFile ? (
 //                   <>
 //                     <div className="text-4xl mb-2">📄</div>
 //                     <p className="text-sm font-medium text-green-700">✓ {uploadedFile.name}</p>
-//                     <p className="text-xs text-gray-500 mt-1">Size: {(uploadedFile.size / 1024).toFixed(1)} KB · Max: 2.00 MB</p>
-//                     <button onClick={e => { e.stopPropagation(); setUploadedFile(null); }}
-//                       className="mt-3 px-3 py-1 bg-red-50 text-red-600 border border-red-200 rounded text-xs hover:bg-red-100 transition-colors">
+//                     <p className="text-xs text-gray-500 mt-1">
+//                       Size: {(uploadedFile.size / 1024).toFixed(1)} KB · Max: 2.00 MB
+//                     </p>
+//                     <button
+//                       onClick={e => { e.stopPropagation(); setUploadedFile(null); }}
+//                       className="mt-3 px-3 py-1 bg-red-50 text-red-600 border border-red-200
+//                                  rounded text-xs hover:bg-red-100 transition-colors"
+//                     >
 //                       Clear File
 //                     </button>
 //                   </>
@@ -1501,7 +1623,10 @@ export default function BatchJobs() {
 //                     <div className="text-4xl mb-2 opacity-40">📄</div>
 //                     <p className="text-sm text-gray-600">Drag & drop a file here</p>
 //                     <p className="text-xs text-gray-500">or tap to browse</p>
-//                     <button className="mt-3 px-3 py-1 bg-white border border-gray-300 rounded text-xs text-gray-700 hover:bg-gray-50 transition-colors">Browse...</button>
+//                     <button className="mt-3 px-3 py-1 bg-white border border-gray-300 rounded
+//                                        text-xs text-gray-700 hover:bg-gray-50 transition-colors">
+//                       Browse...
+//                     </button>
 //                     <p className="text-xs text-gray-400 mt-2">Supported: CSV, TXT, TSV</p>
 //                     <p className="text-xs text-gray-400">Max size: 2.00 MB</p>
 //                   </>
@@ -1510,22 +1635,33 @@ export default function BatchJobs() {
 //             </div>
 //           </div>
 
-//           <button onClick={handleSubmit}
+//           <button
+//             onClick={handleSubmit}
 //             disabled={submitting || !hasAccess || (!parsedUrls.length && !uploadedFile)}
-//             className="w-full py-4 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700
-//                        disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-base
-//                        focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+//             className="w-full py-4 bg-blue-600 text-white font-semibold rounded-xl
+//                        hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed
+//                        transition-colors text-base
+//                        focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+//           >
 //             {submitting ? '⏳ Submitting...' : '🚀 Submit Batch Job'}
 //           </button>
 //         </div>
 
+//         {/* ── Jobs list ── */}
 //         <div>
 //           <div className="flex justify-between items-center mb-4">
 //             <h2 className="text-xl font-bold text-gray-900">
-//               Your Batch Jobs{jobs.length > 0 && <span className="text-gray-400 font-normal text-base"> ({jobs.length})</span>}
+//               Your Batch Jobs
+//               {jobs.length > 0 && (
+//                 <span className="text-gray-400 font-normal text-base"> ({jobs.length})</span>
+//               )}
 //             </h2>
-//             <button onClick={() => fetchJobs()} disabled={loadingJobs}
-//               className="px-3 py-1.5 bg-white border border-gray-300 text-gray-700 rounded-lg text-sm hover:bg-gray-50 disabled:opacity-50 flex items-center gap-1.5">
+//             <button
+//               onClick={() => fetchJobs()}
+//               disabled={loadingJobs}
+//               className="px-3 py-1.5 bg-white border border-gray-300 text-gray-700 rounded-lg
+//                          text-sm hover:bg-gray-50 disabled:opacity-50 flex items-center gap-1.5"
+//             >
 //               🔄 {loadingJobs ? 'Loading...' : 'Refresh'}
 //             </button>
 //           </div>
@@ -1543,7 +1679,13 @@ export default function BatchJobs() {
 //             </div>
 //           ) : (
 //             jobs.map(job => (
-//               <JobCard key={job.id} job={job} token={token} onRetry={handleRetryJob} onDelete={handleDeleteJob} />
+//               <JobCard
+//                 key={job.id}
+//                 job={job}
+//                 token={token}
+//                 onRetry={handleRetryJob}
+//                 onDelete={handleDeleteJob}
+//               />
 //             ))
 //           )}
 //         </div>
