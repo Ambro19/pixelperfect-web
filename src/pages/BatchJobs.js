@@ -1,5 +1,5 @@
 // frontend/src/pages/BatchJobs.js — PixelPerfect Screenshot API
-// UPDATED: March 2026
+// UPDATED: April 2026
 //   ✅ Preset toast notifications (Desktop/Laptop/Mobile) — matches ScreenshotPage.js
 //   ✅ Live polling every 2s while processing
 //   ✅ Progress bar per job
@@ -12,8 +12,9 @@
 //   ✅ MOBILE FIX (Mar 2026): URL parser uses regex extraction instead of
 //      line-start filter so URLs embedded in Android share-sheet lines
 //      (e.g. "Page Title https://...") are correctly counted and submitted.
-//      This also fixes the Submit button staying disabled on mobile when
-//      URLs are typed/pasted in the textarea.
+//   ✅ FIX (Apr 2026): Added Tablet (768x1024) viewport preset.
+//      Preset buttons now use a 2-column grid on mobile/tablet so all four
+//      presets (Desktop, Laptop, Tablet, Mobile) fit without overflow.
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -48,7 +49,6 @@ function resolveScreenshotUrl(rawUrl) {
   if (!rawUrl || typeof rawUrl !== 'string') return null;
   const t = rawUrl.trim();
   if (!t) return null;
-  // ✅ MOBILE FIX: rewrite http://localhost:8000/... to the correct LAN/prod host
   if (/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?/.test(t)) {
     return t.replace(/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?/, API_BASE_URL.replace(/\/$/, ''));
   }
@@ -57,35 +57,28 @@ function resolveScreenshotUrl(rawUrl) {
   return `${API_BASE_URL}${t.startsWith('/') ? '' : '/'}${t}`;
 }
 
-// ── Viewport presets — same set as ScreenshotPage.js ─────────────────────────
+// ── ✅ Viewport presets — Desktop / Laptop / Tablet / Mobile ─────────────────
+//
+// Added: Tablet (768x1024) between Laptop and Mobile.
+// This matches the standard iPad portrait viewport and is the most commonly
+// used tablet breakpoint for screenshot testing.
+//
+// Layout note: with 4 presets the buttons use a 2×2 grid on narrow screens
+// (grid-cols-2) and a single row (grid-cols-4) on md+ screens, so they never
+// overflow or wrap awkwardly on any device.
 const VIEWPORT_PRESETS = [
-  { label: 'Desktop (1920x1080)', w: 1920, h: 1080 },
-  { label: 'Laptop (1366x768)',   w: 1366, h: 768  },
-  { label: 'Mobile (375x667)',    w: 375,  h: 667  },
+  { label: 'Desktop',  sub: '1920×1080', w: 1920, h: 1080 },
+  { label: 'Laptop',   sub: '1366×768',  w: 1366, h: 768  },
+  { label: 'Tablet',   sub: '768×1024',  w: 768,  h: 1024 },
+  { label: 'Mobile',   sub: '375×667',   w: 375,  h: 667  },
 ];
 
-// ── ✅ FIX (Mar 2026): extractUrls — regex-based URL extraction ───────────────
-//
-// Root cause of the mobile 0/50 bug + disabled Submit button:
-//
-//   The old code did:
-//     urlText.split('\n').filter(l => l.startsWith('http'))
-//
-//   Android's share sheet sends content like:
-//     "State Weather Risk Center | University at Albany https://share.google/BBba1oF..."
-//   Each share item title + URL land on the SAME line, so the line does NOT
-//   start with "http" → it was dropped → parsedUrls = [] → 0/50 → button disabled.
-//
-//   Fix: use a regex to find all http(s) URLs embedded anywhere in the text,
-//   then deduplicate. Works identically for:
-//     • Desktop: clean one-URL-per-line input  → same result as before
-//     • Mobile:  share-sheet title+URL lines   → URLs correctly extracted
-//
+// ── URL extraction (regex-based — works with Android share-sheet content) ─────
 function extractUrls(text) {
   const matches = text.match(/https?:\/\/[^\s\n\r\t,;"'<>[\]{}|\\^`]+/g) || [];
   const seen = new Set();
   return matches
-    .map(u => u.replace(/[.,;:!?)\]}>]+$/, '').trim()) // strip trailing punctuation
+    .map(u => u.replace(/[.,;:!?)\]}>]+$/, '').trim())
     .filter(u => {
       if (!u || seen.has(u)) return false;
       seen.add(u);
@@ -162,8 +155,6 @@ function JobProgressBar({ job }) {
 }
 
 // ── Single Job Card ───────────────────────────────────────────────────────────
-// Mobile UI: four dedicated rows (ID+format / status / timestamps / buttons).
-// No overlap on narrow viewports. py-2 touch targets on all buttons.
 function JobCard({ job, token, onRetry, onDelete }) {
   const [expanded,   setExpanded]   = useState(false);
   const [retrying,   setRetrying]   = useState(false);
@@ -425,14 +416,14 @@ export default function BatchJobs() {
   const hasAccess = tierLower !== 'free';
   const tierLimit = tierLower === 'business' ? 200 : tierLower === 'premium' ? 1000 : hasAccess ? 50 : 0;
 
-  // ✅ FIX: extractUrls() correctly handles both clean lines and share-sheet content
   const parsedUrls = extractUrls(urlText);
   const urlCount   = uploadedFile ? '(from file)' : parsedUrls.length;
 
+  // ── Apply viewport preset with toast ───────────────────────────────────────
   const applyPreset = (preset) => {
     setWidth(preset.w);
     setHeight(preset.h);
-    toast.success(`Applied ${preset.label} preset`);
+    toast.success(`Applied ${preset.label} (${preset.sub}) preset`);
   };
 
   // ── Fetch all jobs ──────────────────────────────────────────────────────────
@@ -659,14 +650,30 @@ export default function BatchJobs() {
                                  focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   </div>
-                  <div className="flex flex-wrap gap-2 pt-1">
+
+                  {/* ── ✅ Viewport preset buttons — 2×2 grid on mobile/tablet, 4-col on md+ ── */}
+                  {/*                                                                            */}
+                  {/* With 4 presets, a single flex-wrap row causes overflow on 375px screens.  */}
+                  {/* grid-cols-2 keeps two buttons per row on narrow viewports; grid-cols-4    */}
+                  {/* restores a single row on medium screens and wider.                        */}
+                  {/* Each button shows the device name in bold + resolution as a muted sub-    */}
+                  {/* label, making it clear at a glance what each preset does.                 */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2 pt-1">
                     {VIEWPORT_PRESETS.map(p => (
                       <button
                         key={p.label}
                         onClick={() => applyPreset(p)}
-                        className="px-2.5 py-1 bg-gray-100 hover:bg-gray-200 rounded text-xs text-gray-700 transition-colors"
+                        className="flex flex-col items-center px-2 py-2 bg-gray-100
+                                   hover:bg-blue-50 hover:border-blue-300
+                                   border border-transparent rounded-lg text-center
+                                   transition-colors group"
                       >
-                        {p.label}
+                        <span className="text-xs font-semibold text-gray-700 group-hover:text-blue-700 leading-tight">
+                          {p.label}
+                        </span>
+                        <span className="text-[10px] text-gray-400 group-hover:text-blue-500 mt-0.5 leading-tight">
+                          {p.sub}
+                        </span>
                       </button>
                     ))}
                   </div>
@@ -699,7 +706,6 @@ export default function BatchJobs() {
                 <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
                   <div className="flex justify-between items-center text-sm">
                     <span className="text-gray-600">URL Preview</span>
-                    {/* ✅ FIX: now reflects true URL count on mobile */}
                     <span className={`font-semibold ${
                       typeof urlCount === 'number' && urlCount > tierLimit
                         ? 'text-red-600'
@@ -793,11 +799,6 @@ export default function BatchJobs() {
             </div>
           </div>
 
-          {/*
-            ✅ FIX: button is now correctly enabled when parsedUrls.length > 0,
-            which works for both clean URL-per-line (desktop) and share-sheet
-            mixed-content pasting (mobile).
-          */}
           <button
             onClick={handleSubmit}
             disabled={submitting || !hasAccess || (!parsedUrls.length && !uploadedFile)}
@@ -857,7 +858,7 @@ export default function BatchJobs() {
   );
 }
 
-///////////THIS FILE BELOW IS A GOOD OME TOO: IT PRECISELY FIXED PHONE UI ALIGNMENT ////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
 
 // // frontend/src/pages/BatchJobs.js — PixelPerfect Screenshot API
 // // UPDATED: March 2026
@@ -870,6 +871,11 @@ export default function BatchJobs() {
 // //   ✅ Cancel button for queued/processing jobs
 // //   ✅ MOBILE FIX: resolveScreenshotUrl handles localhost URLs on LAN devices
 // //   ✅ MOBILE UI FIX: JobCard fully stacked layout — no overlapping badges/buttons
+// //   ✅ MOBILE FIX (Mar 2026): URL parser uses regex extraction instead of
+// //      line-start filter so URLs embedded in Android share-sheet lines
+// //      (e.g. "Page Title https://...") are correctly counted and submitted.
+// //      This also fixes the Submit button staying disabled on mobile when
+// //      URLs are typed/pasted in the textarea.
 
 // import React, { useState, useEffect, useCallback, useRef } from 'react';
 // import { useNavigate } from 'react-router-dom';
@@ -913,12 +919,41 @@ export default function BatchJobs() {
 //   return `${API_BASE_URL}${t.startsWith('/') ? '' : '/'}${t}`;
 // }
 
-// // ✅ Viewport presets — same set as ScreenshotPage.js
+// // ── Viewport presets — same set as ScreenshotPage.js ─────────────────────────
 // const VIEWPORT_PRESETS = [
 //   { label: 'Desktop (1920x1080)', w: 1920, h: 1080 },
 //   { label: 'Laptop (1366x768)',   w: 1366, h: 768  },
 //   { label: 'Mobile (375x667)',    w: 375,  h: 667  },
 // ];
+
+// // ── ✅ FIX (Mar 2026): extractUrls — regex-based URL extraction ───────────────
+// //
+// // Root cause of the mobile 0/50 bug + disabled Submit button:
+// //
+// //   The old code did:
+// //     urlText.split('\n').filter(l => l.startsWith('http'))
+// //
+// //   Android's share sheet sends content like:
+// //     "State Weather Risk Center | University at Albany https://share.google/BBba1oF..."
+// //   Each share item title + URL land on the SAME line, so the line does NOT
+// //   start with "http" → it was dropped → parsedUrls = [] → 0/50 → button disabled.
+// //
+// //   Fix: use a regex to find all http(s) URLs embedded anywhere in the text,
+// //   then deduplicate. Works identically for:
+// //     • Desktop: clean one-URL-per-line input  → same result as before
+// //     • Mobile:  share-sheet title+URL lines   → URLs correctly extracted
+// //
+// function extractUrls(text) {
+//   const matches = text.match(/https?:\/\/[^\s\n\r\t,;"'<>[\]{}|\\^`]+/g) || [];
+//   const seen = new Set();
+//   return matches
+//     .map(u => u.replace(/[.,;:!?)\]}>]+$/, '').trim()) // strip trailing punctuation
+//     .filter(u => {
+//       if (!u || seen.has(u)) return false;
+//       seen.add(u);
+//       return true;
+//     });
+// }
 
 // const formatSize = (bytes) => {
 //   if (!bytes) return '—';
@@ -947,9 +982,9 @@ export default function BatchJobs() {
 
 // // ── Progress Bar ──────────────────────────────────────────────────────────────
 // function JobProgressBar({ job }) {
-//   const total   = job.total || 1;
-//   const done    = (job.completed || 0) + (job.failed || 0);
-//   const pct     = Math.round((done / total) * 100);
+//   const total    = job.total || 1;
+//   const done     = (job.completed || 0) + (job.failed || 0);
+//   const pct      = Math.round((done / total) * 100);
 //   const isActive = job.status === 'processing' || job.status === 'queued';
 
 //   return (
@@ -989,19 +1024,8 @@ export default function BatchJobs() {
 // }
 
 // // ── Single Job Card ───────────────────────────────────────────────────────────
-// // ✅ MOBILE UI FIX:
-// //   Old layout used `flex flex-wrap items-start justify-between` for the header,
-// //   which caused the status badge to float into / overlap the action buttons on
-// //   narrow viewports (< 400 px).
-// //
-// //   New layout uses four clearly separated rows:
-// //     Row 1 — Job ID (truncated) + Format pill, space-between
-// //     Row 2 — Status badge (standalone)
-// //     Row 3 — Created / Finished timestamps
-// //     Row 4 — Action buttons (flex-wrap, full touch targets)
-// //   Progress bar is always below these rows inside its own block.
-// //
-// //   This eliminates all overlap on mobile while remaining clean on desktop.
+// // Mobile UI: four dedicated rows (ID+format / status / timestamps / buttons).
+// // No overlap on narrow viewports. py-2 touch targets on all buttons.
 // function JobCard({ job, token, onRetry, onDelete }) {
 //   const [expanded,   setExpanded]   = useState(false);
 //   const [retrying,   setRetrying]   = useState(false);
@@ -1055,7 +1079,7 @@ export default function BatchJobs() {
 //       });
 //       if (!res.ok) throw new Error(`HTTP ${res.status}`);
 //       toast.success('Batch job cancelled');
-//       onRetry(job.id); // re-poll to update status
+//       onRetry(job.id);
 //     } catch (err) {
 //       toast.error(`Cancel failed: ${err.message}`);
 //       setCancelling(false);
@@ -1066,7 +1090,7 @@ export default function BatchJobs() {
 //     <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-4">
 //       <div className="p-4 sm:p-5">
 
-//         {/* ── Row 1: Job ID (left, truncated) + Format pill (right) ── */}
+//         {/* Row 1: Job ID + Format pill */}
 //         <div className="flex items-center justify-between gap-2 mb-2">
 //           <span
 //             className="font-mono text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded
@@ -1081,7 +1105,7 @@ export default function BatchJobs() {
 //           </span>
 //         </div>
 
-//         {/* ── Row 2: Status badge ── */}
+//         {/* Row 2: Status badge */}
 //         <div className="mb-2">
 //           <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full
 //                             text-xs font-semibold ${statusColor(job.status)}`}>
@@ -1089,22 +1113,16 @@ export default function BatchJobs() {
 //           </span>
 //         </div>
 
-//         {/* ── Row 3: Timestamps ── */}
+//         {/* Row 3: Timestamps */}
 //         <p className="text-xs text-gray-500 mb-3 leading-relaxed">
 //           Created: {new Date(job.created_at + 'Z').toLocaleString()}
 //           {job.completed_at && (
-//             <>
-//               {' '}·{' '}
-//               Finished: {new Date(job.completed_at + 'Z').toLocaleString()}
-//             </>
+//             <> · Finished: {new Date(job.completed_at + 'Z').toLocaleString()}</>
 //           )}
 //         </p>
 
-//         {/* ── Row 4: Action buttons ── */}
-//         {/*   Each button is sized for comfortable touch (py-2 px-3, min 44 px tall   */}
-//         {/*   on most screens). They wrap naturally on very small displays.            */}
+//         {/* Row 4: Action buttons */}
 //         <div className="flex flex-wrap items-center gap-2">
-//           {/* Cancel — only when active */}
 //           {isActive && (
 //             <button
 //               onClick={handleCancel}
@@ -1112,15 +1130,12 @@ export default function BatchJobs() {
 //               className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold
 //                          bg-red-50 text-red-600 border border-red-200
 //                          hover:bg-red-100 active:bg-red-200
-//                          disabled:opacity-50 disabled:cursor-not-allowed
-//                          transition-colors"
-//               title="Stop this batch job"
+//                          disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
 //             >
 //               {cancelling ? '⏳ Cancelling…' : '✕ Cancel'}
 //             </button>
 //           )}
 
-//           {/* Retry — only when finished with failures */}
 //           {hasFailed && !isActive && (
 //             <button
 //               onClick={handleRetry}
@@ -1128,25 +1143,21 @@ export default function BatchJobs() {
 //               className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold
 //                          bg-yellow-50 text-yellow-700 border border-yellow-200
 //                          hover:bg-yellow-100 active:bg-yellow-200
-//                          disabled:opacity-50 disabled:cursor-not-allowed
-//                          transition-colors"
+//                          disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
 //             >
 //               {retrying ? '↺ Retrying...' : '↺ Retry Failed'}
 //             </button>
 //           )}
 
-//           {/* View / Collapse */}
 //           <button
 //             onClick={() => setExpanded(v => !v)}
 //             className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold
 //                        bg-blue-50 text-blue-700 border border-blue-200
-//                        hover:bg-blue-100 active:bg-blue-200
-//                        transition-colors"
+//                        hover:bg-blue-100 active:bg-blue-200 transition-colors"
 //           >
 //             {expanded ? '▲ Collapse' : '▼ View Items'}
 //           </button>
 
-//           {/* Delete — only when not active */}
 //           {!isActive && (
 //             <button
 //               onClick={handleDelete}
@@ -1154,8 +1165,7 @@ export default function BatchJobs() {
 //               className="inline-flex items-center justify-center w-9 h-9 rounded-lg text-sm
 //                          bg-red-50 text-red-600 border border-red-200
 //                          hover:bg-red-100 active:bg-red-200
-//                          disabled:opacity-50 disabled:cursor-not-allowed
-//                          transition-colors"
+//                          disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
 //               title="Delete this batch job"
 //             >
 //               {deleting ? '…' : '🗑'}
@@ -1163,11 +1173,9 @@ export default function BatchJobs() {
 //           )}
 //         </div>
 
-//         {/* ── Progress bar ── */}
 //         <JobProgressBar job={job} />
 //       </div>
 
-//       {/* ── Expanded item list ── */}
 //       {expanded && (
 //         <div className="border-t border-gray-100 divide-y divide-gray-50">
 //           {(job.items || []).map((item) => {
@@ -1180,7 +1188,6 @@ export default function BatchJobs() {
 //                   item.status === 'completed' ? 'bg-green-50/40' : ''
 //                 }`}
 //               >
-//                 {/* Item top row: index dot + URL */}
 //                 <div className="flex items-center gap-2 mb-1.5">
 //                   <span className="text-xs text-gray-400 w-6 flex-shrink-0 font-mono">
 //                     #{item.idx + 1}
@@ -1199,9 +1206,8 @@ export default function BatchJobs() {
 //                   </span>
 //                 </div>
 
-//                 {/* Item bottom row: meta + status badge + view link */}
 //                 <div className="flex flex-wrap items-center gap-2 pl-8">
-//                   {item.file_size       && (
+//                   {item.file_size && (
 //                     <span className="text-xs text-gray-400">📏 {formatSize(item.file_size)}</span>
 //                   )}
 //                   {item.processing_time && (
@@ -1277,18 +1283,14 @@ export default function BatchJobs() {
 //     };
 //   }, []);
 
-//   const tierLower  = (tier || '').toLowerCase();
-//   const hasAccess  = tierLower !== 'free';
-//   const tierLimit  = tierLower === 'business' ? 200 : tierLower === 'premium' ? 1000 : hasAccess ? 50 : 0;
+//   const tierLower = (tier || '').toLowerCase();
+//   const hasAccess = tierLower !== 'free';
+//   const tierLimit = tierLower === 'business' ? 200 : tierLower === 'premium' ? 1000 : hasAccess ? 50 : 0;
 
-//   const parsedUrls = urlText
-//     .split('\n')
-//     .map(l => l.trim())
-//     .filter(l => l.startsWith('http://') || l.startsWith('https://'));
+//   // ✅ FIX: extractUrls() correctly handles both clean lines and share-sheet content
+//   const parsedUrls = extractUrls(urlText);
+//   const urlCount   = uploadedFile ? '(from file)' : parsedUrls.length;
 
-//   const urlCount = uploadedFile ? '(from file)' : parsedUrls.length;
-
-//   // ✅ Apply viewport preset with toast — identical to ScreenshotPage.js behaviour
 //   const applyPreset = (preset) => {
 //     setWidth(preset.w);
 //     setHeight(preset.h);
@@ -1519,7 +1521,6 @@ export default function BatchJobs() {
 //                                  focus:ring-2 focus:ring-blue-500 focus:border-transparent"
 //                     />
 //                   </div>
-//                   {/* ✅ Preset buttons — each fires toast matching ScreenshotPage.js */}
 //                   <div className="flex flex-wrap gap-2 pt-1">
 //                     {VIEWPORT_PRESETS.map(p => (
 //                       <button
@@ -1560,7 +1561,12 @@ export default function BatchJobs() {
 //                 <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
 //                   <div className="flex justify-between items-center text-sm">
 //                     <span className="text-gray-600">URL Preview</span>
-//                     <span className={`font-semibold ${typeof urlCount === 'number' && urlCount > tierLimit ? 'text-red-600' : 'text-green-600'}`}>
+//                     {/* ✅ FIX: now reflects true URL count on mobile */}
+//                     <span className={`font-semibold ${
+//                       typeof urlCount === 'number' && urlCount > tierLimit
+//                         ? 'text-red-600'
+//                         : 'text-green-600'
+//                     }`}>
 //                       {typeof urlCount === 'number' ? `${urlCount}/${tierLimit}` : urlCount}
 //                     </span>
 //                   </div>
@@ -1568,7 +1574,9 @@ export default function BatchJobs() {
 //                     {uploadedFile ? 'Previewing URLs from uploaded file.' : 'Previewing URLs from textarea.'}
 //                   </p>
 //                   {parsedUrls[0] && !uploadedFile && (
-//                     <p className="text-xs text-gray-400 mt-1 truncate">Example: {parsedUrls[0]}</p>
+//                     <p className="text-xs text-gray-400 mt-1 truncate">
+//                       Example: {parsedUrls[0]}
+//                     </p>
 //                   )}
 //                 </div>
 //               </div>
@@ -1647,6 +1655,11 @@ export default function BatchJobs() {
 //             </div>
 //           </div>
 
+//           {/*
+//             ✅ FIX: button is now correctly enabled when parsedUrls.length > 0,
+//             which works for both clean URL-per-line (desktop) and share-sheet
+//             mixed-content pasting (mobile).
+//           */}
 //           <button
 //             onClick={handleSubmit}
 //             disabled={submitting || !hasAccess || (!parsedUrls.length && !uploadedFile)}
