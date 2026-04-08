@@ -3,19 +3,20 @@
 // ========================================
 // File: frontend/src/pages/ChangePassword.js
 // Author: OneTechly
-// Created/Updated: April 2026
+// Updated: January 2026
 //
-// ✅ PROFESSIONAL FEATURES:
-// - PixelPerfect logo in header (matches Dashboard)
-// - Consistent UI design with Dashboard and other pages
-// - Mobile-responsive layout
-// - Professional loading states and error handling
-// - Proper form validation
-// - Success feedback with auto-redirect
+// ✅ FIXES IN THIS VERSION:
+// - Show/hide password toggles (👁️/🙈 emojis like LoginPage)
+// - Proper backend endpoint (/user/change_password)
+// - Better error handling and validation
+// - Security tips section
+// - Mobile responsive design
+// - Professional header/footer with logo
 // ========================================
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import PixelPerfectLogo from '../components/PixelPerfectLogo';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -26,6 +27,12 @@ export default function ChangePassword() {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+
+  // Show/hide password states
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -88,6 +95,8 @@ export default function ChangePassword() {
       }
 
       setSuccess(true);
+      toast.success('Password changed successfully!');
+      
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
@@ -95,7 +104,9 @@ export default function ChangePassword() {
       // Redirect to dashboard after success
       setTimeout(() => navigate('/dashboard'), 2000);
     } catch (err) {
-      setError(err.message || 'Failed to change password');
+      const errorMsg = err.message || 'Failed to change password';
+      setError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -178,16 +189,28 @@ export default function ChangePassword() {
                 <label htmlFor="current-password" className="block text-sm font-medium text-gray-700 mb-2">
                   Current Password
                 </label>
-                <input
-                  id="current-password"
-                  type="password"
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                  placeholder="Enter current password"
-                  disabled={loading || success}
-                  autoComplete="current-password"
-                />
+                <div className="relative">
+                  <input
+                    id="current-password"
+                    type={showCurrentPassword ? "text" : "password"}
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    style={{ fontSize: "16px" }}
+                    placeholder="Enter current password"
+                    disabled={loading || success}
+                    autoComplete="current-password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowCurrentPassword((v) => !v)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 p-2"
+                    aria-label={showCurrentPassword ? "Hide password" : "Show password"}
+                    tabIndex={-1}
+                  >
+                    {showCurrentPassword ? "🙈" : "👁️"}
+                  </button>
+                </div>
               </div>
 
               {/* New Password */}
@@ -195,16 +218,28 @@ export default function ChangePassword() {
                 <label htmlFor="new-password" className="block text-sm font-medium text-gray-700 mb-2">
                   New Password
                 </label>
-                <input
-                  id="new-password"
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                  placeholder="Enter new password"
-                  disabled={loading || success}
-                  autoComplete="new-password"
-                />
+                <div className="relative">
+                  <input
+                    id="new-password"
+                    type={showNewPassword ? "text" : "password"}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    style={{ fontSize: "16px" }}
+                    placeholder="Enter new password"
+                    disabled={loading || success}
+                    autoComplete="new-password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword((v) => !v)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 p-2"
+                    aria-label={showNewPassword ? "Hide password" : "Show password"}
+                    tabIndex={-1}
+                  >
+                    {showNewPassword ? "🙈" : "👁️"}
+                  </button>
+                </div>
                 <p className="text-xs text-gray-500 mt-1.5">Minimum 8 characters</p>
               </div>
 
@@ -213,16 +248,28 @@ export default function ChangePassword() {
                 <label htmlFor="confirm-password" className="block text-sm font-medium text-gray-700 mb-2">
                   Confirm New Password
                 </label>
-                <input
-                  id="confirm-password"
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                  placeholder="Confirm new password"
-                  disabled={loading || success}
-                  autoComplete="new-password"
-                />
+                <div className="relative">
+                  <input
+                    id="confirm-password"
+                    type={showConfirmPassword ? "text" : "password"}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    style={{ fontSize: "16px" }}
+                    placeholder="Confirm new password"
+                    disabled={loading || success}
+                    autoComplete="new-password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword((v) => !v)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 p-2"
+                    aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                    tabIndex={-1}
+                  >
+                    {showConfirmPassword ? "🙈" : "👁️"}
+                  </button>
+                </div>
               </div>
 
               {/* Action Buttons */}
