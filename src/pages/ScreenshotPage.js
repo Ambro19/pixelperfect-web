@@ -1,10 +1,17 @@
 // frontend/src/pages/ScreenshotPage.js — PixelPerfect Screenshot API
-// UPDATED: March 2026
+// UPDATED: April 2026
 //   ✅ URL display fix: long URLs no longer overflow the green confirmation box
 //   ✅ Sleeker "Valid URL" pill — shows truncated URL with full URL in tooltip
 //   ✅ MOBILE FIX: resolveApiBase() replaces build-time env var fallback
 //      — prevents "Failed to fetch" on mobile/LAN when localhost:8000 is baked in
 //   ✅ Error box now uses break-all so long URLs in error messages wrap correctly
+//   ✅ FIX (Apr 2026): friendlyError() translates raw Playwright / network error
+//      codes (ERR_NAME_NOT_RESOLVED, ERR_CONNECTION_REFUSED, etc.) into plain-
+//      English messages. Previously the user saw the raw Chromium error string,
+//      e.g. "Page.goto: net::ERR_NAME_NOT_RESOLVED at https://www.hollywoodre/"
+//      which is meaningless to a non-technical user. Now they see:
+//      "The website address could not be found. Please check that the URL is
+//       spelled correctly and the domain exists."
 
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -14,11 +21,6 @@ import { useSubscription } from '../contexts/SubscriptionContext';
 import PixelPerfectLogo from '../components/PixelPerfectLogo';
 
 // ✅ MOBILE FIX: Use runtime URL resolution instead of build-time env var.
-// The old approach (process.env fallback to localhost:8000) caused "Failed to fetch"
-// on mobile/LAN because process.env is baked at build time — if the env var was
-// missing or stale during the build, the phone tried http://localhost:8000 (itself).
-// resolveApiBase() inspects window.location.hostname at RUNTIME so it always
-// resolves to the correct host regardless of how the app was built.
 function resolveApiBase() {
   const env = (
     process.env.REACT_APP_API_URL ||
@@ -35,7 +37,6 @@ function resolveApiBase() {
     if (host === 'localhost' || host === '127.0.0.1') {
       return 'http://localhost:8000';
     }
-    // LAN/mobile: e.g. 192.168.1.158:3000 → api at :8000
     if (/^(\d{1,3}\.){3}\d{1,3}$/.test(host)) {
       return `http://${host}:8000`;
     }
@@ -45,6 +46,106 @@ function resolveApiBase() {
 }
 
 const API_BASE_URL = resolveApiBase();
+
+// ✅ FIX (Apr 2026): Translate raw Playwright / network error codes into
+// plain-English messages that are actionable for non-technical users.
+//
+// Root cause of the problem:
+//   When a user enters a syntactically valid URL whose domain doesn't exist
+//   (e.g. "https://www.hollywoodre"), the URL passes the isValidUrl() check
+//   (correct — we can't know it's unresolvable without a DNS lookup).
+//   Playwright then tries to navigate to it and returns:
+//     "Page.goto: net::ERR_NAME_NOT_RESOLVED at https://www.hollywoodre/"
+//   That raw Chromium error code was displayed directly to the user.
+//
+// Fix: translate the most common error classes here at the frontend layer.
+// The same translation is applied in batch.py's _process_item() on the backend
+// so batch job item messages are also human-readable.
+function friendlyError(msg) {
+  if (!msg) return 'Screenshot capture failed. Please try again.';
+  const m = msg.toLowerCase();
+
+  // ── Domain does not exist / DNS lookup failed ──────────────────────────────
+  // Triggered when user enters a URL with a non-existent TLD or misspelled
+  // domain, e.g. "https://www.hollywoodre" or "https://googl.com"
+  if (
+    m.includes('err_name_not_resolved') ||
+    m.includes('name not resolved') ||
+    m.includes('getaddrinfo') ||
+    m.includes('nodename nor servname')
+  ) {
+    return (
+      'The website address could not be found. ' +
+      'Please check that the URL is spelled correctly and the domain exists ' +
+      '(e.g. https://example.com — not https://exampel.com).'
+    );
+  }
+
+  // ── Connection refused ─────────────────────────────────────────────────────
+  if (m.includes('err_connection_refused') || m.includes('connection refused')) {
+    return (
+      'The website refused the connection. ' +
+      'The server may be down or blocking automated requests. ' +
+      'Please try a different URL.'
+    );
+  }
+
+  // ── Timeout ────────────────────────────────────────────────────────────────
+  if (
+    m.includes('err_connection_timed_out') ||
+    m.includes('err_timed_out') ||
+    m.includes('timed out after all retry')
+  ) {
+    return (
+      'The website took too long to respond. ' +
+      'It may be slow or temporarily unavailable. ' +
+      'Try adding a delay in Advanced Options, or try again later.'
+    );
+  }
+
+  // ── SSL / certificate errors ───────────────────────────────────────────────
+  if (m.includes('err_cert') || m.includes('ssl') || m.includes('certificate')) {
+    return (
+      'The website has an SSL certificate problem ' +
+      '(expired or self-signed certificate). ' +
+      'The site may not be publicly accessible.'
+    );
+  }
+
+  // ── Access denied / blocked ────────────────────────────────────────────────
+  if (
+    m.includes('err_access_denied') ||
+    m.includes('access denied') ||
+    m.includes('forbidden')
+  ) {
+    return (
+      'Access to this website was denied. ' +
+      'The site may be blocking automated access.'
+    );
+  }
+
+  // ── Generic Playwright navigation error — strip technical prefix ───────────
+  // e.g. "Page.goto: net::ERR_NAME_NOT_RESOLVED at https://..."
+  if (m.includes('page.goto')) {
+    const codeMatch = msg.match(/net::(ERR_[A-Z_]+)/);
+    if (codeMatch) {
+      return (
+        `Failed to load the website (${codeMatch[1]}). ` +
+        'Please check the URL is correct and the site is publicly accessible.'
+      );
+    }
+    return (
+      'Failed to load the website. ' +
+      'Please check the URL is correct and the site is publicly accessible.'
+    );
+  }
+
+  // ── Tier / limit messages — already user-friendly from backend ────────────
+  if (m.includes('limit exceeded') || m.includes('upgrade')) return msg;
+
+  // ── Unknown: return original so diagnostic info is not hidden ─────────────
+  return msg;
+}
 
 const VIEWPORT_PRESETS = {
   desktop:   { width: 1920, height: 1080,  name: 'Desktop (1920x1080)' },
@@ -108,7 +209,7 @@ export default function ScreenshotPage() {
   const xUiPrimaryDisabled = isLoading || !xUiValidUrl || atLimit('screenshots');
 
   const xUiDisabledReason = () => {
-    if (!xUiValidUrl)         return 'Enter a valid website URL starting with http:// or https://';
+    if (!xUiValidUrl)           return 'Enter a valid website URL starting with http:// or https://';
     if (atLimit('screenshots')) return 'Monthly screenshot limit reached. Please upgrade your plan.';
     return '';
   };
@@ -150,7 +251,6 @@ export default function ScreenshotPage() {
     return false;
   }, [refreshSubscriptionStatus, getUsed]);
 
-  // Progress bar helpers
   const screenshotsUsed  = getUsed('screenshots');
   const screenshotsLimit = getLimit('screenshots');
 
@@ -222,9 +322,12 @@ export default function ScreenshotPage() {
       toast.success('📸 Screenshot captured!');
 
       await pollUsageSync(beforeUsage, 'screenshots');
+
     } catch (err) {
-      setError(err.message || 'Screenshot capture failed');
-      toast.error(err.message || 'Screenshot capture failed');
+      // ✅ FIX (Apr 2026): translate raw Playwright errors to plain English
+      const friendly = friendlyError(err.message);
+      setError(friendly);
+      toast.error(friendly);
     } finally {
       setIsLoading(false);
       try { await refreshSubscriptionStatus(); } catch {}
@@ -393,19 +496,12 @@ export default function ScreenshotPage() {
           />
         </div>
 
-        {/*
-          ✅ FIX: "Valid URL detected" box
-          Old code rendered the full URL as bold text with no wrapping constraints → overflowed.
-          New design: compact pill with a green check, domain shown prominently, full URL in
-          a monospace block that uses `break-all` so it wraps instead of overflowing.
-          Full URL also available as a `title` tooltip on hover.
-        */}
+        {/* Valid URL pill */}
         {websiteUrl && xUiValidUrl && (() => {
           let displayDomain = websiteUrl;
           try { displayDomain = new URL(websiteUrl).hostname; } catch {}
           return (
             <div className="mb-5 rounded-lg border border-green-200 bg-green-50 overflow-hidden shadow-sm">
-              {/* Header row */}
               <div className="flex items-center gap-2 px-4 py-2.5 bg-green-100 border-b border-green-200">
                 <span className="flex-shrink-0 w-5 h-5 rounded-full bg-green-500 text-white text-xs flex items-center justify-center font-bold">✓</span>
                 <span className="text-sm font-semibold text-green-800">Valid URL detected</span>
@@ -414,7 +510,6 @@ export default function ScreenshotPage() {
                   {displayDomain}
                 </span>
               </div>
-              {/* Full URL — break-all so long URLs wrap instead of overflowing */}
               <div className="px-4 py-2.5" title={websiteUrl}>
                 <p className="text-xs font-mono text-green-700 break-all leading-relaxed">
                   {websiteUrl}
@@ -428,7 +523,6 @@ export default function ScreenshotPage() {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
           <h3 className="text-lg font-semibold mb-4">📐 Screenshot Configuration</h3>
 
-          {/* Viewport Presets */}
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-2">Quick Presets:</label>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
@@ -441,7 +535,6 @@ export default function ScreenshotPage() {
             </div>
           </div>
 
-          {/* Dimensions */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Width (px)</label>
@@ -459,7 +552,6 @@ export default function ScreenshotPage() {
             </div>
           </div>
 
-          {/* Format */}
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-2">Format</label>
             <select value={format} onChange={e => setFormat(e.target.value)}
@@ -471,7 +563,6 @@ export default function ScreenshotPage() {
             </select>
           </div>
 
-          {/* Checkboxes */}
           <div className="space-y-3 mb-4">
             <label className="flex items-center gap-2 cursor-pointer">
               <input type="checkbox" checked={fullPage} onChange={e => setFullPage(e.target.checked)} className="w-4 h-4" />
@@ -483,7 +574,6 @@ export default function ScreenshotPage() {
             </label>
           </div>
 
-          {/* Advanced */}
           <div className="border-t border-gray-200 pt-4">
             <h4 className="text-sm font-semibold text-gray-700 mb-3">Advanced Options</h4>
             <div className="mb-3">
@@ -512,17 +602,15 @@ export default function ScreenshotPage() {
           </div>
         )}
 
-        {/* Error */}
+        {/* Error box */}
         {error && (
           <div className="bg-red-50 border border-red-200 rounded-lg mb-4 shadow-sm overflow-hidden">
-            {/* Header row */}
             <div className="flex items-center gap-2 px-4 py-2.5 bg-red-100 border-b border-red-200">
               <span className="flex-shrink-0 text-red-600 font-bold">⚠️</span>
               <span className="text-sm font-semibold text-red-800">Screenshot failed</span>
             </div>
-            {/* Error message — break-all prevents long URLs overflowing */}
             <div className="px-4 py-2.5">
-              <p className="text-xs font-mono text-red-700 break-all leading-relaxed">
+              <p className="text-sm text-red-700 leading-relaxed">
                 {error}
               </p>
             </div>
@@ -558,17 +646,8 @@ export default function ScreenshotPage() {
               )}
             </h2>
 
-            {/*
-              ✅ FIX: PDF format preview.
-              Browsers cannot render a PDF inside an <img> tag — it shows blank.
-              For PDF we show an embedded viewer using <iframe> (works on desktop
-              browsers) with a friendly fallback card that links to the file
-              directly. For all other formats (PNG, JPEG, WebP) we keep the
-              standard <img> preview.
-            */}
             {format === 'pdf' ? (
               <div className="mb-4">
-                {/* Embedded PDF viewer — works in Chrome, Edge, Firefox desktop */}
                 <div className="rounded-lg overflow-hidden border border-gray-300 shadow-lg bg-gray-100"
                   style={{ height: '500px' }}>
                   <iframe
@@ -578,7 +657,6 @@ export default function ScreenshotPage() {
                     style={{ border: 'none' }}
                   />
                 </div>
-                {/* Fallback message for mobile browsers that can't embed PDFs */}
                 <p className="text-xs text-gray-500 mt-2 text-center">
                   📱 If the PDF doesn't display above, use the buttons below to download or open it.
                 </p>
@@ -639,13 +717,15 @@ export default function ScreenshotPage() {
   );
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////
 
+// ============================================================================================
 // // frontend/src/pages/ScreenshotPage.js — PixelPerfect Screenshot API
 // // UPDATED: March 2026
 // //   ✅ URL display fix: long URLs no longer overflow the green confirmation box
 // //   ✅ Sleeker "Valid URL" pill — shows truncated URL with full URL in tooltip
-// //   ✅ All other production-ready features retained from February 2026 version
+// //   ✅ MOBILE FIX: resolveApiBase() replaces build-time env var fallback
+// //      — prevents "Failed to fetch" on mobile/LAN when localhost:8000 is baked in
+// //   ✅ Error box now uses break-all so long URLs in error messages wrap correctly
 
 // import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 // import { useNavigate } from 'react-router-dom';
@@ -654,10 +734,38 @@ export default function ScreenshotPage() {
 // import { useSubscription } from '../contexts/SubscriptionContext';
 // import PixelPerfectLogo from '../components/PixelPerfectLogo';
 
-// const API_BASE_URL =
-//   process.env.REACT_APP_API_URL ||
-//   process.env.REACT_APP_API_BASE_URL ||
-//   'http://localhost:8000';
+// // ✅ MOBILE FIX: Use runtime URL resolution instead of build-time env var.
+// // The old approach (process.env fallback to localhost:8000) caused "Failed to fetch"
+// // on mobile/LAN because process.env is baked at build time — if the env var was
+// // missing or stale during the build, the phone tried http://localhost:8000 (itself).
+// // resolveApiBase() inspects window.location.hostname at RUNTIME so it always
+// // resolves to the correct host regardless of how the app was built.
+// function resolveApiBase() {
+//   const env = (
+//     process.env.REACT_APP_API_URL ||
+//     process.env.REACT_APP_API_BASE_URL ||
+//     ''
+//   ).trim().replace(/\/+$/, '');
+//   if (env) return env;
+
+//   if (typeof window !== 'undefined') {
+//     const host = window.location.hostname;
+//     if (host === 'pixelperfectapi.net' || host.endsWith('.pixelperfectapi.net')) {
+//       return 'https://api.pixelperfectapi.net';
+//     }
+//     if (host === 'localhost' || host === '127.0.0.1') {
+//       return 'http://localhost:8000';
+//     }
+//     // LAN/mobile: e.g. 192.168.1.158:3000 → api at :8000
+//     if (/^(\d{1,3}\.){3}\d{1,3}$/.test(host)) {
+//       return `http://${host}:8000`;
+//     }
+//     return `${window.location.protocol}//${host}:8000`;
+//   }
+//   return 'http://localhost:8000';
+// }
+
+// const API_BASE_URL = resolveApiBase();
 
 // const VIEWPORT_PRESETS = {
 //   desktop:   { width: 1920, height: 1080,  name: 'Desktop (1920x1080)' },
@@ -1127,8 +1235,18 @@ export default function ScreenshotPage() {
 
 //         {/* Error */}
 //         {error && (
-//           <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg mb-4 shadow-sm">
-//             ⚠️ {error}
+//           <div className="bg-red-50 border border-red-200 rounded-lg mb-4 shadow-sm overflow-hidden">
+//             {/* Header row */}
+//             <div className="flex items-center gap-2 px-4 py-2.5 bg-red-100 border-b border-red-200">
+//               <span className="flex-shrink-0 text-red-600 font-bold">⚠️</span>
+//               <span className="text-sm font-semibold text-red-800">Screenshot failed</span>
+//             </div>
+//             {/* Error message — break-all prevents long URLs overflowing */}
+//             <div className="px-4 py-2.5">
+//               <p className="text-xs font-mono text-red-700 break-all leading-relaxed">
+//                 {error}
+//               </p>
+//             </div>
 //           </div>
 //         )}
 
@@ -1241,5 +1359,4 @@ export default function ScreenshotPage() {
 //     </div>
 //   );
 // }
-
 
