@@ -86,7 +86,7 @@ export const articles = [
     title: 'Getting your API key',
     excerpt: 'Learn how to generate and manage your API keys for authentication.',
     category: 'getting-started',
-    component: null,
+    component: 'GettingYourApiKeyGuide', // Update: April 2026 - Maps to frontend/src/guides/GettingYourApiKeyGuide.jsx
     readTime: '4 min read',
     tags: ['api-key', 'authentication', 'security'],
     popular: false,
@@ -529,7 +529,6 @@ export function formatViews(views) {
   return views.toString();
 }
 
-// ===================================================================
 // // ========================================
 // // HELP CENTER ARTICLES DATA - PIXELPERFECT
 // // ========================================
@@ -606,7 +605,7 @@ export function formatViews(views) {
 //     title: 'How to create an account',
 //     excerpt: 'Step-by-step guide to creating your PixelPerfect account and getting your API key.',
 //     category: 'getting-started',
-//     component: null, // This article doesn't have a guide component yet
+//     component: 'HowToCreateAccountGuide', // Update: April 2026 - Maps to frontend/src/guides/HowToCreateAccountGuide.jsx
 //     readTime: '3 min read',
 //     tags: ['account', 'signup', 'registration'],
 //     popular: false,
@@ -1060,3 +1059,4 @@ export function formatViews(views) {
 //   }
 //   return views.toString();
 // }
+

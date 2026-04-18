@@ -30,7 +30,8 @@ import {
 
 const guideComponents = {
   QuickStartGuide: lazy(() => import('../guides/QuickStartGuide')),
-  HowToCreateAccountGuide: lazy(() => import('../guides/HowToCreateAccountGuide')), // Update: April 2026 - NEW
+  HowToCreateAccountGuide: lazy(() => import('../guides/HowToCreateAccountGuide')), // Update: April 2026
+  GettingYourApiKeyGuide: lazy(() => import('../guides/GettingYourApiKeyGuide')), // Update: April 2026 - NEW
   APIProcessingGuide: lazy(() => import('../guides/APIProcessingGuide')),
   ErrorsAndSolutionsGuide: lazy(() => import('../guides/ErrorsAndSolutionsGuide')),
   JavaScriptExecutionGuide: lazy(() => import('../guides/JavaScriptExecutionGuide')),
@@ -296,7 +297,7 @@ const ArticleDetail = () => {
 
 export default ArticleDetail;
 
-//=========================================================================
+// // =================================================================================================================
 // // ========================================
 // // ARTICLE DETAIL PAGE - PIXELPERFECT
 // // ========================================
@@ -329,6 +330,7 @@ export default ArticleDetail;
 
 // const guideComponents = {
 //   QuickStartGuide: lazy(() => import('../guides/QuickStartGuide')),
+//   HowToCreateAccountGuide: lazy(() => import('../guides/HowToCreateAccountGuide')), // Update: April 2026 - NEW
 //   APIProcessingGuide: lazy(() => import('../guides/APIProcessingGuide')),
 //   ErrorsAndSolutionsGuide: lazy(() => import('../guides/ErrorsAndSolutionsGuide')),
 //   JavaScriptExecutionGuide: lazy(() => import('../guides/JavaScriptExecutionGuide')),
@@ -593,3 +595,4 @@ export default ArticleDetail;
 // };
 
 // export default ArticleDetail;
+
