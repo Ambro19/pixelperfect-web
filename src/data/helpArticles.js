@@ -98,7 +98,7 @@ export const articles = [
     title: 'Making your first API request',
     excerpt: 'Send your first screenshot request using the PixelPerfect API.',
     category: 'getting-started',
-    component: null,
+    component: 'MakingFirstApiRequestGuide', // Update: April 2026 - Maps to frontend/src/guides/MakingFirstApiRequestGuide.jsx
     readTime: '6 min read',
     tags: ['api', 'request', 'curl', 'getting-started'],
     popular: true,
@@ -529,6 +529,7 @@ export function formatViews(views) {
   return views.toString();
 }
 
+// // ====================================================================================================
 // // ========================================
 // // HELP CENTER ARTICLES DATA - PIXELPERFECT
 // // ========================================
@@ -617,7 +618,7 @@ export function formatViews(views) {
 //     title: 'Getting your API key',
 //     excerpt: 'Learn how to generate and manage your API keys for authentication.',
 //     category: 'getting-started',
-//     component: null,
+//     component: 'GettingYourApiKeyGuide', // Update: April 2026 - Maps to frontend/src/guides/GettingYourApiKeyGuide.jsx
 //     readTime: '4 min read',
 //     tags: ['api-key', 'authentication', 'security'],
 //     popular: false,
