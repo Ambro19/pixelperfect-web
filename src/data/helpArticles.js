@@ -74,7 +74,7 @@ export const articles = [
     title: 'How to create an account',
     excerpt: 'Step-by-step guide to creating your PixelPerfect account and getting your API key.',
     category: 'getting-started',
-    component: 'HowToCreateAccountGuide', // Update: April 2026 - Maps to frontend/src/guides/HowToCreateAccountGuide.jsx
+    component: 'HowToCreateAccountGuide', // Update: April 2026
     readTime: '3 min read',
     tags: ['account', 'signup', 'registration'],
     popular: false,
@@ -86,7 +86,7 @@ export const articles = [
     title: 'Getting your API key',
     excerpt: 'Learn how to generate and manage your API keys for authentication.',
     category: 'getting-started',
-    component: 'GettingYourApiKeyGuide', // Update: April 2026 - Maps to frontend/src/guides/GettingYourApiKeyGuide.jsx
+    component: 'GettingYourApiKeyGuide', // Update: April 2026
     readTime: '4 min read',
     tags: ['api-key', 'authentication', 'security'],
     popular: false,
@@ -98,7 +98,7 @@ export const articles = [
     title: 'Making your first API request',
     excerpt: 'Send your first screenshot request using the PixelPerfect API.',
     category: 'getting-started',
-    component: 'MakingFirstApiRequestGuide', // Update: April 2026 - Maps to frontend/src/guides/MakingFirstApiRequestGuide.jsx
+    component: 'MakingFirstApiRequestGuide', // Update: April 2026
     readTime: '6 min read',
     tags: ['api', 'request', 'curl', 'getting-started'],
     popular: true,
@@ -126,7 +126,7 @@ export const articles = [
     title: 'API authentication methods',
     excerpt: 'Understand JWT tokens vs API keys and how to authenticate your requests.',
     category: 'api-usage',
-    component: null,
+    component: 'ApiAuthenticationMethodsGuide', // Update: April 2026 - Maps to frontend/src/guides/ApiAuthenticationMethodsGuide.jsx
     readTime: '7 min read',
     tags: ['authentication', 'api-key', 'jwt', 'security'],
     popular: true,
@@ -529,7 +529,7 @@ export function formatViews(views) {
   return views.toString();
 }
 
-// // ====================================================================================================
+// // ===============================================================================
 // // ========================================
 // // HELP CENTER ARTICLES DATA - PIXELPERFECT
 // // ========================================
@@ -630,7 +630,7 @@ export function formatViews(views) {
 //     title: 'Making your first API request',
 //     excerpt: 'Send your first screenshot request using the PixelPerfect API.',
 //     category: 'getting-started',
-//     component: null,
+//     component: 'MakingFirstApiRequestGuide', // Update: April 2026 - Maps to frontend/src/guides/MakingFirstApiRequestGuide.jsx
 //     readTime: '6 min read',
 //     tags: ['api', 'request', 'curl', 'getting-started'],
 //     popular: true,
