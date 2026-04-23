@@ -1,3 +1,4 @@
+
 // ========================================
 // HELP CENTER ARTICLES DATA - PIXELPERFECT
 // ========================================
@@ -62,7 +63,7 @@ export const articles = [
     title: 'Quick Start Guide',
     excerpt: 'Get started with PixelPerfect in under 5 minutes. Learn how to capture your first screenshot.',
     category: 'getting-started',
-    component: 'QuickStartGuide', // Maps to frontend/src/guides/QuickStartGuide.jsx
+    component: 'QuickStartGuide',
     readTime: '5 min read',
     tags: ['beginner', 'setup', 'getting-started', 'first-steps'],
     popular: true,
@@ -74,7 +75,7 @@ export const articles = [
     title: 'How to create an account',
     excerpt: 'Step-by-step guide to creating your PixelPerfect account and getting your API key.',
     category: 'getting-started',
-    component: 'HowToCreateAccountGuide', // Update: April 2026
+    component: 'HowToCreateAccountGuide',
     readTime: '3 min read',
     tags: ['account', 'signup', 'registration'],
     popular: false,
@@ -86,7 +87,7 @@ export const articles = [
     title: 'Getting your API key',
     excerpt: 'Learn how to generate and manage your API keys for authentication.',
     category: 'getting-started',
-    component: 'GettingYourApiKeyGuide', // Update: April 2026
+    component: 'GettingYourApiKeyGuide',
     readTime: '4 min read',
     tags: ['api-key', 'authentication', 'security'],
     popular: false,
@@ -98,7 +99,7 @@ export const articles = [
     title: 'Making your first API request',
     excerpt: 'Send your first screenshot request using the PixelPerfect API.',
     category: 'getting-started',
-    component: 'MakingFirstApiRequestGuide', // Update: April 2026
+    component: 'MakingFirstApiRequestGuide',
     readTime: '6 min read',
     tags: ['api', 'request', 'curl', 'getting-started'],
     popular: true,
@@ -126,7 +127,7 @@ export const articles = [
     title: 'API authentication methods',
     excerpt: 'Understand JWT tokens vs API keys and how to authenticate your requests.',
     category: 'api-usage',
-    component: 'ApiAuthenticationMethodsGuide', // Update: April 2026 - Maps to frontend/src/guides/ApiAuthenticationMethodsGuide.jsx
+    component: 'ApiAuthenticationMethodsGuide',
     readTime: '7 min read',
     tags: ['authentication', 'api-key', 'jwt', 'security'],
     popular: true,
@@ -138,7 +139,7 @@ export const articles = [
     title: 'Screenshot parameters explained',
     excerpt: 'Master all available screenshot parameters: width, height, format, quality, and more.',
     category: 'api-usage',
-    component: 'APIProcessingGuide', // Maps to APIProcessingGuide.jsx
+    component: 'APIProcessingGuide',
     readTime: '10 min read',
     tags: ['parameters', 'api', 'screenshot', 'customization'],
     popular: true,
@@ -150,7 +151,7 @@ export const articles = [
     title: 'Batch processing guide',
     excerpt: 'Capture multiple screenshots efficiently using batch requests.',
     category: 'api-usage',
-    component: null,
+    component: 'BatchProcessingGuide', // Update: April 2026 - NEW - Maps to frontend/src/guides/BatchProcessingGuide.jsx
     readTime: '8 min read',
     tags: ['batch', 'bulk', 'automation', 'efficiency'],
     popular: true,
@@ -162,7 +163,7 @@ export const articles = [
     title: 'Rate limits and quotas',
     excerpt: 'Understand rate limits and how to optimize your API usage.',
     category: 'api-usage',
-    component: 'OptimizationGuide', // Maps to OptimizationGuide.jsx
+    component: 'OptimizationGuide',
     readTime: '6 min read',
     tags: ['rate-limits', 'quotas', 'optimization', 'limits'],
     popular: false,
@@ -174,7 +175,7 @@ export const articles = [
     title: 'Node.js Integration Guide',
     excerpt: 'Integrate PixelPerfect into your Node.js applications with code examples.',
     category: 'api-usage',
-    component: 'NodeIntegrationGuide', // Maps to NodeIntegrationGuide.jsx
+    component: 'NodeIntegrationGuide',
     readTime: '12 min read',
     tags: ['nodejs', 'javascript', 'integration', 'sdk'],
     popular: true,
@@ -186,7 +187,7 @@ export const articles = [
     title: 'Python Integration Guide',
     excerpt: 'Use PixelPerfect in your Python projects with practical examples.',
     category: 'api-usage',
-    component: 'PythonIntegrationGuide', // Maps to PythonIntegrationGuide.jsx
+    component: 'PythonIntegrationGuide',
     readTime: '12 min read',
     tags: ['python', 'integration', 'sdk', 'requests'],
     popular: true,
@@ -198,7 +199,7 @@ export const articles = [
     title: 'JavaScript Execution Guide',
     excerpt: 'Execute custom JavaScript before capturing screenshots.',
     category: 'api-usage',
-    component: 'JavaScriptExecutionGuide', // Maps to JavaScriptExecutionGuide.jsx
+    component: 'JavaScriptExecutionGuide',
     readTime: '10 min read',
     tags: ['javascript', 'custom-js', 'automation', 'advanced'],
     popular: false,
@@ -210,7 +211,7 @@ export const articles = [
     title: 'Social Media Preview Guide',
     excerpt: 'Create perfect social media preview images with PixelPerfect.',
     category: 'api-usage',
-    component: 'SocialMediaPreviewGuide', // Maps to SocialMediaPreviewGuide.jsx
+    component: 'SocialMediaPreviewGuide',
     readTime: '8 min read',
     tags: ['social-media', 'preview', 'og-image', 'twitter-card'],
     popular: false,
@@ -222,7 +223,7 @@ export const articles = [
     title: 'Website Monitoring Guide',
     excerpt: 'Set up automated website monitoring with screenshot alerts.',
     category: 'api-usage',
-    component: 'WebsiteMonitorGuide', // Maps to WebsiteMonitorGuide.jsx
+    component: 'WebsiteMonitorGuide',
     readTime: '15 min read',
     tags: ['monitoring', 'automation', 'alerts', 'cron'],
     popular: true,
@@ -290,7 +291,7 @@ export const articles = [
     title: 'Common error codes',
     excerpt: 'Troubleshoot common error codes and their solutions.',
     category: 'troubleshooting',
-    component: 'ErrorsAndSolutionsGuide', // Maps to ErrorsAndSolutionsGuide.jsx
+    component: 'ErrorsAndSolutionsGuide',
     readTime: '12 min read',
     tags: ['errors', 'troubleshooting', 'debugging', 'solutions'],
     popular: true,
@@ -442,30 +443,18 @@ export const articles = [
 // HELPER FUNCTIONS
 // ========================================
 
-/**
- * Get all articles
- */
 export function getAllArticles() {
   return articles;
 }
 
-/**
- * Get article by slug
- */
 export function getArticleBySlug(slug) {
   return articles.find(article => article.slug === slug) || null;
 }
 
-/**
- * Get articles by category
- */
 export function getArticlesByCategory(categoryId) {
   return articles.filter(article => article.category === categoryId);
 }
 
-/**
- * Get popular articles (sorted by views)
- */
 export function getPopularArticles(limit = 5) {
   return articles
     .filter(article => article.popular)
@@ -473,16 +462,10 @@ export function getPopularArticles(limit = 5) {
     .slice(0, limit);
 }
 
-/**
- * Get category by ID
- */
 export function getCategoryById(categoryId) {
   return categories.find(cat => cat.id === categoryId) || null;
 }
 
-/**
- * Search articles by query (searches title, excerpt, tags)
- */
 export function searchArticles(query) {
   if (!query || query.trim() === '') {
     return articles;
@@ -491,37 +474,19 @@ export function searchArticles(query) {
   const searchTerm = query.toLowerCase().trim();
   
   return articles.filter(article => {
-    // Search in title
-    if (article.title.toLowerCase().includes(searchTerm)) {
-      return true;
-    }
-    
-    // Search in excerpt
-    if (article.excerpt.toLowerCase().includes(searchTerm)) {
-      return true;
-    }
-    
-    // Search in tags
-    if (article.tags.some(tag => tag.toLowerCase().includes(searchTerm))) {
-      return true;
-    }
-    
+    if (article.title.toLowerCase().includes(searchTerm)) return true;
+    if (article.excerpt.toLowerCase().includes(searchTerm)) return true;
+    if (article.tags.some(tag => tag.toLowerCase().includes(searchTerm))) return true;
     return false;
   });
 }
 
-/**
- * Get recent articles (by views, descending)
- */
 export function getRecentArticles(limit = 10) {
   return articles
     .sort((a, b) => b.views - a.views)
     .slice(0, limit);
 }
 
-/**
- * Format view count (e.g., 12500 -> "12.5K")
- */
 export function formatViews(views) {
   if (views >= 1000) {
     return `${(views / 1000).toFixed(1)}K`;
@@ -529,7 +494,7 @@ export function formatViews(views) {
   return views.toString();
 }
 
-// // ===============================================================================
+// // =============================================================
 // // ========================================
 // // HELP CENTER ARTICLES DATA - PIXELPERFECT
 // // ========================================
@@ -606,7 +571,7 @@ export function formatViews(views) {
 //     title: 'How to create an account',
 //     excerpt: 'Step-by-step guide to creating your PixelPerfect account and getting your API key.',
 //     category: 'getting-started',
-//     component: 'HowToCreateAccountGuide', // Update: April 2026 - Maps to frontend/src/guides/HowToCreateAccountGuide.jsx
+//     component: 'HowToCreateAccountGuide', // Update: April 2026
 //     readTime: '3 min read',
 //     tags: ['account', 'signup', 'registration'],
 //     popular: false,
@@ -618,7 +583,7 @@ export function formatViews(views) {
 //     title: 'Getting your API key',
 //     excerpt: 'Learn how to generate and manage your API keys for authentication.',
 //     category: 'getting-started',
-//     component: 'GettingYourApiKeyGuide', // Update: April 2026 - Maps to frontend/src/guides/GettingYourApiKeyGuide.jsx
+//     component: 'GettingYourApiKeyGuide', // Update: April 2026
 //     readTime: '4 min read',
 //     tags: ['api-key', 'authentication', 'security'],
 //     popular: false,
@@ -630,7 +595,7 @@ export function formatViews(views) {
 //     title: 'Making your first API request',
 //     excerpt: 'Send your first screenshot request using the PixelPerfect API.',
 //     category: 'getting-started',
-//     component: 'MakingFirstApiRequestGuide', // Update: April 2026 - Maps to frontend/src/guides/MakingFirstApiRequestGuide.jsx
+//     component: 'MakingFirstApiRequestGuide', // Update: April 2026
 //     readTime: '6 min read',
 //     tags: ['api', 'request', 'curl', 'getting-started'],
 //     popular: true,
@@ -658,7 +623,7 @@ export function formatViews(views) {
 //     title: 'API authentication methods',
 //     excerpt: 'Understand JWT tokens vs API keys and how to authenticate your requests.',
 //     category: 'api-usage',
-//     component: null,
+//     component: 'ApiAuthenticationMethodsGuide', // Update: April 2026 - Maps to frontend/src/guides/ApiAuthenticationMethodsGuide.jsx
 //     readTime: '7 min read',
 //     tags: ['authentication', 'api-key', 'jwt', 'security'],
 //     popular: true,
@@ -1060,4 +1025,3 @@ export function formatViews(views) {
 //   }
 //   return views.toString();
 // }
-
