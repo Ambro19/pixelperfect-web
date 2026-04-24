@@ -9,22 +9,69 @@
 // Pulls article data from helpArticles.js via getArticleBySlug
 // Dynamically imports guide component for content
 // Includes breadcrumb navigation, related articles, and social sharing
+//
+// ✅ FIX (Apr 2026): Removed lucide-react dependency.
+//    All icons replaced with inline SVGs matching the style used by every
+//    guide component in this codebase. No new package install required.
 // ========================================
 
 import React, { Suspense, lazy } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import {
-  ArrowLeft,
-  Clock,
-  ChevronRight,
-  Mail,
-  BookOpen,
-  HelpCircle,
-  ExternalLink,
-  Info,
-} from 'lucide-react';
 import { getArticleBySlug, getArticlesByCategory, getCategoryById } from '../data/helpArticles';
 import PixelPerfectLogo from '../components/PixelPerfectLogo';
+
+// ========================================
+// INLINE SVG ICONS (replaces lucide-react)
+// ========================================
+// Small, focused, dependency-free. Each one mirrors a lucide-react icon
+// at roughly the same visual weight, so the page looks unchanged.
+// ========================================
+
+const IconArrowLeft = ({ className = "w-5 h-5" }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+  </svg>
+);
+
+const IconClock = ({ className = "w-4 h-4" }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+  </svg>
+);
+
+const IconChevronRight = ({ className = "w-4 h-4" }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+  </svg>
+);
+
+const IconMail = ({ className = "w-4 h-4" }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+      d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+  </svg>
+);
+
+const IconBookOpen = ({ className = "w-4 h-4" }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+      d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+  </svg>
+);
+
+const IconHelpCircle = ({ className = "w-8 h-8" }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+      d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+  </svg>
+);
+
+const IconInfo = ({ className = "w-5 h-5" }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+  </svg>
+);
 
 // ========================================
 // GUIDE COMPONENT MAP (category-ordered)
@@ -78,7 +125,7 @@ const ArticleDetail = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="text-center">
           <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <HelpCircle className="w-8 h-8 text-red-500" />
+            <IconHelpCircle className="w-8 h-8 text-red-500" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Article Not Found</h1>
           <p className="text-gray-600 mb-6">The article you're looking for doesn't exist.</p>
@@ -110,14 +157,14 @@ const ArticleDetail = () => {
             <Link to="/help" className="text-blue-600 hover:text-blue-700 font-medium">
               Help Center
             </Link>
-            <ChevronRight className="w-4 h-4 text-gray-400" />
+            <IconChevronRight className="w-4 h-4 text-gray-400" />
             <Link
               to={`/help?category=${article.category}`}
               className="text-blue-600 hover:text-blue-700 font-medium"
             >
               {category?.name}
             </Link>
-            <ChevronRight className="w-4 h-4 text-gray-400" />
+            <IconChevronRight className="w-4 h-4 text-gray-400" />
             <span className="text-gray-600 truncate">{article.title}</span>
           </nav>
         </div>
@@ -133,7 +180,7 @@ const ArticleDetail = () => {
                 onClick={() => navigate(-1)}
                 className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
               >
-                <ArrowLeft className="w-5 h-5" />
+                <IconArrowLeft className="w-5 h-5" />
                 Back
               </button>
             </div>
@@ -143,7 +190,7 @@ const ArticleDetail = () => {
 
             <div className="flex items-center gap-4 text-sm text-gray-500">
               <div className="flex items-center gap-1">
-                <Clock className="w-4 h-4" />
+                <IconClock className="w-4 h-4" />
                 <span>{article.readTime}</span>
               </div>
               <div>•</div>
@@ -161,7 +208,7 @@ const ArticleDetail = () => {
               // Placeholder for articles without custom guide components
               <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-6 rounded-lg">
                 <div className="flex">
-                  <Info className="w-5 h-5 text-blue-400 mt-0.5" />
+                  <IconInfo className="w-5 h-5 text-blue-400 mt-0.5" />
                   <div className="ml-3">
                     <h3 className="text-lg font-semibold text-blue-800 mb-2">Guide Coming Soon</h3>
                     <p className="text-blue-700">
@@ -242,7 +289,7 @@ const ArticleDetail = () => {
                     {related.excerpt}
                   </p>
                   <div className="flex items-center gap-2 text-xs text-gray-500">
-                    <Clock className="w-3 h-3" />
+                    <IconClock className="w-3 h-3" />
                     <span>{related.readTime}</span>
                     <span>•</span>
                     <span>{(related.views || 0).toLocaleString()} views</span>
@@ -264,14 +311,14 @@ const ArticleDetail = () => {
               to="/contact"
               className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded-lg transition-colors flex items-center gap-2 justify-center"
             >
-              <Mail className="w-4 h-4" />
+              <IconMail className="w-4 h-4" />
               Contact Support
             </Link>
             <Link
               to="/help"
               className="bg-white hover:bg-gray-50 text-blue-600 font-semibold px-6 py-2 rounded-lg border border-blue-200 transition-colors flex items-center gap-2 justify-center"
             >
-              <BookOpen className="w-4 h-4" />
+              <IconBookOpen className="w-4 h-4" />
               Browse More Articles
             </Link>
           </div>

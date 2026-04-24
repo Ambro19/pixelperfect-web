@@ -8,29 +8,28 @@
 // Article #4 in "API Usage" category
 // (Slug: rate-limits-and-quotas in helpArticles.js)
 //
-// ⚠️  VERIFY BEFORE DEPLOY — numbers to confirm against backend/models.py:
-// ┌──────────────────────────────────────────────────────────────────────┐
-// │  MONTHLY SCREENSHOT QUOTAS — Free: 100   / Pro: 5,000                │
-// │                              Business: 25,000  / Premium: unlimited  │
-// │  MONTHLY BATCH REQUEST QUOTAS — Free: 0  / Pro: 100                  │
-// │                                 Business: 500  / Premium: unlimited  │
-// │                                                                      │
-// │  Screenshot-capture quotas are the ones returned by                  │
-// │  GET /subscription_status → limits.screenshots. If those values are  │
-// │  different in your production DB, search this file for               │
-// │  "// TIER-QUOTA-CHECK" and update each occurrence.                   │
-// └──────────────────────────────────────────────────────────────────────┘
+// ✅ VERIFIED Apr 2026 against backend/.env.production:
+//   FREE_SCREENSHOTS_LIMIT     = 100
+//   FREE_BATCH_LIMIT           = 0
+//   PRO_SCREENSHOTS_LIMIT      = 5,000
+//   PRO_BATCH_LIMIT            = 50
+//   BUSINESS_SCREENSHOTS_LIMIT = 50,000  (was incorrectly 25,000 in earlier draft)
+//   BUSINESS_BATCH_LIMIT       = 200
+//   PREMIUM_SCREENSHOTS_LIMIT  = 999,999,999  (effectively unlimited)
+//   PREMIUM_BATCH_LIMIT        = 999,999,999  (effectively unlimited)
+//   FILE_RETENTION_DAYS        = 7  (screenshots auto-deleted after 7 days)
+//   ACCESS_TOKEN_EXPIRE_MINUTES= 1440  (JWT lifetime: 24 hours)
+//   ALGORITHM                  = HS256  (JWT signing algorithm)
 //
 // ✅ Verified facts from code:
-//   - Batch URLs per batch (batch.py):   Free=0, Pro=50, Business=200, Premium=1000
-//   - Concurrency limits (main.py):      starter=2, pro=3, business=5
-//   - Request timeout (Render):          120s
-//   - Playwright worst case:             ~100s (3-tier fallback)
-//   - Viewport bounds (single):          320-3840w / 240-2160h
-//   - Viewport bounds (batch):           320-7680w / 240-4320h
-//   - Delay range:                       0-10 seconds
-//   - remove_elements cap:               20 selectors, 200 chars each
-//   - Batch file upload max:             2 MB
+//   - Concurrency limits (main.py):    starter=2, pro=3, business=5
+//   - Request timeout (Render):        120s
+//   - Playwright worst case:           ~100s (3-tier fallback)
+//   - Viewport bounds (single):        320-3840w / 240-2160h
+//   - Viewport bounds (batch):         320-7680w / 240-4320h
+//   - Delay range:                     0-10 seconds
+//   - remove_elements cap:             20 selectors, 200 chars each
+//   - Batch file upload max:           2 MB
 // ========================================
 
 import React from 'react';
@@ -99,7 +98,6 @@ const OptimizationGuide = () => {
         submitted. Here's what each plan includes:
       </p>
 
-      {/* TIER-QUOTA-CHECK — update the numbers in this table after verifying models.py */}
       <div className="overflow-x-auto my-6">
         <table className="w-full border-collapse text-sm">
           <thead>
@@ -129,7 +127,7 @@ const OptimizationGuide = () => {
             <tr className="border-b border-gray-200">
               <td className="p-3 border-r border-gray-200 bg-gray-50"><strong>Business</strong></td>
               <td className="p-3 border-r border-gray-200">$199</td>
-              <td className="p-3 border-r border-gray-200">25,000</td>
+              <td className="p-3 border-r border-gray-200">50,000</td>
               <td className="p-3 border-r border-gray-200">500</td>
               <td className="p-3">Up to 200</td>
             </tr>
@@ -173,6 +171,43 @@ const OptimizationGuide = () => {
         the <span className="font-mono">next_reset</span> field of{' '}
         <span className="font-mono">GET /subscription_status</span>.
       </p>
+
+      {/* File retention */}
+      <h3 className="text-lg font-semibold text-gray-900 mt-8 mb-3">Captured screenshots are kept for 7 days</h3>
+      <p className="text-gray-700 leading-relaxed">
+        Every screenshot you capture is stored on Cloudflare R2 for <strong>7 days</strong>, then
+        automatically deleted. The 7-day window applies regardless of plan — Premium does not
+        extend retention. Plan accordingly:
+      </p>
+      <ul className="space-y-2 mt-3 text-gray-700">
+        <li className="flex items-start gap-2">
+          <svg className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+          </svg>
+          <span className="leading-relaxed">
+            If you need long-term archival, download or upload to your own storage immediately
+            after capture
+          </span>
+        </li>
+        <li className="flex items-start gap-2">
+          <svg className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+          </svg>
+          <span className="leading-relaxed">
+            Database records (with metadata + URL) persist longer; only the image files are
+            cleaned up
+          </span>
+        </li>
+        <li className="flex items-start gap-2">
+          <svg className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+          </svg>
+          <span className="leading-relaxed">
+            For an ongoing pipeline, treat PixelPerfect as the renderer and your own storage as
+            the archive
+          </span>
+        </li>
+      </ul>
 
       {/* Checking usage */}
       <h2 className="text-2xl font-bold text-gray-900 mt-10 mb-4">Checking Your Usage</h2>
@@ -224,8 +259,9 @@ const OptimizationGuide = () => {
         <p className="text-sm text-gray-700 mb-0">
           <strong>Note:</strong> <span className="font-mono">/subscription_status</span> uses JWT
           auth (not API key). Get a JWT by calling <span className="font-mono">POST /token_json</span>{' '}
-          with your username and password. This endpoint is primarily for the dashboard; for
-          code monitoring, consider polling it every few minutes rather than per-request.
+          with your username and password. JWTs expire after 24 hours, so refresh as needed. This
+          endpoint is primarily for the dashboard; for code monitoring, consider polling it every
+          few minutes rather than per-request.
         </p>
       </div>
 
@@ -409,7 +445,8 @@ const OptimizationGuide = () => {
         If you're capturing the same URL multiple times in a short window, cache the result.
         A landing page captured at 9:00 AM is the same landing page at 9:05 AM — call the API
         once and serve the cached image from your CDN. R2 URLs are public and cacheable by
-        default.
+        default. Combine this with the 7-day retention reality: download once, archive in your
+        own storage, then serve from there indefinitely.
       </p>
 
       <h3 className="text-lg font-semibold text-gray-900 mt-6 mb-3">2. Use WebP instead of PNG</h3>
@@ -506,7 +543,8 @@ const OptimizationGuide = () => {
           <h4 className="font-semibold text-gray-900 mb-1">Pro → Business ($199/month)</h4>
           <p className="text-sm text-gray-700 mb-0">
             You need more than 50 URLs per batch, or you're hitting the 5,000/month screenshot
-            cap consistently, or you want 5 concurrent captures instead of 3.
+            cap consistently, or you want 5 concurrent captures instead of 3. Business is a 10×
+            jump in monthly capacity (50,000/month).
           </p>
         </div>
         <div className="bg-white border border-gray-200 rounded-lg p-4">
@@ -561,6 +599,15 @@ const OptimizationGuide = () => {
             Quotas reset at 00:00 UTC. If you're in a timezone that's behind UTC (like Eastern
             US), your "1st" starts at 7-8 PM the evening before UTC midnight. Your new quota
             arrives earlier than you might expect, not later.
+          </p>
+        </div>
+
+        <div className="bg-white border border-gray-200 rounded-lg p-5">
+          <h4 className="font-semibold text-gray-900 mb-2">"My screenshot URL stopped working"</h4>
+          <p className="text-sm text-gray-700">
+            Screenshots are kept on R2 storage for 7 days, then automatically deleted. If your URL
+            returns 404, the file has aged out. Recapture the URL, or build a workflow that
+            archives images to your own storage immediately after capture.
           </p>
         </div>
 
