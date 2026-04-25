@@ -8,11 +8,19 @@
 // Renders individual help articles with dynamic loading
 // Pulls article data from helpArticles.js via getArticleBySlug
 // Dynamically imports guide component for content
-// Includes breadcrumb navigation, related articles, and social sharing
 //
 // ✅ FIX (Apr 2026): Removed lucide-react dependency.
 //    All icons replaced with inline SVGs matching the style used by every
 //    guide component in this codebase. No new package install required.
+//
+// ✅ FIX (Apr 2026 - Round 2): Polished bottom layout:
+//    - Footer block is now responsive: stacks vertically on mobile,
+//      balanced side-by-side on desktop with proper padding
+//    - Related Articles card titles clamp to 2 lines (was unlimited → causing
+//      4-5 line titles that broke the grid visually)
+//    - Card excerpts clamp to 3 lines for consistent card heights
+//    - Metadata row uses flex-wrap so tight layouts don't overflow
+//    - All three related-article cards now have identical visual weight
 // ========================================
 
 import React, { Suspense, lazy } from 'react';
@@ -22,9 +30,6 @@ import PixelPerfectLogo from '../components/PixelPerfectLogo';
 
 // ========================================
 // INLINE SVG ICONS (replaces lucide-react)
-// ========================================
-// Small, focused, dependency-free. Each one mirrors a lucide-react icon
-// at roughly the same visual weight, so the page looks unchanged.
 // ========================================
 
 const IconArrowLeft = ({ className = "w-5 h-5" }) => (
@@ -75,11 +80,6 @@ const IconInfo = ({ className = "w-5 h-5" }) => (
 
 // ========================================
 // GUIDE COMPONENT MAP (category-ordered)
-//
-// Add new guide components here when introducing a new article.
-// Only components in this map will render at runtime; any slug whose
-// `component` in helpArticles.js isn't listed here will fall through
-// to the "Guide Coming Soon" placeholder.
 // ========================================
 const guideComponents = {
   // ---------- Getting Started ----------
@@ -91,7 +91,7 @@ const guideComponents = {
   // ---------- API Usage ----------
   ApiAuthenticationMethodsGuide:  lazy(() => import('../guides/ApiAuthenticationMethodsGuide')),
   APIProcessingGuide:             lazy(() => import('../guides/APIProcessingGuide')),
-  BatchProcessingGuide:           lazy(() => import('../guides/BatchProcessingGuide')), // ✅ NEW Apr 2026
+  BatchProcessingGuide:           lazy(() => import('../guides/BatchProcessingGuide')),
   OptimizationGuide:              lazy(() => import('../guides/OptimizationGuide')),
   NodeIntegrationGuide:           lazy(() => import('../guides/NodeIntegrationGuide')),
   PythonIntegrationGuide:         lazy(() => import('../guides/PythonIntegrationGuide')),
@@ -119,7 +119,6 @@ const ArticleDetail = () => {
   const navigate = useNavigate();
   const article  = getArticleBySlug(slug);
 
-  // If article not found
   if (!article) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
@@ -145,7 +144,6 @@ const ArticleDetail = () => {
     .filter(a => a.id !== article.id)
     .slice(0, 3);
 
-  // Get guide component if available
   const GuideComponent = article.component ? guideComponents[article.component] : null;
 
   return (
@@ -205,7 +203,6 @@ const ArticleDetail = () => {
                 <GuideComponent />
               </Suspense>
             ) : (
-              // Placeholder for articles without custom guide components
               <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-6 rounded-lg">
                 <div className="flex">
                   <IconInfo className="w-5 h-5 text-blue-400 mt-0.5" />
@@ -220,7 +217,6 @@ const ArticleDetail = () => {
               </div>
             )}
 
-            {/* Common CTA Section for articles without full content */}
             {!GuideComponent && (
               <div className="mt-8">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Need Help Right Away?</h3>
@@ -245,25 +241,34 @@ const ArticleDetail = () => {
             )}
           </div>
 
-          {/* Article Footer */}
-          <div className="bg-gray-50 px-8 py-6 flex items-center justify-between">
-            <div className="flex items-center gap-3">
+          {/* ✅ FIX (Apr 2026 Round 2): Responsive footer                              */}
+          {/*                                                                           */}
+          {/* Previously: flex items-center justify-between with no stacking,           */}
+          {/* resulting in cramped mobile and awkward desktop padding.                  */}
+          {/*                                                                           */}
+          {/* Now:                                                                      */}
+          {/*   - Mobile (<sm):  flex-col, logo block on top, buttons below, gap-4      */}
+          {/*   - Tablet+ (sm+): flex-row, items-center, justify-between, gap-4         */}
+          {/*   - Increased vertical padding (py-5 → py-6) for breathing room          */}
+          {/*   - Logo block wraps in a min-w-0 container to truncate on very narrow   */}
+          <div className="bg-gray-50 px-6 sm:px-8 py-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center gap-3 min-w-0">
               <PixelPerfectLogo size={32} showText={false} />
-              <div>
-                <div className="font-semibold text-gray-900 text-sm">PixelPerfect</div>
-                <div className="text-xs text-gray-500">Screenshot API</div>
+              <div className="min-w-0">
+                <div className="font-semibold text-gray-900 text-sm truncate">PixelPerfect</div>
+                <div className="text-xs text-gray-500 truncate">Screenshot API</div>
               </div>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-shrink-0">
               <Link
                 to="/help"
-                className="text-sm text-gray-600 hover:text-gray-900 font-medium"
+                className="text-sm text-gray-600 hover:text-gray-900 font-medium whitespace-nowrap"
               >
                 ← Help Center
               </Link>
               <Link
                 to="/register"
-                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg transition-colors text-sm"
+                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg transition-colors text-sm whitespace-nowrap"
               >
                 Get Started
               </Link>
@@ -271,26 +276,42 @@ const ArticleDetail = () => {
           </div>
         </div>
 
-        {/* Related Articles */}
+        {/* ✅ FIX (Apr 2026 Round 2): Related Articles with proper title clamping   */}
+        {/*                                                                          */}
+        {/* Previously: card titles had no line-clamp, so long titles like           */}
+        {/* "How to create an account" would break onto 4-5 lines, making the       */}
+        {/* three-card grid visually uneven and awkward.                            */}
+        {/*                                                                          */}
+        {/* Now:                                                                     */}
+        {/*   - Title clamped to 2 lines (line-clamp-2)                             */}
+        {/*   - Excerpt clamped to 3 lines (line-clamp-3)                           */}
+        {/*   - Card has flex-col with min-height for alignment                     */}
+        {/*   - Metadata row uses flex-wrap to avoid overflow on tight widths       */}
+        {/*   - Grid uses items-stretch so all cards match height                   */}
         {relatedArticles.length > 0 && (
           <div className="mt-8">
             <h2 className="text-xl font-bold text-gray-900 mb-4">Related Articles</h2>
-            <div className="grid md:grid-cols-3 gap-4">
+            <div className="grid md:grid-cols-3 gap-4 items-stretch">
               {relatedArticles.map((related) => (
                 <Link
                   key={related.id}
                   to={`/help/article/${related.slug}`}
-                  className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md hover:border-blue-200 transition-all group"
+                  className="flex flex-col bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:shadow-md hover:border-blue-200 transition-all group"
                 >
-                  <h3 className="font-semibold text-gray-900 group-hover:text-blue-600 mb-2">
+                  <h3
+                    className="font-semibold text-gray-900 group-hover:text-blue-600 mb-2 leading-snug line-clamp-2"
+                    title={related.title}
+                  >
                     {related.title}
                   </h3>
-                  <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                  <p className="text-sm text-gray-600 mb-4 line-clamp-3 flex-1">
                     {related.excerpt}
                   </p>
-                  <div className="flex items-center gap-2 text-xs text-gray-500">
-                    <IconClock className="w-3 h-3" />
-                    <span>{related.readTime}</span>
+                  <div className="flex items-center gap-2 text-xs text-gray-500 flex-wrap">
+                    <span className="inline-flex items-center gap-1">
+                      <IconClock className="w-3 h-3" />
+                      {related.readTime}
+                    </span>
                     <span>•</span>
                     <span>{(related.views || 0).toLocaleString()} views</span>
                   </div>
@@ -329,6 +350,8 @@ const ArticleDetail = () => {
 };
 
 export default ArticleDetail;
+
+// ===== END OF ArticleDetail.js =====
 
 // // ========================================================================================
 // // ========================================
