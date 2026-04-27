@@ -375,7 +375,7 @@ const ManagingYourProfileGuide = () => {
         <li className="flex items-start gap-2">
           <span className="text-blue-600 font-bold mt-0.5">•</span>
           <span><strong>Password</strong> — use{' '}
-            <a href="/help/article/changing-your-password" className="text-blue-600 hover:underline">
+            <a href="/help/article/password-reset" className="text-blue-600 hover:underline">
               the password change flow
             </a>{' '}
             (separate endpoint with current-password verification)</span>
@@ -406,7 +406,7 @@ const ManagingYourProfileGuide = () => {
 
       <div className="grid grid-cols-1 gap-4">
         <a
-          href="/help/article/changing-your-password"
+          href="/help/article/password-reset"
           className="flex items-center justify-between p-4 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors no-underline"
         >
           <div>
@@ -432,7 +432,7 @@ const ManagingYourProfileGuide = () => {
         </a>
 
         <a
-          href="/help/article/api-key-best-practices"
+          href="/help/article/api-key-security-best-practices"
           className="flex items-center justify-between p-4 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors no-underline"
         >
           <div>

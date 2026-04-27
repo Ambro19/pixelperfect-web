@@ -78,7 +78,7 @@ const DeletingYourAccountGuide = () => {
             deletion is overkill — it'll fix the problem but takes everything else with it.
           </p>
           <p className="text-sm text-blue-700 mb-0">
-            → See <a href="/help/article/api-key-best-practices" className="text-blue-700 underline">
+            → See <a href="/help/article/api-key-security-best-practices" className="text-blue-700 underline">
               API Key Best Practices
             </a> for the leak response flow
           </p>
@@ -304,7 +304,7 @@ const DeletingYourAccountGuide = () => {
       <p className="text-gray-700 leading-relaxed mt-3">
         For the full data retention picture (what we collect, where it lives, who else has
         access), see the{' '}
-        <a href="/help/article/data-retention-and-privacy" className="text-blue-600 hover:underline">
+        <a href="/help/article/data-retention-policy" className="text-blue-600 hover:underline">
           Data Retention & Privacy guide
         </a>.
       </p>
@@ -406,7 +406,7 @@ const DeletingYourAccountGuide = () => {
 
       <div className="grid grid-cols-1 gap-4">
         <a
-          href="/help/article/data-retention-and-privacy"
+          href="/help/article/data-retention-policy"
           className="flex items-center justify-between p-4 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors no-underline"
         >
           <div>
@@ -432,7 +432,7 @@ const DeletingYourAccountGuide = () => {
         </a>
 
         <a
-          href="/help/article/gdpr-and-compliance"
+          href="/help/article/gdpr-compliance"
           className="flex items-center justify-between p-4 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors no-underline"
         >
           <div>

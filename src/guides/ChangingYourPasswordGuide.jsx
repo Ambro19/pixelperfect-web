@@ -423,7 +423,7 @@ const ChangingYourPasswordGuide = () => {
           <h4 className="font-semibold text-gray-900 mb-2">"I changed my password but my forgot-password email still goes to the old address"</h4>
           <p className="text-sm text-gray-700">
             Password change and email change are separate actions. Update your email via{' '}
-            <a href="/help/article/managing-your-profile" className="text-blue-600 hover:underline">
+            <a href="/help/article/updating-account-details" className="text-blue-600 hover:underline">
               the profile update flow
             </a>, then request another reset (which will go to the new address).
           </p>
@@ -493,7 +493,7 @@ const ChangingYourPasswordGuide = () => {
         </a>
 
         <a
-          href="/help/article/managing-your-profile"
+          href="/help/article/updating-account-details"
           className="flex items-center justify-between p-4 bg-green-50 hover:bg-green-100 rounded-lg transition-colors no-underline"
         >
           <div>
@@ -506,7 +506,7 @@ const ChangingYourPasswordGuide = () => {
         </a>
 
         <a
-          href="/help/article/api-key-best-practices"
+          href="/help/article/api-key-security-best-practices"
           className="flex items-center justify-between p-4 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors no-underline"
         >
           <div>

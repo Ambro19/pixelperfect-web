@@ -279,7 +279,7 @@ Password forgotten:
       </p>
       <p className="text-gray-700 leading-relaxed mt-3">
         For the full story on how to handle keys safely on your side, see the{' '}
-        <a href="/help/article/api-key-best-practices" className="text-blue-600 hover:underline">
+        <a href="/help/article/api-key-security-best-practices" className="text-blue-600 hover:underline">
           API Key Best Practices guide
         </a>.
       </p>
@@ -393,7 +393,7 @@ Password forgotten:
 
       <div className="grid grid-cols-1 gap-4">
         <a
-          href="/help/article/api-key-best-practices"
+          href="/help/article/api-key-security-best-practices"
           className="flex items-center justify-between p-4 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors no-underline"
         >
           <div>
@@ -406,7 +406,7 @@ Password forgotten:
         </a>
 
         <a
-          href="/help/article/data-retention-and-privacy"
+          href="/help/article/data-retention-policy"
           className="flex items-center justify-between p-4 bg-green-50 hover:bg-green-100 rounded-lg transition-colors no-underline"
         >
           <div>
@@ -419,7 +419,7 @@ Password forgotten:
         </a>
 
         <a
-          href="/help/article/gdpr-and-compliance"
+          href="/help/article/gdpr-compliance"
           className="flex items-center justify-between p-4 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors no-underline"
         >
           <div>

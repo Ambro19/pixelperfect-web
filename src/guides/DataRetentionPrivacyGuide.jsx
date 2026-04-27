@@ -484,7 +484,7 @@ const DataRetentionPrivacyGuide = () => {
         </a>
 
         <a
-          href="/help/article/gdpr-and-compliance"
+          href="/help/article/gdpr-compliance"
           className="flex items-center justify-between p-4 bg-green-50 hover:bg-green-100 rounded-lg transition-colors no-underline"
         >
           <div>
@@ -497,7 +497,7 @@ const DataRetentionPrivacyGuide = () => {
         </a>
 
         <a
-          href="/help/article/api-key-best-practices"
+          href="/help/article/api-key-security-best-practices"
           className="flex items-center justify-between p-4 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors no-underline"
         >
           <div>
@@ -532,3 +532,5 @@ const DataRetentionPrivacyGuide = () => {
 };
 
 export default DataRetentionPrivacyGuide;
+
+// ===== END OF DataRetentionPrivacyGuide.JSX =====

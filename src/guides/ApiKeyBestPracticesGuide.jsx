@@ -459,7 +459,7 @@ logger.error("Screenshot failed", { url, headers: safeHeaders, status });`}
 
       <div className="grid grid-cols-1 gap-4">
         <a
-          href="/help/article/data-retention-and-privacy"
+          href="/help/article/data-retention-policy"
           className="flex items-center justify-between p-4 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors no-underline"
         >
           <div>
