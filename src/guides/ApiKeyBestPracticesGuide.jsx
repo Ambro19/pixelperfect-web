@@ -521,4 +521,4 @@ logger.error("Screenshot failed", { url, headers: safeHeaders, status });`}
 
 export default ApiKeyBestPracticesGuide;
 
-// ===== END OF ApiKeyBestPracticesGuide =====
+// ===== END OF ApiKeyBestPracticesGuide.jsx =====
