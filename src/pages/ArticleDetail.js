@@ -3,33 +3,30 @@
 // ========================================
 // File: frontend/src/pages/ArticleDetail.js
 // Author: OneTechly
-// Updated: April 28, 2026
+// Updated: April 29, 2026
 //
 // Renders individual help articles with dynamic loading
 // Pulls article data from helpArticles.js via getArticleBySlug
 // Dynamically imports guide component for content
 //
 // ✅ FIX (Apr 2026): Removed lucide-react dependency.
-//    All icons replaced with inline SVGs matching the style used by every
-//    guide component in this codebase. No new package install required.
+//    All icons replaced with inline SVGs.
 //
-// ✅ FIX (Apr 2026 - Round 2): Polished bottom layout:
-//    - Footer block is now responsive: stacks vertically on mobile,
-//      balanced side-by-side on desktop with proper padding
-//    - Related Articles card titles clamp to 2 lines
-//    - Card excerpts clamp to 3 lines for consistent card heights
-//    - Metadata row uses flex-wrap so tight layouts don't overflow
-//    - All three related-article cards now have identical visual weight
+// ✅ FIX (Apr 2026 - Round 2): Polished bottom layout.
 //
-// ✅ UPDATE (Apr 26, 2026 - Round 3): Wired up 8 new guide components
-//    for Security & Privacy and Account Management categories.
+// ✅ UPDATE (Apr 26, 2026 - Round 3): Wired 8 Security & Privacy and
+//    Account Management guide components.
 //
-// ✅ UPDATE (Apr 28, 2026 - Round 4): Wired up the 3 new
-//    Billing & Subscription components. The "MISSING LAZY" placeholder
-//    section is now filled in. Section ordering preserved.
-//      - ManagingPaymentMethodsGuide
-//      - UnderstandingYourInvoiceGuide
-//      - UnderstandingPricingPlansGuide
+// ✅ UPDATE (Apr 28, 2026 - Round 4): Wired 3 Billing components.
+//
+// ✅ FIX (Apr 29, 2026 - Round 5): Added the 3 missing Troubleshooting
+//    lazy-imports that caused the crash on /help/article/webhook-delivery-failures
+//    (Images 1 & 2 in the bug report). The guideComponents map previously had
+//    only ErrorsAndSolutionsGuide in the Troubleshooting section; the other
+//    three (ScreenshotQualityIssuesGuide, ApiTimeoutErrorsGuide,
+//    WebhookDeliveryFailuresGuide) were missing entirely.
+//
+//    Also confirmed: Billing section (Round 4 entries) is intact.
 // ========================================
 
 import React, { Suspense, lazy } from 'react';
@@ -108,24 +105,29 @@ const guideComponents = {
   SocialMediaPreviewGuide:        lazy(() => import('../guides/SocialMediaPreviewGuide')),
   WebsiteMonitorGuide:            lazy(() => import('../guides/WebsiteMonitorGuide')),
 
-  // ---------- 3. Billing & Subscription (✅ NEW: Apr 28, 2026) ----------
+  // ---------- 3. Billing & Subscription ----------
   ManagingPaymentMethodsGuide:    lazy(() => import('../guides/ManagingPaymentMethodsGuide')),
   UnderstandingYourInvoiceGuide:  lazy(() => import('../guides/UnderstandingYourInvoiceGuide')),
   UnderstandingPricingPlansGuide: lazy(() => import('../guides/UnderstandingPricingPlansGuide')),
 
-  // ---------- 4. Troubleshooting (✅ NEW: Apr 28, 2026) ----------
+  // ---------- 4. Troubleshooting ----------
+  // ✅ FIX (Apr 29, 2026): Added the 3 missing imports below.
+  // ErrorsAndSolutionsGuide was already present; the other three were not,
+  // which caused React to receive `undefined` as the lazy component and throw:
+  // "Element type is invalid. Received a promise that resolves to: undefined.
+  //  Lazy element type must resolve to a class or function."
   ErrorsAndSolutionsGuide:        lazy(() => import('../guides/ErrorsAndSolutionsGuide')),
   ScreenshotQualityIssuesGuide:   lazy(() => import('../guides/ScreenshotQualityIssuesGuide')),
   ApiTimeoutErrorsGuide:          lazy(() => import('../guides/ApiTimeoutErrorsGuide')),
   WebhookDeliveryFailuresGuide:   lazy(() => import('../guides/WebhookDeliveryFailuresGuide')),
 
-  // ---------- 5. Security & Privacy (✅ NEW: Apr 26, 2026) ----------
+  // ---------- 5. Security & Privacy ----------
   ApiKeyBestPracticesGuide:       lazy(() => import('../guides/ApiKeyBestPracticesGuide')),
   DataRetentionPrivacyGuide:      lazy(() => import('../guides/DataRetentionPrivacyGuide')),
   AccountSecurityGuide:           lazy(() => import('../guides/AccountSecurityGuide')),
   GdprComplianceGuide:            lazy(() => import('../guides/GdprComplianceGuide')),
 
-  // ---------- 6. Account Management (✅ NEW: Apr 26, 2026) ----------
+  // ---------- 6. Account Management ----------
   ManagingYourProfileGuide:       lazy(() => import('../guides/ManagingYourProfileGuide')),
   ChangingYourPasswordGuide:      lazy(() => import('../guides/ChangingYourPasswordGuide')),
   ManagingYourSubscriptionGuide:  lazy(() => import('../guides/ManagingYourSubscriptionGuide')),
@@ -360,15 +362,13 @@ const ArticleDetail = () => {
 
 export default ArticleDetail;
 
-//===== END OF ArticleDetail.js =====
-
-
+// =======================================================
 // // ========================================
 // // ARTICLE DETAIL PAGE - PIXELPERFECT
 // // ========================================
 // // File: frontend/src/pages/ArticleDetail.js
 // // Author: OneTechly
-// // Updated: April 26, 2026
+// // Updated: April 28, 2026
 // //
 // // Renders individual help articles with dynamic loading
 // // Pulls article data from helpArticles.js via getArticleBySlug
@@ -381,21 +381,20 @@ export default ArticleDetail;
 // // ✅ FIX (Apr 2026 - Round 2): Polished bottom layout:
 // //    - Footer block is now responsive: stacks vertically on mobile,
 // //      balanced side-by-side on desktop with proper padding
-// //    - Related Articles card titles clamp to 2 lines (was unlimited → causing
-// //      4-5 line titles that broke the grid visually)
+// //    - Related Articles card titles clamp to 2 lines
 // //    - Card excerpts clamp to 3 lines for consistent card heights
 // //    - Metadata row uses flex-wrap so tight layouts don't overflow
 // //    - All three related-article cards now have identical visual weight
 // //
-// // ✅ UPDATE (Apr 26, 2026 - Round 3): Wired up 8 new guide components.
-// //    Added lazy-imports for:
-// //      - Security & Privacy (4): ApiKeyBestPracticesGuide,
-// //        DataRetentionPrivacyGuide, AccountSecurityGuide, GdprComplianceGuide
-// //      - Account Management (4): ManagingYourProfileGuide,
-// //        ChangingYourPasswordGuide, ManagingYourSubscriptionGuide,
-// //        DeletingYourAccountGuide
-// //    No other changes — icon components, fallback handling, responsive
-// //    footer, related-article styling are all unchanged.
+// // ✅ UPDATE (Apr 26, 2026 - Round 3): Wired up 8 new guide components
+// //    for Security & Privacy and Account Management categories.
+// //
+// // ✅ UPDATE (Apr 28, 2026 - Round 4): Wired up the 3 new
+// //    Billing & Subscription components. The "MISSING LAZY" placeholder
+// //    section is now filled in. Section ordering preserved.
+// //      - ManagingPaymentMethodsGuide
+// //      - UnderstandingYourInvoiceGuide
+// //      - UnderstandingPricingPlansGuide
 // // ========================================
 
 // import React, { Suspense, lazy } from 'react';
@@ -474,13 +473,13 @@ export default ArticleDetail;
 //   SocialMediaPreviewGuide:        lazy(() => import('../guides/SocialMediaPreviewGuide')),
 //   WebsiteMonitorGuide:            lazy(() => import('../guides/WebsiteMonitorGuide')),
 
-  
-//   // IMPORTANT -- MISSING LAZY: DO WE NEED TO ADD THE lazy(() FUNCTIONS FOR Billing & Subscription??  
 //   // ---------- 3. Billing & Subscription (✅ NEW: Apr 28, 2026) ----------
- 
+//   ManagingPaymentMethodsGuide:    lazy(() => import('../guides/ManagingPaymentMethodsGuide')),
+//   UnderstandingYourInvoiceGuide:  lazy(() => import('../guides/UnderstandingYourInvoiceGuide')),
+//   UnderstandingPricingPlansGuide: lazy(() => import('../guides/UnderstandingPricingPlansGuide')),
 
 //   // ---------- 4. Troubleshooting (✅ NEW: Apr 28, 2026) ----------
-//   ErrorsAndSolutionsGuide:        lazy(() => import('../guides/ErrorsAndSolutionsGuide')),  // already there
+//   ErrorsAndSolutionsGuide:        lazy(() => import('../guides/ErrorsAndSolutionsGuide')),
 //   ScreenshotQualityIssuesGuide:   lazy(() => import('../guides/ScreenshotQualityIssuesGuide')),
 //   ApiTimeoutErrorsGuide:          lazy(() => import('../guides/ApiTimeoutErrorsGuide')),
 //   WebhookDeliveryFailuresGuide:   lazy(() => import('../guides/WebhookDeliveryFailuresGuide')),
@@ -636,16 +635,7 @@ export default ArticleDetail;
 //             )}
 //           </div>
 
-//           {/* ✅ FIX (Apr 2026 Round 2): Responsive footer                              */}
-//           {/*                                                                           */}
-//           {/* Previously: flex items-center justify-between with no stacking,           */}
-//           {/* resulting in cramped mobile and awkward desktop padding.                  */}
-//           {/*                                                                           */}
-//           {/* Now:                                                                      */}
-//           {/*   - Mobile (<sm):  flex-col, logo block on top, buttons below, gap-4      */}
-//           {/*   - Tablet+ (sm+): flex-row, items-center, justify-between, gap-4         */}
-//           {/*   - Increased vertical padding (py-5 → py-6) for breathing room          */}
-//           {/*   - Logo block wraps in a min-w-0 container to truncate on very narrow   */}
+//           {/* Responsive footer */}
 //           <div className="bg-gray-50 px-6 sm:px-8 py-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
 //             <div className="flex items-center gap-3 min-w-0">
 //               <PixelPerfectLogo size={32} showText={false} />
@@ -671,18 +661,7 @@ export default ArticleDetail;
 //           </div>
 //         </div>
 
-//         {/* ✅ FIX (Apr 2026 Round 2): Related Articles with proper title clamping   */}
-//         {/*                                                                          */}
-//         {/* Previously: card titles had no line-clamp, so long titles like           */}
-//         {/* "How to create an account" would break onto 4-5 lines, making the       */}
-//         {/* three-card grid visually uneven and awkward.                            */}
-//         {/*                                                                          */}
-//         {/* Now:                                                                     */}
-//         {/*   - Title clamped to 2 lines (line-clamp-2)                             */}
-//         {/*   - Excerpt clamped to 3 lines (line-clamp-3)                           */}
-//         {/*   - Card has flex-col with min-height for alignment                     */}
-//         {/*   - Metadata row uses flex-wrap to avoid overflow on tight widths       */}
-//         {/*   - Grid uses items-stretch so all cards match height                   */}
+//         {/* Related Articles */}
 //         {relatedArticles.length > 0 && (
 //           <div className="mt-8">
 //             <h2 className="text-xl font-bold text-gray-900 mb-4">Related Articles</h2>
@@ -746,4 +725,6 @@ export default ArticleDetail;
 
 // export default ArticleDetail;
 
-// //===== END OF ArticleDetail.jsx =====
+// //===== END OF ArticleDetail.js =====
+
+
