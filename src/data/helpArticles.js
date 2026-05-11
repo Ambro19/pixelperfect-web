@@ -3,33 +3,30 @@
 // ========================================
 // File: frontend/src/data/helpArticles.js
 // Author: OneTechly
-// Update: April 29, 2026
+// Updated: May 2026
 //
-// ✅ FIX (Apr 29, 2026): Four corrections applied:
+// ✅ UPDATE (May 2026): Added Category 7 — Advanced Features
 //
-//   1. understanding-pricing-plans: category changed from 'getting-started'
-//      to 'billing'. This is the third attempt at this fix — previous
-//      sessions delivered the fix in the file but not in the deployed build.
-//      Getting Started now has 4 articles; Billing & Subscription has 5.
+//   New category added:
+//     advanced-features — Pro and Business+ power features across all phases
 //
-//   2. screenshot-quality-issues: component changed from null to
-//      'ScreenshotQualityIssuesGuide'. The guide was written and deployed
-//      to disk in the previous session but never wired here.
+//   Articles added (5):
+//     custom-javascript-execution  → JavaScriptExecutionGuide (updated in place)
+//     device-emulation-guide       → DeviceEmulationGuide (new)
+//     element-selection-guide      → null stub (Phase 2, Business+)
+//     webhooks-guide               → null stub (Phase 3, Business+)
+//     white-label-guide            → null stub (Phase 4, Premium)
 //
-//   3. api-timeout-errors: component changed from null to
-//      'ApiTimeoutErrorsGuide'. Same situation.
+//   Article moved:
+//     javascript-execution: category 'api-usage' → 'advanced-features'
+//     Slug, component, and all other fields unchanged. Zero impact on
+//     existing routes or lazy-imports in ArticleDetail.js.
 //
-//   4. webhook-delivery-failures: component changed from null to
-//      'WebhookDeliveryFailuresGuide'. Same situation.
-//      This was the root cause of the crash in Images 1 & 2 — the guide
-//      file existed on disk but was not referenced here, so ArticleDetail.js
-//      resolved it to undefined and React threw "Lazy element type must
-//      resolve to a class or function."
-//
-// Previous fixes (Apr 26 & Apr 28, 2026) remain in place:
-//   - 8 Security & Privacy / Account Management components wired
-//   - 3 Billing components wired (ManagingPaymentMethodsGuide, etc.)
-//   - SOC2 and 2FA honest redirects
+// Previous fixes (Apr 29, 2026) remain in place:
+//   - understanding-pricing-plans: category 'getting-started' → 'billing'
+//   - screenshot-quality-issues: component null → ScreenshotQualityIssuesGuide
+//   - api-timeout-errors: component null → ApiTimeoutErrorsGuide
+//   - webhook-delivery-failures: component null → WebhookDeliveryFailuresGuide
 // ========================================
 
 // Category definitions
@@ -69,6 +66,13 @@ export const categories = [
     name: 'Account Management',
     icon: '👤',
     description: 'Manage your account settings and preferences'
+  },
+  // ✅ NEW (May 2026): Category 7 — Advanced Features
+  {
+    id: 'advanced-features',
+    name: 'Advanced Features',
+    icon: '⚡',
+    description: 'Pro and Business+ features: JavaScript execution, device emulation, element selection, webhooks, and white-label'
   }
 ];
 
@@ -76,7 +80,7 @@ export const categories = [
 // Each article maps to a guide component in frontend/src/guides/
 export const articles = [
   // ========================================
-  // 1. GETTING STARTED  (4 articles — pricing-plans moved to Billing)
+  // 1. GETTING STARTED  (4 articles)
   // ========================================
   {
     id: 'quick-start',
@@ -126,10 +130,9 @@ export const articles = [
     popular: true,
     views: 8300
   },
-  // ⚠️ pricing-plans is intentionally NOT listed here — it moved to Billing below
 
   // ========================================
-  // 2. API USAGE
+  // 2. API USAGE  (javascript-execution moved to advanced-features)
   // ========================================
   {
     id: 'api-authentication',
@@ -204,18 +207,6 @@ export const articles = [
     views: 6900
   },
   {
-    id: 'javascript-execution',
-    slug: 'javascript-execution',
-    title: 'JavaScript Execution Guide',
-    excerpt: 'Execute custom JavaScript before capturing screenshots.',
-    category: 'api-usage',
-    component: 'JavaScriptExecutionGuide',
-    readTime: '10 min read',
-    tags: ['javascript', 'custom-js', 'automation', 'advanced'],
-    popular: false,
-    views: 4800
-  },
-  {
     id: 'social-media-preview',
     slug: 'social-media-preview-guide',
     title: 'Social Media Preview Guide',
@@ -241,7 +232,7 @@ export const articles = [
   },
 
   // ========================================
-  // 3. BILLING & SUBSCRIPTION  (5 articles — pricing-plans added here)
+  // 3. BILLING & SUBSCRIPTION  (5 articles)
   // ========================================
   {
     id: 'upgrade-plan',
@@ -292,7 +283,6 @@ export const articles = [
     views: 2200
   },
   {
-    // ✅ FIX (Apr 29, 2026): category was 'getting-started' — corrected to 'billing'
     id: 'pricing-plans',
     slug: 'understanding-pricing-plans',
     title: 'Understanding pricing plans',
@@ -306,7 +296,7 @@ export const articles = [
   },
 
   // ========================================
-  // 4. TROUBLESHOOTING  (all 4 now wired)
+  // 4. TROUBLESHOOTING  (4 articles, all wired)
   // ========================================
   {
     id: 'common-errors',
@@ -326,7 +316,6 @@ export const articles = [
     title: 'Screenshot quality issues',
     excerpt: 'Fix common screenshot quality problems and artifacts.',
     category: 'troubleshooting',
-    // ✅ FIX (Apr 29, 2026): was null
     component: 'ScreenshotQualityIssuesGuide',
     readTime: '7 min read',
     tags: ['quality', 'resolution', 'troubleshooting', 'images'],
@@ -339,7 +328,6 @@ export const articles = [
     title: 'API timeout errors',
     excerpt: 'Resolve timeout errors and optimize screenshot capture time.',
     category: 'troubleshooting',
-    // ✅ FIX (Apr 29, 2026): was null
     component: 'ApiTimeoutErrorsGuide',
     readTime: '8 min read',
     tags: ['timeout', 'errors', 'performance', 'troubleshooting'],
@@ -352,7 +340,6 @@ export const articles = [
     title: 'Webhook delivery failures',
     excerpt: 'Debug webhook delivery issues and ensure reliable notifications.',
     category: 'troubleshooting',
-    // ✅ FIX (Apr 29, 2026): was null — this caused the crash in Images 1 & 2
     component: 'WebhookDeliveryFailuresGuide',
     readTime: '10 min read',
     tags: ['webhooks', 'notifications', 'troubleshooting', 'debugging'],
@@ -361,7 +348,7 @@ export const articles = [
   },
 
   // ========================================
-  // 5. SECURITY & PRIVACY
+  // 5. SECURITY & PRIVACY  (5 articles)
   // ========================================
   {
     id: 'data-retention',
@@ -425,7 +412,7 @@ export const articles = [
   },
 
   // ========================================
-  // 6. ACCOUNT MANAGEMENT
+  // 6. ACCOUNT MANAGEMENT  (6 articles)
   // ========================================
   {
     id: 'account-details',
@@ -498,11 +485,89 @@ export const articles = [
     tags: ['2fa', 'security', 'authentication', 'account', 'roadmap'],
     popular: false,
     views: 1100
+  },
+
+  // ========================================
+  // 7. ADVANCED FEATURES  (5 articles — phased rollout)
+  // ========================================
+
+  // ── Phase 1 (shipped May 2026) ──────────────────────────────────────────
+
+  {
+    // ✅ MOVED (May 2026): was category 'api-usage'. Moved to 'advanced-features'
+    // because Phase 1 shipped full custom JS content — this is now a power-user
+    // topic rather than a basic API usage topic.
+    // Slug, component, id, and all other fields are UNCHANGED.
+    // Zero impact on existing routes or ArticleDetail.js lazy-imports.
+    id: 'javascript-execution',
+    slug: 'javascript-execution',
+    title: 'Custom JavaScript Execution',
+    excerpt: 'Execute custom JavaScript before capturing screenshots to manipulate the page, hide elements, trigger interactions, and more. Pro tier and above.',
+    category: 'advanced-features',
+    component: 'JavaScriptExecutionGuide',
+    readTime: '10 min read',
+    tags: ['javascript', 'custom-js', 'automation', 'advanced', 'pro'],
+    popular: true,
+    views: 4800
+  },
+  {
+    id: 'device-emulation',
+    slug: 'device-emulation-guide',
+    title: 'Device Emulation Guide',
+    excerpt: 'Capture screenshots that look exactly as they would on iPhones, Android phones, iPads, and tablets using real Playwright device presets. Pro tier and above.',
+    category: 'advanced-features',
+    component: 'DeviceEmulationGuide',
+    readTime: '8 min read',
+    tags: ['device', 'mobile', 'emulation', 'responsive', 'viewport', 'pro'],
+    popular: true,
+    views: 0
+  },
+
+  // ── Phase 2 (Business+ — stub until shipped) ────────────────────────────
+  {
+    id: 'element-selection',
+    slug: 'element-selection-guide',
+    title: 'Element Selection & Cropping',
+    excerpt: 'Capture specific page elements by CSS selector — automatically crops the screenshot to just that element. Business tier and above. Coming in Phase 2.',
+    category: 'advanced-features',
+    component: null,
+    readTime: '7 min read',
+    tags: ['element', 'css-selector', 'crop', 'advanced', 'business'],
+    popular: false,
+    views: 0
+  },
+
+  // ── Phase 3 (Business+ — stub until shipped) ────────────────────────────
+  {
+    id: 'webhooks-guide',
+    slug: 'webhooks-guide',
+    title: 'Webhooks & Notifications',
+    excerpt: 'Receive real-time POST notifications when screenshots complete. Includes HMAC-SHA256 payload signing and exponential-backoff retry. Business tier and above. Coming in Phase 3.',
+    category: 'advanced-features',
+    component: null,
+    readTime: '10 min read',
+    tags: ['webhooks', 'notifications', 'hmac', 'business', 'automation'],
+    popular: false,
+    views: 0
+  },
+
+  // ── Phase 4 (Premium — stub until shipped) ──────────────────────────────
+  {
+    id: 'white-label-guide',
+    slug: 'white-label-guide',
+    title: 'White-Label & Custom Domains',
+    excerpt: 'Serve screenshots from your own domain with your own branding. Remove all PixelPerfect references from the API response. Premium tier. Coming in Phase 4.',
+    category: 'advanced-features',
+    component: null,
+    readTime: '12 min read',
+    tags: ['white-label', 'custom-domain', 'branding', 'premium'],
+    popular: false,
+    views: 0
   }
 ];
 
 // ========================================
-// HELPER FUNCTIONS
+// HELPER FUNCTIONS  (unchanged)
 // ========================================
 
 export function getAllArticles() {
@@ -556,42 +621,41 @@ export function formatViews(views) {
   return views.toString();
 }
 
-// ================================================================
+// ===== END OF helpArticles.js =====
+
+//////////////////////////////////////////////////////////////////////
 // // ========================================
 // // HELP CENTER ARTICLES DATA - PIXELPERFECT
 // // ========================================
 // // File: frontend/src/data/helpArticles.js
 // // Author: OneTechly
-// // Update: April 2026
+// // Update: April 29, 2026
 // //
-// // Article metadata for Help Center Hub
-// // Maps article titles to actual guide components
-// // Provides searchable keywords and categorization
+// // ✅ FIX (Apr 29, 2026): Four corrections applied:
 // //
-// // ✅ FIX (Apr 26, 2026): Wired up 8 new article components from the
-// //    Security & Privacy and Account Management categories.
+// //   1. understanding-pricing-plans: category changed from 'getting-started'
+// //      to 'billing'. This is the third attempt at this fix — previous
+// //      sessions delivered the fix in the file but not in the deployed build.
+// //      Getting Started now has 4 articles; Billing & Subscription has 5.
 // //
-// //    Wiring summary:
-// //      - Updated existing slugs to map their `component` field to the
-// //        new guide files instead of `null`:
-// //          api-key-security-best-practices → ApiKeyBestPracticesGuide
-// //          data-retention-policy           → DataRetentionPrivacyGuide
-// //          gdpr-compliance                 → GdprComplianceGuide
-// //          updating-account-details        → ManagingYourProfileGuide
-// //          password-reset                  → ChangingYourPasswordGuide
+// //   2. screenshot-quality-issues: component changed from null to
+// //      'ScreenshotQualityIssuesGuide'. The guide was written and deployed
+// //      to disk in the previous session but never wired here.
 // //
-// //      - Added 3 net-new entries for articles the data file didn't yet have:
-// //          account-security                → AccountSecurityGuide
-// //          managing-your-subscription      → ManagingYourSubscriptionGuide
-// //          deleting-your-account           → DeletingYourAccountGuide
+// //   3. api-timeout-errors: component changed from null to
+// //      'ApiTimeoutErrorsGuide'. Same situation.
 // //
-// //      - Honestly reconciled two entries that previously over-claimed:
-// //          soc2-certification: kept the slug for backwards compatibility
-// //            but redirected to GdprComplianceGuide (which honestly states
-// //            we are NOT yet SOC 2 audited). Excerpt rewritten.
-// //          two-factor-authentication: kept the slug but redirected to
-// //            AccountSecurityGuide which covers 2FA in its roadmap section.
-// //            Excerpt rewritten to reflect that 2FA isn't shipped yet.
+// //   4. webhook-delivery-failures: component changed from null to
+// //      'WebhookDeliveryFailuresGuide'. Same situation.
+// //      This was the root cause of the crash in Images 1 & 2 — the guide
+// //      file existed on disk but was not referenced here, so ArticleDetail.js
+// //      resolved it to undefined and React threw "Lazy element type must
+// //      resolve to a class or function."
+// //
+// // Previous fixes (Apr 26 & Apr 28, 2026) remain in place:
+// //   - 8 Security & Privacy / Account Management components wired
+// //   - 3 Billing components wired (ManagingPaymentMethodsGuide, etc.)
+// //   - SOC2 and 2FA honest redirects
 // // ========================================
 
 // // Category definitions
@@ -638,7 +702,7 @@ export function formatViews(views) {
 // // Each article maps to a guide component in frontend/src/guides/
 // export const articles = [
 //   // ========================================
-//   // 1. GETTING STARTED
+//   // 1. GETTING STARTED  (4 articles — pricing-plans moved to Billing)
 //   // ========================================
 //   {
 //     id: 'quick-start',
@@ -688,18 +752,7 @@ export function formatViews(views) {
 //     popular: true,
 //     views: 8300
 //   },
-//   {
-//     id: 'pricing-plans',
-//     slug: 'understanding-pricing-plans',
-//     title: 'Understanding pricing plans',
-//     excerpt: 'Compare our pricing tiers and find the plan that fits your needs.',
-//     category: 'getting-started',
-//     component: null,
-//     readTime: '5 min read',
-//     tags: ['pricing', 'plans', 'subscription'],
-//     popular: false,
-//     views: 4100
-//   },
+//   // ⚠️ pricing-plans is intentionally NOT listed here — it moved to Billing below
 
 //   // ========================================
 //   // 2. API USAGE
@@ -814,7 +867,7 @@ export function formatViews(views) {
 //   },
 
 //   // ========================================
-//   // 3. BILLING & SUBSCRIPTION
+//   // 3. BILLING & SUBSCRIPTION  (5 articles — pricing-plans added here)
 //   // ========================================
 //   {
 //     id: 'upgrade-plan',
@@ -822,8 +875,6 @@ export function formatViews(views) {
 //     title: 'How to upgrade your plan',
 //     excerpt: 'Upgrade to Pro, Business, or Premium to unlock more features.',
 //     category: 'billing',
-//     // ✅ Apr 26, 2026: Pointed to ManagingYourSubscriptionGuide which covers
-//     // upgrade flow plus all related actions (downgrade, cancel, billing cadence).
 //     component: 'ManagingYourSubscriptionGuide',
 //     readTime: '4 min read',
 //     tags: ['upgrade', 'subscription', 'billing', 'plans'],
@@ -836,7 +887,7 @@ export function formatViews(views) {
 //     title: 'Managing payment methods',
 //     excerpt: 'Add, update, or remove payment methods from your account.',
 //     category: 'billing',
-//     component: null,
+//     component: 'ManagingPaymentMethodsGuide',
 //     readTime: '5 min read',
 //     tags: ['payment', 'billing', 'credit-card', 'stripe'],
 //     popular: false,
@@ -848,7 +899,7 @@ export function formatViews(views) {
 //     title: 'Understanding your invoice',
 //     excerpt: 'Learn how to read your PixelPerfect invoices and billing statements.',
 //     category: 'billing',
-//     component: null,
+//     component: 'UnderstandingYourInvoiceGuide',
 //     readTime: '6 min read',
 //     tags: ['invoice', 'billing', 'charges', 'statement'],
 //     popular: false,
@@ -858,19 +909,30 @@ export function formatViews(views) {
 //     id: 'cancellation',
 //     slug: 'cancellation-and-refunds',
 //     title: 'Cancellation and refunds',
-//     excerpt: 'Understand our cancellation policy and how to request refunds.',
+//     excerpt: 'Understand our cancellation policy. We do not offer refunds — start with the Free tier to evaluate.',
 //     category: 'billing',
-//     // ✅ Apr 26, 2026: Pointed to ManagingYourSubscriptionGuide which covers
-//     // cancellation flow with the 14-day refund policy explicitly stated.
 //     component: 'ManagingYourSubscriptionGuide',
 //     readTime: '5 min read',
 //     tags: ['cancellation', 'refund', 'policy', 'subscription'],
 //     popular: false,
 //     views: 2200
 //   },
+//   {
+//     // ✅ FIX (Apr 29, 2026): category was 'getting-started' — corrected to 'billing'
+//     id: 'pricing-plans',
+//     slug: 'understanding-pricing-plans',
+//     title: 'Understanding pricing plans',
+//     excerpt: 'Compare our pricing tiers and find the plan that fits your needs.',
+//     category: 'billing',
+//     component: 'UnderstandingPricingPlansGuide',
+//     readTime: '5 min read',
+//     tags: ['pricing', 'plans', 'subscription'],
+//     popular: false,
+//     views: 4100
+//   },
 
 //   // ========================================
-//   // 4. TROUBLESHOOTING
+//   // 4. TROUBLESHOOTING  (all 4 now wired)
 //   // ========================================
 //   {
 //     id: 'common-errors',
@@ -890,6 +952,7 @@ export function formatViews(views) {
 //     title: 'Screenshot quality issues',
 //     excerpt: 'Fix common screenshot quality problems and artifacts.',
 //     category: 'troubleshooting',
+//     // ✅ FIX (Apr 29, 2026): was null
 //     component: 'ScreenshotQualityIssuesGuide',
 //     readTime: '7 min read',
 //     tags: ['quality', 'resolution', 'troubleshooting', 'images'],
@@ -902,6 +965,7 @@ export function formatViews(views) {
 //     title: 'API timeout errors',
 //     excerpt: 'Resolve timeout errors and optimize screenshot capture time.',
 //     category: 'troubleshooting',
+//     // ✅ FIX (Apr 29, 2026): was null
 //     component: 'ApiTimeoutErrorsGuide',
 //     readTime: '8 min read',
 //     tags: ['timeout', 'errors', 'performance', 'troubleshooting'],
@@ -914,6 +978,7 @@ export function formatViews(views) {
 //     title: 'Webhook delivery failures',
 //     excerpt: 'Debug webhook delivery issues and ensure reliable notifications.',
 //     category: 'troubleshooting',
+//     // ✅ FIX (Apr 29, 2026): was null — this caused the crash in Images 1 & 2
 //     component: 'WebhookDeliveryFailuresGuide',
 //     readTime: '10 min read',
 //     tags: ['webhooks', 'notifications', 'troubleshooting', 'debugging'],
@@ -976,8 +1041,6 @@ export function formatViews(views) {
 //     id: 'soc2',
 //     slug: 'soc2-certification',
 //     title: 'SOC 2 status',
-//     // ✅ Apr 26, 2026: Honest excerpt. We are NOT currently SOC 2 audited.
-//     // The full position is documented in the GDPR & Compliance guide.
 //     excerpt: 'Our current SOC 2 position and roadmap — covered in our GDPR & Compliance guide.',
 //     category: 'security',
 //     component: 'GdprComplianceGuide',
@@ -1054,9 +1117,6 @@ export function formatViews(views) {
 //     id: 'two-factor',
 //     slug: 'two-factor-authentication',
 //     title: 'Two-factor authentication',
-//     // ✅ Apr 26, 2026: Honest excerpt. 2FA is on the roadmap, not shipped.
-//     // The full security model and 2FA roadmap context lives in
-//     // AccountSecurityGuide.
 //     excerpt: 'Two-factor authentication is on our roadmap — see our account security guide for the full story.',
 //     category: 'account',
 //     component: 'AccountSecurityGuide',
@@ -1122,9 +1182,4 @@ export function formatViews(views) {
 //   return views.toString();
 // }
 
-// //// ====== END OF helpArticles.js ============
-
-
-
-
-
+// // ===== END OF helpArticles.js file 
