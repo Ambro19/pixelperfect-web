@@ -24,9 +24,14 @@
 //
 // ✅ UPDATE (May 2026 - Round 6): Added Advanced Features category imports.
 //    New lazy-imports added:
-//      - DeviceEmulationGuide  (Phase 1, new guide)
+//      - DeviceEmulationGuide   (Phase 1, new guide)
 //    JavaScriptExecutionGuide was already present (article moved from api-usage
 //    to advanced-features in helpArticles.js; no import change needed here).
+//
+// ✅ UPDATE (May 2026 - Round 7): Phase 2 + Phase 3 guides wired.
+//    New lazy-imports added:
+//      - ElementSelectionGuide  (Phase 2, Business+)
+//      - WebhooksGuide          (Phase 3, Business+)
 // ========================================
 
 import React, { Suspense, lazy } from 'react';
@@ -134,8 +139,10 @@ const guideComponents = {
   JavaScriptExecutionGuide:       lazy(() => import('../guides/JavaScriptExecutionGuide')),
   // ✅ NEW (May 2026): Phase 1 Device Emulation guide
   DeviceEmulationGuide:           lazy(() => import('../guides/DeviceEmulationGuide')),
-  // Phase 2–4 guides have component: null in helpArticles.js and render the
-  // "Guide Coming Soon" fallback — no lazy-import needed until they ship.
+  // ✅ UPDATE (May 2026 - Round 7): Phase 2 + 3 guides now live
+  ElementSelectionGuide:          lazy(() => import('../guides/ElementSelectionGuide')),
+  WebhooksGuide:                  lazy(() => import('../guides/WebhooksGuide')),
+  // Phase 4 guide has component: null — renders "Guide Coming Soon" until it ships.
 };
 
 // Loading component
@@ -368,13 +375,13 @@ export default ArticleDetail;
 
 // ===== END OF ArticleDetail.js =====
 
-//// ===========================================================================================================
+// ===================================================================
 // // ========================================
 // // ARTICLE DETAIL PAGE - PIXELPERFECT
 // // ========================================
 // // File: frontend/src/pages/ArticleDetail.js
 // // Author: OneTechly
-// // Updated: April 29, 2026
+// // Updated: May 2026
 // //
 // // Renders individual help articles with dynamic loading
 // // Pulls article data from helpArticles.js via getArticleBySlug
@@ -391,13 +398,13 @@ export default ArticleDetail;
 // // ✅ UPDATE (Apr 28, 2026 - Round 4): Wired 3 Billing components.
 // //
 // // ✅ FIX (Apr 29, 2026 - Round 5): Added the 3 missing Troubleshooting
-// //    lazy-imports that caused the crash on /help/article/webhook-delivery-failures
-// //    (Images 1 & 2 in the bug report). The guideComponents map previously had
-// //    only ErrorsAndSolutionsGuide in the Troubleshooting section; the other
-// //    three (ScreenshotQualityIssuesGuide, ApiTimeoutErrorsGuide,
-// //    WebhookDeliveryFailuresGuide) were missing entirely.
+// //    lazy-imports that caused the crash on /help/article/webhook-delivery-failures.
 // //
-// //    Also confirmed: Billing section (Round 4 entries) is intact.
+// // ✅ UPDATE (May 2026 - Round 6): Added Advanced Features category imports.
+// //    New lazy-imports added:
+// //      - DeviceEmulationGuide  (Phase 1, new guide)
+// //    JavaScriptExecutionGuide was already present (article moved from api-usage
+// //    to advanced-features in helpArticles.js; no import change needed here).
 // // ========================================
 
 // import React, { Suspense, lazy } from 'react';
@@ -472,7 +479,6 @@ export default ArticleDetail;
 //   OptimizationGuide:              lazy(() => import('../guides/OptimizationGuide')),
 //   NodeIntegrationGuide:           lazy(() => import('../guides/NodeIntegrationGuide')),
 //   PythonIntegrationGuide:         lazy(() => import('../guides/PythonIntegrationGuide')),
-//   JavaScriptExecutionGuide:       lazy(() => import('../guides/JavaScriptExecutionGuide')),
 //   SocialMediaPreviewGuide:        lazy(() => import('../guides/SocialMediaPreviewGuide')),
 //   WebsiteMonitorGuide:            lazy(() => import('../guides/WebsiteMonitorGuide')),
 
@@ -482,11 +488,6 @@ export default ArticleDetail;
 //   UnderstandingPricingPlansGuide: lazy(() => import('../guides/UnderstandingPricingPlansGuide')),
 
 //   // ---------- 4. Troubleshooting ----------
-//   // ✅ FIX (Apr 29, 2026): Added the 3 missing imports below.
-//   // ErrorsAndSolutionsGuide was already present; the other three were not,
-//   // which caused React to receive `undefined` as the lazy component and throw:
-//   // "Element type is invalid. Received a promise that resolves to: undefined.
-//   //  Lazy element type must resolve to a class or function."
 //   ErrorsAndSolutionsGuide:        lazy(() => import('../guides/ErrorsAndSolutionsGuide')),
 //   ScreenshotQualityIssuesGuide:   lazy(() => import('../guides/ScreenshotQualityIssuesGuide')),
 //   ApiTimeoutErrorsGuide:          lazy(() => import('../guides/ApiTimeoutErrorsGuide')),
@@ -503,6 +504,16 @@ export default ArticleDetail;
 //   ChangingYourPasswordGuide:      lazy(() => import('../guides/ChangingYourPasswordGuide')),
 //   ManagingYourSubscriptionGuide:  lazy(() => import('../guides/ManagingYourSubscriptionGuide')),
 //   DeletingYourAccountGuide:       lazy(() => import('../guides/DeletingYourAccountGuide')),
+
+//   // ---------- 7. Advanced Features ----------
+//   // ✅ UPDATE (May 2026): JavaScriptExecutionGuide was already imported above
+//   // (previously listed under API Usage). It remains unchanged here — only its
+//   // category in helpArticles.js was updated. No import change needed.
+//   JavaScriptExecutionGuide:       lazy(() => import('../guides/JavaScriptExecutionGuide')),
+//   // ✅ NEW (May 2026): Phase 1 Device Emulation guide
+//   DeviceEmulationGuide:           lazy(() => import('../guides/DeviceEmulationGuide')),
+//   // Phase 2–4 guides have component: null in helpArticles.js and render the
+//   // "Guide Coming Soon" fallback — no lazy-import needed until they ship.
 // };
 
 // // Loading component
@@ -626,17 +637,17 @@ export default ArticleDetail;
 //                   <li>
 //                     • <Link to="/contact" className="text-blue-600 hover:text-blue-700 underline">
 //                       Contact our support team
-//                     </Link> - We're here to help with any questions
+//                     </Link> — We're here to help with any questions
 //                   </li>
 //                   <li>
 //                     • <Link to="/api-docs" className="text-blue-600 hover:text-blue-700 underline">
 //                       View full API documentation
-//                     </Link> - Complete reference and examples
+//                     </Link> — Complete reference and examples
 //                   </li>
 //                   <li>
 //                     • <Link to="/help?category=troubleshooting" className="text-blue-600 hover:text-blue-700 underline">
 //                       Check our FAQ
-//                     </Link> - Common questions and answers
+//                     </Link> — Common questions and answers
 //                   </li>
 //                 </ul>
 //               </div>
@@ -733,4 +744,5 @@ export default ArticleDetail;
 
 // export default ArticleDetail;
 
-// //===== END OF ArticleDetail.js ===== 
+// // ===== END OF ArticleDetail.js =====
+
