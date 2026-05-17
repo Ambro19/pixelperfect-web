@@ -3,36 +3,28 @@
 // ========================================
 // File: frontend/src/pages/Features.jsx
 // Author: OneTechly
-// Updated: April 2026 - Honest feature alignment with shipped code
+// Updated: May 2026 — Phase 1/2/3 feature alignment
 //
-// ✅ FIX (Apr 2026): Aligned feature tiers with what actually ships in the
-//    production code path (backend/screenshot_endpoints.py).
+// ✅ UPDATE (May 2026): Aligned with shipped Phase 1, 2, and 3 features.
 //
-//    Verified shipped features (all tiers unless noted):
-//      - Single screenshot capture
-//      - Custom viewport (320–3840 × 240–2160)
-//      - PNG / JPEG / WebP / PDF formats
-//      - Full page capture (full_page param)
-//      - Dark mode (dark_mode param)
-//      - Delay 0–10s (delay param)
-//      - Element removal via CSS selectors (remove_elements param)
-//      - Batch processing (Pro+: 50 / Business: 200 / Premium: 1,000 URLs)
-//      - Tier concurrency (Free=2 / Pro=3 / Business=5)
-//      - 7-day R2 storage with public CDN URLs
+//    Phase 1 (shipped — Pro+):
+//      - Custom JavaScript Execution   → Pro+  (was "Coming Soon")
+//      - Device Emulation              → Pro+  (new, was not listed)
+//      - Wait for Selector             → Pro+  (new, was not listed)
 //
-//    Roadmap features (Coming Soon — code exists in backend/routers/screenshot.py
-//    but is NOT wired up in main.py, so these endpoints are not reachable):
-//      - Custom JavaScript Execution
-//      - Webhooks & Change Detection
-//      - White-Label Options (custom domain)
+//    Phase 2 (shipped — Business+):
+//      - Element Selection (crop)      → Business+  (was "Coming Soon" as "Element Removal Free+")
 //
-//    Changes in this revision:
-//      - Full Page Screenshots:  Pro+    → Free+
-//      - Element Selection:      Pro+    → Free+
-//      - Custom JavaScript:      Business → Coming Soon
-//      - Webhooks:               Business → Coming Soon
-//      - White-Label:            Premium  → Coming Soon
-//      - Batch URL count:        100      → up to 1,000 (Premium tier)
+//    Phase 3 (shipped — Business+):
+//      - Webhooks & Notifications      → Business+  (was "Coming Soon")
+//
+//    Phase 4 (roadmap — Premium):
+//      - White-Label & Custom Domains  → still "Coming Soon"
+//
+//    Other corrections:
+//      - "Element Removal" (remove_elements) kept as Free+ — correct
+//      - "Full Page Screenshots" kept as Free+ — correct
+//      - Device Emulation added under Pro+ Advanced Features section
 // ========================================
 
 import React from 'react';
@@ -56,24 +48,9 @@ const Features = () => {
             </div>
 
             <nav className="hidden md:flex items-center gap-6">
-              <button
-                onClick={() => navigate('/about')}
-                className="text-gray-600 hover:text-gray-900 font-medium"
-              >
-                About
-              </button>
-              <button
-                onClick={() => navigate('/pricing')}
-                className="text-gray-600 hover:text-gray-900 font-medium"
-              >
-                Pricing
-              </button>
-              <button
-                onClick={() => navigate('/docs')}
-                className="text-gray-600 hover:text-gray-900 font-medium"
-              >
-                Documentation
-              </button>
+              <button onClick={() => navigate('/about')}   className="text-gray-600 hover:text-gray-900 font-medium">About</button>
+              <button onClick={() => navigate('/pricing')} className="text-gray-600 hover:text-gray-900 font-medium">Pricing</button>
+              <button onClick={() => navigate('/docs')}    className="text-gray-600 hover:text-gray-900 font-medium">Documentation</button>
             </nav>
 
             <div className="flex items-center gap-2 sm:gap-3">
@@ -94,13 +71,12 @@ const Features = () => {
         </div>
       </header>
 
-      {/* Hero Section */}
+      {/* Hero */}
       <section className="bg-gradient-to-b from-blue-50 to-white py-12 sm:py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="flex justify-center items-center mb-6">
             <PixelPerfectLogo size={64} showText={false} />
           </div>
-
           <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">
             Powerful Screenshot Features
           </h1>
@@ -110,17 +86,17 @@ const Features = () => {
         </div>
       </section>
 
-      {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
 
-        {/* Core Features */}
+        {/* ── Core Features ──────────────────────────────────────────────────── */}
         <section className="mb-16">
           <div className="text-center mb-12">
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">Core Features</h2>
-            <p className="text-gray-600 text-lg">The foundation of our screenshot API</p>
+            <p className="text-gray-600 text-lg">The foundation of our screenshot API — available on all plans</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+
             {/* Lightning Fast */}
             <div className="bg-white p-6 rounded-xl border border-gray-200 hover:shadow-lg transition-shadow">
               <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
@@ -128,28 +104,13 @@ const Features = () => {
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-3">Lightning Fast</h3>
               <p className="text-gray-700 leading-relaxed mb-4">
-                Capture screenshots in under 3 seconds with our optimized cloud infrastructure.
-                Our globally distributed servers ensure low latency regardless of your location.
+                Capture screenshots in under 3 seconds with our optimized Playwright-powered
+                infrastructure. Global CDN delivery ensures low latency wherever you are.
               </p>
               <ul className="space-y-2 text-sm text-gray-600">
-                <li className="flex items-start gap-2">
-                  <svg className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                  <span>Average response time under 3 seconds</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <svg className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                  <span>Global CDN for instant delivery</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <svg className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                  <span>Optimized rendering pipeline</span>
-                </li>
+                <li className="flex items-start gap-2"><CheckIcon /><span>Average response time under 3 seconds</span></li>
+                <li className="flex items-start gap-2"><CheckIcon /><span>Cloudflare R2 CDN for instant delivery</span></li>
+                <li className="flex items-start gap-2"><CheckIcon /><span>Optimized Playwright rendering pipeline</span></li>
               </ul>
             </div>
 
@@ -160,28 +121,13 @@ const Features = () => {
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-3">Full Customization</h3>
               <p className="text-gray-700 leading-relaxed mb-4">
-                Control every aspect of your screenshots with our comprehensive API parameters.
-                From viewport dimensions to output formats, you're in complete control.
+                Control every aspect of your screenshots. From viewport dimensions to output
+                formats and dark mode — you're in complete control.
               </p>
               <ul className="space-y-2 text-sm text-gray-600">
-                <li className="flex items-start gap-2">
-                  <svg className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                  <span>Custom viewport sizes (width × height)</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <svg className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                  <span>Multiple formats: PNG, JPEG, WebP, PDF</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <svg className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                  <span>Quality and compression settings</span>
-                </li>
+                <li className="flex items-start gap-2"><CheckIcon /><span>Custom viewport sizes (320–3840 × 240–2160)</span></li>
+                <li className="flex items-start gap-2"><CheckIcon /><span>PNG, JPEG, WebP, and PDF formats</span></li>
+                <li className="flex items-start gap-2"><CheckIcon /><span>Delay 0–10s, full-page, dark mode, element removal</span></li>
               </ul>
             </div>
 
@@ -193,63 +139,16 @@ const Features = () => {
               <h3 className="text-xl font-semibold text-gray-900 mb-3">Secure & Reliable</h3>
               <p className="text-gray-700 leading-relaxed mb-4">
                 Enterprise-grade security with industry-standard encryption. Your data and
-                requests are protected at every step of the screenshot capture pipeline.
+                requests are protected at every step of the capture pipeline.
               </p>
               <ul className="space-y-2 text-sm text-gray-600">
-                <li className="flex items-start gap-2">
-                  <svg className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                  <span>SSL/TLS encryption for all requests</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <svg className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                  <span>API keys hashed with SHA-256</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <svg className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                  <span>Cloudflare R2 storage with secure URLs</span>
-                </li>
+                <li className="flex items-start gap-2"><CheckIcon /><span>SSL/TLS encryption for all requests</span></li>
+                <li className="flex items-start gap-2"><CheckIcon /><span>API keys hashed with SHA-256</span></li>
+                <li className="flex items-start gap-2"><CheckIcon /><span>Cloudflare R2 storage with secure URLs</span></li>
               </ul>
             </div>
 
-            {/* Mobile Screenshots */}
-            <div className="bg-white p-6 rounded-xl border border-gray-200 hover:shadow-lg transition-shadow">
-              <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center mb-4">
-                <span className="text-2xl">📱</span>
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">Mobile Screenshots</h3>
-              <p className="text-gray-700 leading-relaxed mb-4">
-                Capture screenshots at any mobile viewport. Test responsive designs and see
-                exactly how your site looks on phones, tablets, and small screens.
-              </p>
-              <ul className="space-y-2 text-sm text-gray-600">
-                <li className="flex items-start gap-2">
-                  <svg className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                  <span>Mobile viewport presets (375×667, 390×844)</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <svg className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                  <span>Tablet viewports (768×1024)</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <svg className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                  <span>Responsive design verification</span>
-                </li>
-              </ul>
-            </div>
-
-            {/* Batch Processing - ✅ FIX: Updated URL count to match real limits */}
+            {/* Batch Processing */}
             <div className="bg-white p-6 rounded-xl border border-gray-200 hover:shadow-lg transition-shadow">
               <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center mb-4">
                 <span className="text-2xl">⚙️</span>
@@ -257,199 +156,186 @@ const Features = () => {
               <h3 className="text-xl font-semibold text-gray-900 mb-3">Batch Processing</h3>
               <p className="text-gray-700 leading-relaxed mb-4">
                 Capture multiple screenshots in a single API call with async job processing.
-                Perfect for monitoring multiple pages or comparing different URLs efficiently.
+                Scale from 50 URLs on Pro to 1,000 on Premium.
               </p>
               <ul className="space-y-2 text-sm text-gray-600">
-                <li className="flex items-start gap-2">
-                  <svg className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                  <span>Up to 1,000 URLs per batch (Premium tier)</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <svg className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                  <span>Async job processing with polling</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <svg className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                  <span>Available on Pro tier and above</span>
-                </li>
+                <li className="flex items-start gap-2"><CheckIcon /><span>Async job processing with polling</span></li>
+                <li className="flex items-start gap-2"><CheckIcon /><span>Up to 1,000 URLs per batch (Premium)</span></li>
+                <li className="flex items-start gap-2"><CheckIcon /><span>Available on Pro tier and above</span></li>
               </ul>
             </div>
 
-            {/* Dark Mode Support */}
+            {/* Dark Mode */}
             <div className="bg-white p-6 rounded-xl border border-gray-200 hover:shadow-lg transition-shadow">
               <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center mb-4">
                 <span className="text-2xl">🌙</span>
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-3">Dark Mode Support</h3>
               <p className="text-gray-700 leading-relaxed mb-4">
-                Capture screenshots with dark mode enabled. Essential for testing dark themes
-                and ensuring your site looks great in any color scheme.
+                Capture screenshots with dark mode forced on. Essential for testing dark themes
+                and verifying your site looks great in any color scheme.
               </p>
               <ul className="space-y-2 text-sm text-gray-600">
-                <li className="flex items-start gap-2">
-                  <svg className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                  <span>Force dark color scheme</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <svg className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                  <span>Available on all tiers</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <svg className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                  <span>Theme testing made easy</span>
-                </li>
+                <li className="flex items-start gap-2"><CheckIcon /><span>Force dark color scheme via prefers-color-scheme</span></li>
+                <li className="flex items-start gap-2"><CheckIcon /><span>Available on all tiers</span></li>
+                <li className="flex items-start gap-2"><CheckIcon /><span>Theme testing made easy</span></li>
               </ul>
             </div>
+
+            {/* Full Page */}
+            <div className="bg-white p-6 rounded-xl border border-gray-200 hover:shadow-lg transition-shadow">
+              <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center mb-4">
+                <span className="text-2xl">📄</span>
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">Full Page Screenshots</h3>
+              <p className="text-gray-700 leading-relaxed mb-4">
+                Capture entire web pages from top to bottom regardless of height. Perfect for
+                documenting long-form content, articles, and landing pages.
+              </p>
+              <ul className="space-y-2 text-sm text-gray-600">
+                <li className="flex items-start gap-2"><CheckIcon /><span>Automatic scroll and full-page capture</span></li>
+                <li className="flex items-start gap-2"><CheckIcon /><span>No height limitations</span></li>
+                <li className="flex items-start gap-2"><CheckIcon /><span>Available on all tiers</span></li>
+              </ul>
+            </div>
+
           </div>
         </section>
 
-        {/* Advanced Features - ✅ UPDATED with honest tier alignment */}
+        {/* ── Advanced Features ───────────────────────────────────────────────── */}
         <section className="mb-16">
           <div className="text-center mb-12">
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">Advanced Features</h2>
-            <p className="text-gray-600 text-lg">Available now and coming soon to PixelPerfect</p>
+            <p className="text-gray-600 text-lg">Pro, Business, and Premium capabilities — live in production</p>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
-            {/* ✅ Full Page Screenshots — corrected to Free+ */}
-            <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-8 rounded-xl">
+            {/* ✅ Custom JavaScript — Pro+ (SHIPPED Phase 1) */}
+            <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-8 rounded-xl border border-purple-200">
               <div className="flex items-start gap-4 mb-4">
-                <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <span className="text-2xl">📄</span>
+                <div className="w-12 h-12 bg-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <span className="text-2xl">💻</span>
                 </div>
                 <div>
                   <div className="flex items-center gap-2 mb-2 flex-wrap">
-                    <h3 className="text-xl font-semibold text-gray-900">Full Page Screenshots</h3>
-                    <span className="px-2 py-1 bg-green-600 text-white text-xs font-semibold rounded">Free+</span>
+                    <h3 className="text-xl font-semibold text-gray-900">Custom JavaScript Execution</h3>
+                    <span className="px-2 py-1 bg-purple-600 text-white text-xs font-semibold rounded">Pro+</span>
                   </div>
                   <p className="text-gray-700">
-                    Capture entire web pages from top to bottom, regardless of length. Perfect for
-                    documenting long-form content, articles, or complete landing pages.
+                    Execute custom JavaScript before capturing screenshots. Interact with the page,
+                    fill forms, click buttons, or modify content programmatically — all server-side
+                    in our headless Playwright browser.
                   </p>
                 </div>
               </div>
               <ul className="space-y-2 text-sm text-gray-700 ml-16">
-                <li>• Automatic page scroll and stitching</li>
-                <li>• No height limitations</li>
-                <li>• Maintains perfect pixel alignment</li>
+                <li>• Run any JavaScript code before capture</li>
+                <li>• Non-fatal execution — screenshot still captured on JS errors</li>
+                <li>• js_warning field reports any execution issues</li>
               </ul>
             </div>
 
-            {/* ✅ Element Selection — corrected to Free+ */}
-            <div className="bg-gradient-to-br from-green-50 to-green-100 p-8 rounded-xl">
+            {/* ✅ Device Emulation — Pro+ (SHIPPED Phase 1) */}
+            <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-8 rounded-xl border border-blue-200">
+              <div className="flex items-start gap-4 mb-4">
+                <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <span className="text-2xl">📱</span>
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 mb-2 flex-wrap">
+                    <h3 className="text-xl font-semibold text-gray-900">Device Emulation</h3>
+                    <span className="px-2 py-1 bg-blue-600 text-white text-xs font-semibold rounded">Pro+</span>
+                  </div>
+                  <p className="text-gray-700">
+                    Capture screenshots using real device profiles with accurate viewport sizes,
+                    pixel density (DPR), and user agent strings for iPhone, Android, and iPad devices.
+                  </p>
+                </div>
+              </div>
+              <ul className="space-y-2 text-sm text-gray-700 ml-16">
+                <li>• 9 device presets: iPhone 13, Pixel 7, iPad Pro, and more</li>
+                <li>• Accurate DPR scaling (up to 4.5×) for retina-quality crops</li>
+                <li>• Correct user agent strings for responsive design testing</li>
+              </ul>
+            </div>
+
+            {/* ✅ Element Selection — Business+ (SHIPPED Phase 2) */}
+            <div className="bg-gradient-to-br from-green-50 to-green-100 p-8 rounded-xl border border-green-200">
               <div className="flex items-start gap-4 mb-4">
                 <div className="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center flex-shrink-0">
                   <span className="text-2xl">🎯</span>
                 </div>
                 <div>
                   <div className="flex items-center gap-2 mb-2 flex-wrap">
-                    <h3 className="text-xl font-semibold text-gray-900">Element Removal</h3>
-                    <span className="px-2 py-1 bg-green-600 text-white text-xs font-semibold rounded">Free+</span>
+                    <h3 className="text-xl font-semibold text-gray-900">Element Selection</h3>
+                    <span className="px-2 py-1 bg-green-600 text-white text-xs font-semibold rounded">Business+</span>
                   </div>
                   <p className="text-gray-700">
-                    Hide specific elements on a page using CSS selectors before capture. Remove
-                    cookie banners, popups, ads, or any unwanted content from your screenshots.
+                    Crop screenshots to any element using CSS selectors. The full page is captured
+                    first, then Pillow crops precisely to the element's bounding box — accounting
+                    for device pixel ratio for crisp results on retina displays.
                   </p>
                 </div>
               </div>
               <ul className="space-y-2 text-sm text-gray-700 ml-16">
-                <li>• CSS selector support (up to 20 selectors per request)</li>
-                <li>• Hide cookie banners, popups, and overlays</li>
-                <li>• Applied automatically before each capture</li>
+                <li>• CSS selector targeting: <code className="bg-green-200 px-1 rounded text-xs">h1</code>, <code className="bg-green-200 px-1 rounded text-xs">#hero</code>, <code className="bg-green-200 px-1 rounded text-xs">.card</code>, any valid selector</li>
+                <li>• DPR-aware Pillow crop — pixel-perfect on high-density displays</li>
+                <li>• Combinable with device emulation, custom JS, and webhooks</li>
               </ul>
             </div>
 
-            {/* ✅ Custom JavaScript — Coming Soon */}
-            <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-8 rounded-xl relative overflow-hidden">
-              <div className="absolute top-0 right-0 px-3 py-1 bg-purple-600 text-white text-xs font-bold uppercase tracking-wide rounded-bl-lg">
-                Coming Soon
-              </div>
-              <div className="flex items-start gap-4 mb-4 mt-2">
-                <div className="w-12 h-12 bg-purple-600 rounded-lg flex items-center justify-center flex-shrink-0 opacity-90">
-                  <span className="text-2xl">💻</span>
-                </div>
-                <div>
-                  <div className="flex items-center gap-2 mb-2 flex-wrap">
-                    <h3 className="text-xl font-semibold text-gray-900">Custom JavaScript Execution</h3>
-                  </div>
-                  <p className="text-gray-700">
-                    Execute custom JavaScript before capturing screenshots. Interact with the page,
-                    fill forms, click buttons, or modify content programmatically — all server-side
-                    in our headless browser environment.
-                  </p>
-                </div>
-              </div>
-              <ul className="space-y-2 text-sm text-gray-700 ml-16 mb-4">
-                <li>• Run any JavaScript code before capture</li>
-                <li>• Wait for dynamic content to load</li>
-                <li>• Programmatic page interaction</li>
-              </ul>
-              <div className="ml-16 pt-3 border-t border-purple-200">
-                <button
-                  onClick={() => navigate('/contact?subject=feature-request-javascript-execution')}
-                  className="text-sm font-semibold text-purple-700 hover:text-purple-900 inline-flex items-center gap-1"
-                >
-                  Get notified when this ships
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-
-            {/* ✅ Webhooks & Change Detection — Coming Soon */}
-            <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-8 rounded-xl relative overflow-hidden">
-              <div className="absolute top-0 right-0 px-3 py-1 bg-orange-600 text-white text-xs font-bold uppercase tracking-wide rounded-bl-lg">
-                Coming Soon
-              </div>
-              <div className="flex items-start gap-4 mb-4 mt-2">
-                <div className="w-12 h-12 bg-orange-600 rounded-lg flex items-center justify-center flex-shrink-0 opacity-90">
+            {/* ✅ Webhooks — Business+ (SHIPPED Phase 3) */}
+            <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-8 rounded-xl border border-orange-200">
+              <div className="flex items-start gap-4 mb-4">
+                <div className="w-12 h-12 bg-orange-600 rounded-lg flex items-center justify-center flex-shrink-0">
                   <span className="text-2xl">🔔</span>
                 </div>
                 <div>
                   <div className="flex items-center gap-2 mb-2 flex-wrap">
-                    <h3 className="text-xl font-semibold text-gray-900">Webhooks & Change Detection</h3>
+                    <h3 className="text-xl font-semibold text-gray-900">Webhooks & Notifications</h3>
+                    <span className="px-2 py-1 bg-orange-600 text-white text-xs font-semibold rounded">Business+</span>
                   </div>
                   <p className="text-gray-700">
-                    Receive real-time notifications when screenshots are ready or when visual changes
-                    are detected on monitored pages. Perfect for monitoring workflows and automated
-                    testing pipelines.
+                    Receive real-time POST notifications the moment a screenshot completes.
+                    Optional HMAC-SHA256 signing lets you verify every delivery is genuine.
+                    The API returns instantly — your server is notified asynchronously.
                   </p>
                 </div>
               </div>
-              <ul className="space-y-2 text-sm text-gray-700 ml-16 mb-4">
-                <li>• Instant completion notifications</li>
-                <li>• Visual change detection alerts</li>
-                <li>• Custom webhook endpoints with retry logic</li>
+              <ul className="space-y-2 text-sm text-gray-700 ml-16">
+                <li>• Instant async completion notification to your endpoint</li>
+                <li>• Optional HMAC-SHA256 signing via <code className="bg-orange-200 px-1 rounded text-xs">webhook_secret</code></li>
+                <li>• Exponential backoff retry (3 attempts: 2s → 4s → 8s)</li>
               </ul>
-              <div className="ml-16 pt-3 border-t border-orange-200">
-                <button
-                  onClick={() => navigate('/contact?subject=feature-request-webhooks')}
-                  className="text-sm font-semibold text-orange-700 hover:text-orange-900 inline-flex items-center gap-1"
-                >
-                  Get notified when this ships
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </button>
-              </div>
             </div>
 
-            {/* ✅ White-Label Options — Coming Soon */}
-            <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 p-8 rounded-xl relative overflow-hidden">
+            {/* ✅ Element Removal — Free+ */}
+            <div className="bg-gradient-to-br from-teal-50 to-teal-100 p-8 rounded-xl border border-teal-200">
+              <div className="flex items-start gap-4 mb-4">
+                <div className="w-12 h-12 bg-teal-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <span className="text-2xl">🧹</span>
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 mb-2 flex-wrap">
+                    <h3 className="text-xl font-semibold text-gray-900">Element Removal</h3>
+                    <span className="px-2 py-1 bg-teal-600 text-white text-xs font-semibold rounded">Free+</span>
+                  </div>
+                  <p className="text-gray-700">
+                    Hide specific elements using CSS selectors before capture. Remove cookie banners,
+                    popups, ads, or any unwanted content to get clean, distraction-free screenshots.
+                  </p>
+                </div>
+              </div>
+              <ul className="space-y-2 text-sm text-gray-700 ml-16">
+                <li>• Up to 20 CSS selectors per request</li>
+                <li>• Hides banners, popups, overlays, and ads</li>
+                <li>• Applied automatically before each capture</li>
+              </ul>
+            </div>
+
+            {/* White-Label — Coming Soon (Phase 4) */}
+            <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 p-8 rounded-xl border border-yellow-200 relative overflow-hidden">
               <div className="absolute top-0 right-0 px-3 py-1 bg-gradient-to-r from-yellow-500 to-orange-500 text-white text-xs font-bold uppercase tracking-wide rounded-bl-lg">
                 Coming Soon
               </div>
@@ -459,12 +345,12 @@ const Features = () => {
                 </div>
                 <div>
                   <div className="flex items-center gap-2 mb-2 flex-wrap">
-                    <h3 className="text-xl font-semibold text-gray-900">White-Label Options</h3>
+                    <h3 className="text-xl font-semibold text-gray-900">White-Label & Custom Domains</h3>
+                    <span className="px-2 py-1 bg-gradient-to-r from-yellow-500 to-orange-500 text-white text-xs font-semibold rounded">Premium</span>
                   </div>
                   <p className="text-gray-700">
-                    Rebrand the API as your own. Custom domain support, branded responses, and
-                    dedicated infrastructure for enterprise customers who want PixelPerfect under
-                    their own brand.
+                    Rebrand the API under your own domain. Custom domain support, branded responses,
+                    and dedicated infrastructure for enterprises who want PixelPerfect under their brand.
                   </p>
                 </div>
               </div>
@@ -486,9 +372,12 @@ const Features = () => {
               </div>
             </div>
 
-            {/* Dedicated Support & SLA — Premium (real service offering, kept) */}
-            <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 p-8 rounded-xl">
-              <div className="flex items-start gap-4 mb-4">
+          </div>
+
+          {/* Dedicated Support */}
+          <div className="mt-8">
+            <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 p-8 rounded-xl border border-indigo-200">
+              <div className="flex items-start gap-4">
                 <div className="w-12 h-12 bg-indigo-600 rounded-lg flex items-center justify-center flex-shrink-0">
                   <span className="text-2xl">🎯</span>
                 </div>
@@ -497,43 +386,71 @@ const Features = () => {
                     <h3 className="text-xl font-semibold text-gray-900">Dedicated Support & Custom SLA</h3>
                     <span className="px-2 py-1 bg-gradient-to-r from-yellow-500 to-orange-500 text-white text-xs font-semibold rounded">Premium</span>
                   </div>
-                  <p className="text-gray-700">
+                  <p className="text-gray-700 mb-4">
                     Get a dedicated point of contact, priority email support, and custom SLA
                     agreements tailored to your business needs.
                   </p>
+                  <ul className="space-y-2 text-sm text-gray-700 grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <li>• Dedicated account contact</li>
+                    <li>• Priority email support</li>
+                    <li>• Custom SLA agreements available</li>
+                  </ul>
                 </div>
               </div>
-              <ul className="space-y-2 text-sm text-gray-700 ml-16">
-                <li>• Dedicated account contact</li>
-                <li>• Priority email support</li>
-                <li>• Custom SLA agreements available</li>
-              </ul>
             </div>
-          </div>
-
-          {/* ✅ Roadmap call-out below Advanced Features */}
-          <div className="mt-12 bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-200 rounded-xl p-6 text-center">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              Building toward the future
-            </h3>
-            <p className="text-gray-600 max-w-2xl mx-auto mb-4">
-              We're actively building Custom JavaScript Execution, Webhooks, and White-Label
-              support. Let us know which feature matters most for your workflow — your input
-              shapes our roadmap.
-            </p>
-            <button
-              onClick={() => navigate('/contact?subject=feature-roadmap-feedback')}
-              className="inline-flex items-center gap-2 px-5 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
-            >
-              Share your feature priorities
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
           </div>
         </section>
 
-        {/* Use Cases */}
+        {/* ── Tier Summary Table ──────────────────────────────────────────────── */}
+        <section className="mb-16">
+          <div className="text-center mb-10">
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">Feature Availability</h2>
+            <p className="text-gray-600 text-lg">What's included at each tier</p>
+          </div>
+
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-200">
+                    <th className="text-left px-6 py-4 font-semibold text-gray-900 w-1/3">Feature</th>
+                    <th className="text-center px-4 py-4 font-semibold text-gray-600">Free</th>
+                    <th className="text-center px-4 py-4 font-semibold text-purple-700">Pro</th>
+                    <th className="text-center px-4 py-4 font-semibold text-blue-700">Business</th>
+                    <th className="text-center px-4 py-4 font-semibold text-orange-700">Premium</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {[
+                    { name: "Screenshots / month",   free: "100",   pro: "5,000",  biz: "50,000",  prem: "Unlimited" },
+                    { name: "Batch processing",       free: "—",     pro: "50 URLs",biz: "200 URLs",prem: "1,000 URLs" },
+                    { name: "All output formats",     free: "✅",    pro: "✅",     biz: "✅",      prem: "✅" },
+                    { name: "Full page screenshots",  free: "✅",    pro: "✅",     biz: "✅",      prem: "✅" },
+                    { name: "Dark mode",              free: "✅",    pro: "✅",     biz: "✅",      prem: "✅" },
+                    { name: "Element removal",        free: "✅",    pro: "✅",     biz: "✅",      prem: "✅" },
+                    { name: "Custom JavaScript",      free: "—",     pro: "✅",     biz: "✅",      prem: "✅" },
+                    { name: "Device emulation",       free: "—",     pro: "✅",     biz: "✅",      prem: "✅" },
+                    { name: "Wait for selector",      free: "—",     pro: "✅",     biz: "✅",      prem: "✅" },
+                    { name: "Element selection",      free: "—",     pro: "—",      biz: "✅",      prem: "✅" },
+                    { name: "Webhooks",               free: "—",     pro: "—",      biz: "✅",      prem: "✅" },
+                    { name: "White-label / domain",   free: "—",     pro: "—",      biz: "—",       prem: "Soon" },
+                    { name: "Dedicated support",      free: "—",     pro: "—",      biz: "—",       prem: "✅" },
+                  ].map((row, i) => (
+                    <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-gray-50/50"}>
+                      <td className="px-6 py-3 font-medium text-gray-800">{row.name}</td>
+                      <td className="px-4 py-3 text-center text-gray-500">{row.free}</td>
+                      <td className="px-4 py-3 text-center text-purple-700 font-medium">{row.pro}</td>
+                      <td className="px-4 py-3 text-center text-blue-700 font-medium">{row.biz}</td>
+                      <td className="px-4 py-3 text-center text-orange-700 font-medium">{row.prem}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        {/* ── Use Cases ───────────────────────────────────────────────────────── */}
         <section className="mb-16">
           <div className="text-center mb-12">
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">Common Use Cases</h2>
@@ -541,50 +458,27 @@ const Features = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div className="bg-white p-6 rounded-lg border border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Automated Testing</h3>
-              <p className="text-gray-600 text-sm">
-                Capture visual snapshots for regression testing and QA workflows
-              </p>
-            </div>
-            <div className="bg-white p-6 rounded-lg border border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Social Media Preview</h3>
-              <p className="text-gray-600 text-sm">
-                Generate Open Graph images and social media thumbnails automatically
-              </p>
-            </div>
-            <div className="bg-white p-6 rounded-lg border border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Website Monitoring</h3>
-              <p className="text-gray-600 text-sm">
-                Track visual changes and monitor competitor websites over time
-              </p>
-            </div>
-            <div className="bg-white p-6 rounded-lg border border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Documentation</h3>
-              <p className="text-gray-600 text-sm">
-                Create visual documentation and tutorials with accurate screenshots
-              </p>
-            </div>
-            <div className="bg-white p-6 rounded-lg border border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Content Archiving</h3>
-              <p className="text-gray-600 text-sm">
-                Archive web pages for compliance, legal, or historical purposes
-              </p>
-            </div>
-            <div className="bg-white p-6 rounded-lg border border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Email Marketing</h3>
-              <p className="text-gray-600 text-sm">
-                Generate visual previews of landing pages for email campaigns
-              </p>
-            </div>
+            {[
+              { title: "Automated Testing",     desc: "Capture visual snapshots for regression testing and QA workflows" },
+              { title: "Social Media Preview",  desc: "Generate Open Graph images and social media thumbnails automatically" },
+              { title: "Website Monitoring",    desc: "Track visual changes and monitor competitor websites over time" },
+              { title: "Documentation",         desc: "Create visual documentation and tutorials with accurate screenshots" },
+              { title: "Content Archiving",     desc: "Archive web pages for compliance, legal, or historical purposes" },
+              { title: "Email Marketing",       desc: "Generate visual previews of landing pages for email campaigns" },
+            ].map((uc, i) => (
+              <div key={i} className="bg-white p-6 rounded-lg border border-gray-200 hover:shadow-md transition-shadow">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">{uc.title}</h3>
+                <p className="text-gray-600 text-sm">{uc.desc}</p>
+              </div>
+            ))}
           </div>
         </section>
 
-        {/* CTA Section */}
+        {/* ── CTA ─────────────────────────────────────────────────────────────── */}
         <section className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-8 sm:p-12 text-white text-center">
           <h2 className="text-3xl sm:text-4xl font-bold mb-4">Ready to Get Started?</h2>
           <p className="text-lg sm:text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
-            Start capturing pixel-perfect screenshots today
+            Start capturing pixel-perfect screenshots today. Free tier included — no credit card required.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button
@@ -614,7 +508,7 @@ const Features = () => {
             </div>
             <div className="flex gap-6 text-sm text-gray-400">
               <button onClick={() => navigate('/privacy')} className="hover:text-white">Privacy</button>
-              <button onClick={() => navigate('/terms')} className="hover:text-white">Terms</button>
+              <button onClick={() => navigate('/terms')}   className="hover:text-white">Terms</button>
               <button onClick={() => navigate('/cookies')} className="hover:text-white">Cookies</button>
             </div>
           </div>
@@ -624,19 +518,57 @@ const Features = () => {
   );
 };
 
+// ── Shared icon ───────────────────────────────────────────────────────────────
+function CheckIcon() {
+  return (
+    <svg className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+    </svg>
+  );
+}
+
 export default Features;
 
-// ===== END OF Features.js =====
+// ===== END OF Features.jsx =====
 
-// IMPORTANT NOTE: KEEP THIS FILE FOR NOW!!!
 
-// // ================================================================================================
+
 // // ========================================
-// // FEATURES PAGE - PIXELPERFECT   ===>> THIS IS A GOOD ONEKEEP !!
+// // FEATURES PAGE - PIXELPERFECT
 // // ========================================
-// // Comprehensive features showcase for PixelPerfect Screenshot API
-// // Production-ready, mobile-responsive
-// // Updated: Added Business plan to Advanced Features section
+// // File: frontend/src/pages/Features.jsx
+// // Author: OneTechly
+// // Updated: April 2026 - Honest feature alignment with shipped code
+// //
+// // ✅ FIX (Apr 2026): Aligned feature tiers with what actually ships in the
+// //    production code path (backend/screenshot_endpoints.py).
+// //
+// //    Verified shipped features (all tiers unless noted):
+// //      - Single screenshot capture
+// //      - Custom viewport (320–3840 × 240–2160)
+// //      - PNG / JPEG / WebP / PDF formats
+// //      - Full page capture (full_page param)
+// //      - Dark mode (dark_mode param)
+// //      - Delay 0–10s (delay param)
+// //      - Element removal via CSS selectors (remove_elements param)
+// //      - Batch processing (Pro+: 50 / Business: 200 / Premium: 1,000 URLs)
+// //      - Tier concurrency (Free=2 / Pro=3 / Business=5)
+// //      - 7-day R2 storage with public CDN URLs
+// //
+// //    Roadmap features (Coming Soon — code exists in backend/routers/screenshot.py
+// //    but is NOT wired up in main.py, so these endpoints are not reachable):
+// //      - Custom JavaScript Execution
+// //      - Webhooks & Change Detection
+// //      - White-Label Options (custom domain)
+// //
+// //    Changes in this revision:
+// //      - Full Page Screenshots:  Pro+    → Free+
+// //      - Element Selection:      Pro+    → Free+
+// //      - Custom JavaScript:      Business → Coming Soon
+// //      - Webhooks:               Business → Coming Soon
+// //      - White-Label:            Premium  → Coming Soon
+// //      - Batch URL count:        100      → up to 1,000 (Premium tier)
+// // ========================================
 
 // import React from 'react';
 // import { useNavigate } from 'react-router-dom';
@@ -651,15 +583,13 @@ export default Features;
 //       <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
 //         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 //           <div className="flex justify-between items-center h-14 sm:h-16">
-//             {/* Logo */}
 //             <div className="cursor-pointer" onClick={() => navigate('/')}>
-//               <PixelPerfectLogo 
-//                 size={window.innerWidth < 640 ? 32 : 40} 
-//                 showText={true} 
+//               <PixelPerfectLogo
+//                 size={window.innerWidth < 640 ? 32 : 40}
+//                 showText={true}
 //               />
 //             </div>
-            
-//             {/* Navigation */}
+
 //             <nav className="hidden md:flex items-center gap-6">
 //               <button
 //                 onClick={() => navigate('/about')}
@@ -681,7 +611,6 @@ export default Features;
 //               </button>
 //             </nav>
 
-//             {/* Auth Buttons */}
 //             <div className="flex items-center gap-2 sm:gap-3">
 //               <button
 //                 onClick={() => navigate('/login')}
@@ -700,14 +629,13 @@ export default Features;
 //         </div>
 //       </header>
 
-//       {/* Hero Section - WITH LOGO */}
+//       {/* Hero Section */}
 //       <section className="bg-gradient-to-b from-blue-50 to-white py-12 sm:py-16">
 //         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-//           {/* ✅ PixelPerfect Logo - Centered at top */}
 //           <div className="flex justify-center items-center mb-6">
 //             <PixelPerfectLogo size={64} showText={false} />
 //           </div>
-          
+
 //           <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">
 //             Powerful Screenshot Features
 //           </h1>
@@ -719,7 +647,7 @@ export default Features;
 
 //       {/* Main Content */}
 //       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        
+
 //         {/* Core Features */}
 //         <section className="mb-16">
 //           <div className="text-center mb-12">
@@ -735,7 +663,7 @@ export default Features;
 //               </div>
 //               <h3 className="text-xl font-semibold text-gray-900 mb-3">Lightning Fast</h3>
 //               <p className="text-gray-700 leading-relaxed mb-4">
-//                 Capture screenshots in under 3 seconds with our optimized cloud infrastructure. 
+//                 Capture screenshots in under 3 seconds with our optimized cloud infrastructure.
 //                 Our globally distributed servers ensure low latency regardless of your location.
 //               </p>
 //               <ul className="space-y-2 text-sm text-gray-600">
@@ -767,7 +695,7 @@ export default Features;
 //               </div>
 //               <h3 className="text-xl font-semibold text-gray-900 mb-3">Full Customization</h3>
 //               <p className="text-gray-700 leading-relaxed mb-4">
-//                 Control every aspect of your screenshots with our comprehensive API parameters. 
+//                 Control every aspect of your screenshots with our comprehensive API parameters.
 //                 From viewport dimensions to output formats, you're in complete control.
 //               </p>
 //               <ul className="space-y-2 text-sm text-gray-600">
@@ -799,16 +727,10 @@ export default Features;
 //               </div>
 //               <h3 className="text-xl font-semibold text-gray-900 mb-3">Secure & Reliable</h3>
 //               <p className="text-gray-700 leading-relaxed mb-4">
-//                 Enterprise-grade security and 99.9% uptime SLA. Your data is always protected 
-//                 with industry-standard encryption and security practices.
+//                 Enterprise-grade security with industry-standard encryption. Your data and
+//                 requests are protected at every step of the screenshot capture pipeline.
 //               </p>
 //               <ul className="space-y-2 text-sm text-gray-600">
-//                 <li className="flex items-start gap-2">
-//                   <svg className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-//                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-//                   </svg>
-//                   <span>99.9% uptime SLA guarantee</span>
-//                 </li>
 //                 <li className="flex items-start gap-2">
 //                   <svg className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
 //                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
@@ -819,7 +741,13 @@ export default Features;
 //                   <svg className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
 //                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
 //                   </svg>
-//                   <span>SOC 2 compliant infrastructure</span>
+//                   <span>API keys hashed with SHA-256</span>
+//                 </li>
+//                 <li className="flex items-start gap-2">
+//                   <svg className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+//                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+//                   </svg>
+//                   <span>Cloudflare R2 storage with secure URLs</span>
 //                 </li>
 //               </ul>
 //             </div>
@@ -831,21 +759,21 @@ export default Features;
 //               </div>
 //               <h3 className="text-xl font-semibold text-gray-900 mb-3">Mobile Screenshots</h3>
 //               <p className="text-gray-700 leading-relaxed mb-4">
-//                 Capture perfect mobile screenshots with device emulation. Test responsive designs 
-//                 and see exactly how your site looks on different devices.
+//                 Capture screenshots at any mobile viewport. Test responsive designs and see
+//                 exactly how your site looks on phones, tablets, and small screens.
 //               </p>
 //               <ul className="space-y-2 text-sm text-gray-600">
 //                 <li className="flex items-start gap-2">
 //                   <svg className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
 //                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
 //                   </svg>
-//                   <span>Device emulation (iPhone, Android, etc.)</span>
+//                   <span>Mobile viewport presets (375×667, 390×844)</span>
 //                 </li>
 //                 <li className="flex items-start gap-2">
 //                   <svg className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
 //                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
 //                   </svg>
-//                   <span>Touch-friendly viewport testing</span>
+//                   <span>Tablet viewports (768×1024)</span>
 //                 </li>
 //                 <li className="flex items-start gap-2">
 //                   <svg className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
@@ -856,28 +784,28 @@ export default Features;
 //               </ul>
 //             </div>
 
-//             {/* Batch Processing */}
+//             {/* Batch Processing - ✅ FIX: Updated URL count to match real limits */}
 //             <div className="bg-white p-6 rounded-xl border border-gray-200 hover:shadow-lg transition-shadow">
 //               <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center mb-4">
 //                 <span className="text-2xl">⚙️</span>
 //               </div>
 //               <h3 className="text-xl font-semibold text-gray-900 mb-3">Batch Processing</h3>
 //               <p className="text-gray-700 leading-relaxed mb-4">
-//                 Capture multiple screenshots in a single API call. Perfect for monitoring multiple 
-//                 pages or comparing different URLs efficiently.
+//                 Capture multiple screenshots in a single API call with async job processing.
+//                 Perfect for monitoring multiple pages or comparing different URLs efficiently.
 //               </p>
 //               <ul className="space-y-2 text-sm text-gray-600">
 //                 <li className="flex items-start gap-2">
 //                   <svg className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
 //                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
 //                   </svg>
-//                   <span>Process up to 100 URLs at once</span>
+//                   <span>Up to 1,000 URLs per batch (Premium tier)</span>
 //                 </li>
 //                 <li className="flex items-start gap-2">
 //                   <svg className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
 //                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
 //                   </svg>
-//                   <span>Parallel processing for speed</span>
+//                   <span>Async job processing with polling</span>
 //                 </li>
 //                 <li className="flex items-start gap-2">
 //                   <svg className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
@@ -895,7 +823,7 @@ export default Features;
 //               </div>
 //               <h3 className="text-xl font-semibold text-gray-900 mb-3">Dark Mode Support</h3>
 //               <p className="text-gray-700 leading-relaxed mb-4">
-//                 Capture screenshots with dark mode enabled. Essential for testing dark themes 
+//                 Capture screenshots with dark mode enabled. Essential for testing dark themes
 //                 and ensuring your site looks great in any color scheme.
 //               </p>
 //               <ul className="space-y-2 text-sm text-gray-600">
@@ -903,13 +831,13 @@ export default Features;
 //                   <svg className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
 //                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
 //                   </svg>
-//                   <span>Automatic dark mode detection</span>
+//                   <span>Force dark color scheme</span>
 //                 </li>
 //                 <li className="flex items-start gap-2">
 //                   <svg className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
 //                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
 //                   </svg>
-//                   <span>Force dark mode preference</span>
+//                   <span>Available on all tiers</span>
 //                 </li>
 //                 <li className="flex items-start gap-2">
 //                   <svg className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
@@ -922,27 +850,28 @@ export default Features;
 //           </div>
 //         </section>
 
-//         {/* Advanced Features - ✅ UPDATED with Business Plan */}
+//         {/* Advanced Features - ✅ UPDATED with honest tier alignment */}
 //         <section className="mb-16">
 //           <div className="text-center mb-12">
 //             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">Advanced Features</h2>
-//             <p className="text-gray-600 text-lg">Pro, Business, and Premium tier capabilities</p>
+//             <p className="text-gray-600 text-lg">Available now and coming soon to PixelPerfect</p>
 //           </div>
 
 //           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-//             {/* Full Page Screenshots - Pro+ */}
+
+//             {/* ✅ Full Page Screenshots — corrected to Free+ */}
 //             <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-8 rounded-xl">
 //               <div className="flex items-start gap-4 mb-4">
 //                 <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
 //                   <span className="text-2xl">📄</span>
 //                 </div>
 //                 <div>
-//                   <div className="flex items-center gap-2 mb-2">
+//                   <div className="flex items-center gap-2 mb-2 flex-wrap">
 //                     <h3 className="text-xl font-semibold text-gray-900">Full Page Screenshots</h3>
-//                     <span className="px-2 py-1 bg-blue-600 text-white text-xs font-semibold rounded">Pro+</span>
+//                     <span className="px-2 py-1 bg-green-600 text-white text-xs font-semibold rounded">Free+</span>
 //                   </div>
 //                   <p className="text-gray-700">
-//                     Capture entire web pages from top to bottom, regardless of length. Perfect for 
+//                     Capture entire web pages from top to bottom, regardless of length. Perfect for
 //                     documenting long-form content, articles, or complete landing pages.
 //                   </p>
 //                 </div>
@@ -954,125 +883,188 @@ export default Features;
 //               </ul>
 //             </div>
 
-//             {/* Element Selection - Pro+ */}
+//             {/* ✅ Element Selection — corrected to Free+ */}
 //             <div className="bg-gradient-to-br from-green-50 to-green-100 p-8 rounded-xl">
 //               <div className="flex items-start gap-4 mb-4">
 //                 <div className="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center flex-shrink-0">
 //                   <span className="text-2xl">🎯</span>
 //                 </div>
 //                 <div>
-//                   <div className="flex items-center gap-2 mb-2">
-//                     <h3 className="text-xl font-semibold text-gray-900">Element Selection</h3>
-//                     <span className="px-2 py-1 bg-green-600 text-white text-xs font-semibold rounded">Pro+</span>
+//                   <div className="flex items-center gap-2 mb-2 flex-wrap">
+//                     <h3 className="text-xl font-semibold text-gray-900">Element Removal</h3>
+//                     <span className="px-2 py-1 bg-green-600 text-white text-xs font-semibold rounded">Free+</span>
 //                   </div>
 //                   <p className="text-gray-700">
-//                     Target specific elements on a page using CSS selectors. Capture just the content 
-//                     you need without extra whitespace or unwanted elements.
+//                     Hide specific elements on a page using CSS selectors before capture. Remove
+//                     cookie banners, popups, ads, or any unwanted content from your screenshots.
 //                   </p>
 //                 </div>
 //               </div>
 //               <ul className="space-y-2 text-sm text-gray-700 ml-16">
-//                 <li>• CSS selector support</li>
-//                 <li>• Automatic element cropping</li>
-//                 <li>• Remove unwanted page elements</li>
+//                 <li>• CSS selector support (up to 20 selectors per request)</li>
+//                 <li>• Hide cookie banners, popups, and overlays</li>
+//                 <li>• Applied automatically before each capture</li>
 //               </ul>
 //             </div>
 
-//             {/* Custom JavaScript - Business+ */}
-//             <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-8 rounded-xl">
-//               <div className="flex items-start gap-4 mb-4">
-//                 <div className="w-12 h-12 bg-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
+//             {/* ✅ Custom JavaScript — Coming Soon */}
+//             <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-8 rounded-xl relative overflow-hidden">
+//               <div className="absolute top-0 right-0 px-3 py-1 bg-purple-600 text-white text-xs font-bold uppercase tracking-wide rounded-bl-lg">
+//                 Coming Soon
+//               </div>
+//               <div className="flex items-start gap-4 mb-4 mt-2">
+//                 <div className="w-12 h-12 bg-purple-600 rounded-lg flex items-center justify-center flex-shrink-0 opacity-90">
 //                   <span className="text-2xl">💻</span>
 //                 </div>
 //                 <div>
-//                   <div className="flex items-center gap-2 mb-2">
+//                   <div className="flex items-center gap-2 mb-2 flex-wrap">
 //                     <h3 className="text-xl font-semibold text-gray-900">Custom JavaScript Execution</h3>
-//                     <span className="px-2 py-1 bg-purple-600 text-white text-xs font-semibold rounded">Business+</span>
 //                   </div>
 //                   <p className="text-gray-700">
-//                     Execute custom JavaScript before capturing screenshots. Interact with the page, 
-//                     fill forms, click buttons, or modify content programmatically.
+//                     Execute custom JavaScript before capturing screenshots. Interact with the page,
+//                     fill forms, click buttons, or modify content programmatically — all server-side
+//                     in our headless browser environment.
 //                   </p>
 //                 </div>
 //               </div>
-//               <ul className="space-y-2 text-sm text-gray-700 ml-16">
-//                 <li>• Run any JavaScript code</li>
-//                 <li>• Interact with page elements</li>
-//                 <li>• Wait for dynamic content</li>
+//               <ul className="space-y-2 text-sm text-gray-700 ml-16 mb-4">
+//                 <li>• Run any JavaScript code before capture</li>
+//                 <li>• Wait for dynamic content to load</li>
+//                 <li>• Programmatic page interaction</li>
 //               </ul>
+//               <div className="ml-16 pt-3 border-t border-purple-200">
+//                 <button
+//                   onClick={() => navigate('/contact?subject=feature-request-javascript-execution')}
+//                   className="text-sm font-semibold text-purple-700 hover:text-purple-900 inline-flex items-center gap-1"
+//                 >
+//                   Get notified when this ships
+//                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+//                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+//                   </svg>
+//                 </button>
+//               </div>
 //             </div>
 
-//             {/* Webhooks & Change Detection - Business+ */}
-//             <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-8 rounded-xl">
-//               <div className="flex items-start gap-4 mb-4">
-//                 <div className="w-12 h-12 bg-orange-600 rounded-lg flex items-center justify-center flex-shrink-0">
+//             {/* ✅ Webhooks & Change Detection — Coming Soon */}
+//             <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-8 rounded-xl relative overflow-hidden">
+//               <div className="absolute top-0 right-0 px-3 py-1 bg-orange-600 text-white text-xs font-bold uppercase tracking-wide rounded-bl-lg">
+//                 Coming Soon
+//               </div>
+//               <div className="flex items-start gap-4 mb-4 mt-2">
+//                 <div className="w-12 h-12 bg-orange-600 rounded-lg flex items-center justify-center flex-shrink-0 opacity-90">
 //                   <span className="text-2xl">🔔</span>
 //                 </div>
 //                 <div>
-//                   <div className="flex items-center gap-2 mb-2">
+//                   <div className="flex items-center gap-2 mb-2 flex-wrap">
 //                     <h3 className="text-xl font-semibold text-gray-900">Webhooks & Change Detection</h3>
-//                     <span className="px-2 py-1 bg-orange-600 text-white text-xs font-semibold rounded">Business+</span>
 //                   </div>
 //                   <p className="text-gray-700">
-//                     Receive real-time notifications when screenshots are ready or when visual changes 
-//                     are detected. Perfect for monitoring workflows and automated testing.
+//                     Receive real-time notifications when screenshots are ready or when visual changes
+//                     are detected on monitored pages. Perfect for monitoring workflows and automated
+//                     testing pipelines.
 //                   </p>
 //                 </div>
 //               </div>
-//               <ul className="space-y-2 text-sm text-gray-700 ml-16">
+//               <ul className="space-y-2 text-sm text-gray-700 ml-16 mb-4">
 //                 <li>• Instant completion notifications</li>
 //                 <li>• Visual change detection alerts</li>
-//                 <li>• Custom webhook endpoints</li>
+//                 <li>• Custom webhook endpoints with retry logic</li>
 //               </ul>
+//               <div className="ml-16 pt-3 border-t border-orange-200">
+//                 <button
+//                   onClick={() => navigate('/contact?subject=feature-request-webhooks')}
+//                   className="text-sm font-semibold text-orange-700 hover:text-orange-900 inline-flex items-center gap-1"
+//                 >
+//                   Get notified when this ships
+//                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+//                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+//                   </svg>
+//                 </button>
+//               </div>
 //             </div>
 
-//             {/* White-Label Options - Premium */}
-//             <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 p-8 rounded-xl">
-//               <div className="flex items-start gap-4 mb-4">
-//                 <div className="w-12 h-12 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-lg flex items-center justify-center flex-shrink-0">
+//             {/* ✅ White-Label Options — Coming Soon */}
+//             <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 p-8 rounded-xl relative overflow-hidden">
+//               <div className="absolute top-0 right-0 px-3 py-1 bg-gradient-to-r from-yellow-500 to-orange-500 text-white text-xs font-bold uppercase tracking-wide rounded-bl-lg">
+//                 Coming Soon
+//               </div>
+//               <div className="flex items-start gap-4 mb-4 mt-2">
+//                 <div className="w-12 h-12 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-lg flex items-center justify-center flex-shrink-0 opacity-90">
 //                   <span className="text-2xl">🏷️</span>
 //                 </div>
 //                 <div>
-//                   <div className="flex items-center gap-2 mb-2">
+//                   <div className="flex items-center gap-2 mb-2 flex-wrap">
 //                     <h3 className="text-xl font-semibold text-gray-900">White-Label Options</h3>
-//                     <span className="px-2 py-1 bg-gradient-to-r from-yellow-500 to-orange-500 text-white text-xs font-semibold rounded">Premium</span>
 //                   </div>
 //                   <p className="text-gray-700">
-//                     Rebrand the API as your own. Custom domain support, branded responses, and 
-//                     dedicated infrastructure for enterprise customers.
+//                     Rebrand the API as your own. Custom domain support, branded responses, and
+//                     dedicated infrastructure for enterprise customers who want PixelPerfect under
+//                     their own brand.
 //                   </p>
 //                 </div>
 //               </div>
-//               <ul className="space-y-2 text-sm text-gray-700 ml-16">
+//               <ul className="space-y-2 text-sm text-gray-700 ml-16 mb-4">
 //                 <li>• Custom domain support (api.yourdomain.com)</li>
 //                 <li>• Branded API responses</li>
-//                 <li>• Dedicated infrastructure</li>
+//                 <li>• Dedicated infrastructure on Premium</li>
 //               </ul>
+//               <div className="ml-16 pt-3 border-t border-yellow-200">
+//                 <button
+//                   onClick={() => navigate('/contact?subject=feature-request-white-label')}
+//                   className="text-sm font-semibold text-orange-700 hover:text-orange-900 inline-flex items-center gap-1"
+//                 >
+//                   Get notified when this ships
+//                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+//                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+//                   </svg>
+//                 </button>
+//               </div>
 //             </div>
 
-//             {/* Dedicated Support & SLA - Premium */}
+//             {/* Dedicated Support & SLA — Premium (real service offering, kept) */}
 //             <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 p-8 rounded-xl">
 //               <div className="flex items-start gap-4 mb-4">
 //                 <div className="w-12 h-12 bg-indigo-600 rounded-lg flex items-center justify-center flex-shrink-0">
 //                   <span className="text-2xl">🎯</span>
 //                 </div>
 //                 <div>
-//                   <div className="flex items-center gap-2 mb-2">
+//                   <div className="flex items-center gap-2 mb-2 flex-wrap">
 //                     <h3 className="text-xl font-semibold text-gray-900">Dedicated Support & Custom SLA</h3>
 //                     <span className="px-2 py-1 bg-gradient-to-r from-yellow-500 to-orange-500 text-white text-xs font-semibold rounded">Premium</span>
 //                   </div>
 //                   <p className="text-gray-700">
-//                     Get a dedicated account manager, priority support, and custom SLA guarantees 
-//                     tailored to your business needs.
+//                     Get a dedicated point of contact, priority email support, and custom SLA
+//                     agreements tailored to your business needs.
 //                   </p>
 //                 </div>
 //               </div>
 //               <ul className="space-y-2 text-sm text-gray-700 ml-16">
-//                 <li>• Dedicated account manager</li>
-//                 <li>• Priority support (24/7 for critical issues)</li>
-//                 <li>• Custom SLA agreements</li>
+//                 <li>• Dedicated account contact</li>
+//                 <li>• Priority email support</li>
+//                 <li>• Custom SLA agreements available</li>
 //               </ul>
 //             </div>
+//           </div>
+
+//           {/* ✅ Roadmap call-out below Advanced Features */}
+//           <div className="mt-12 bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-200 rounded-xl p-6 text-center">
+//             <h3 className="text-lg font-semibold text-gray-900 mb-2">
+//               Building toward the future
+//             </h3>
+//             <p className="text-gray-600 max-w-2xl mx-auto mb-4">
+//               We're actively building Custom JavaScript Execution, Webhooks, and White-Label
+//               support. Let us know which feature matters most for your workflow — your input
+//               shapes our roadmap.
+//             </p>
+//             <button
+//               onClick={() => navigate('/contact?subject=feature-roadmap-feedback')}
+//               className="inline-flex items-center gap-2 px-5 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+//             >
+//               Share your feature priorities
+//               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+//                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+//               </svg>
+//             </button>
 //           </div>
 //         </section>
 
@@ -1127,7 +1119,7 @@ export default Features;
 //         <section className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-8 sm:p-12 text-white text-center">
 //           <h2 className="text-3xl sm:text-4xl font-bold mb-4">Ready to Get Started?</h2>
 //           <p className="text-lg sm:text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
-//             Join thousands of developers using PixelPerfect to capture perfect screenshots
+//             Start capturing pixel-perfect screenshots today
 //           </p>
 //           <div className="flex flex-col sm:flex-row gap-4 justify-center">
 //             <button
@@ -1168,4 +1160,6 @@ export default Features;
 // };
 
 // export default Features;
+
+// // ===== END OF Features.js =====
 
