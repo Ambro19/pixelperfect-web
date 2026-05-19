@@ -1,12 +1,21 @@
-```txt
 User-agent: *
-# Allow the marketing site and auth entry points:
+# Allow all public marketing pages, docs, help center, and legal pages
 Allow: /
 
-# Optional: keep internal file cache paths out of the index if ever exposed
+# Keep authenticated and private areas out of the index
+Disallow: /dashboard
+Disallow: /screenshot
+Disallow: /activity
+Disallow: /history
+Disallow: /batch
+Disallow: /subscription
+Disallow: /settings
+Disallow: /account-settings
+Disallow: /change-password
+Disallow: /api/
 Disallow: /files/
 Disallow: /user/
 Disallow: /debug/
 
-# Your XML sitemap
-Sitemap: https://onetechly.com/sitemap.xml
+# Correct sitemap location
+Sitemap: https://pixelperfectapi.net/sitemap.xml
