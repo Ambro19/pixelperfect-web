@@ -3,13 +3,20 @@
 // ========================================
 // File: frontend/src/pages/ForgotPassword.js
 // Author: OneTechly
-// Updated: April 2026
+// Updated: July 2026
+//
+// ✅ NEW (Jul 2026): Cross-link to /forgot-username added in both
+//    the form state and the success state, so users who realise
+//    they forgot their username (not their password) can switch
+//    recovery flow without going back to the login page.
+//    Cross-link placement: below the primary action in both states,
+//    above "Back to Sign in" — all recovery options grouped together.
 //
 // ✅ FIX (Apr 2026): Added centered title section to both the form
 //    screen and the success screen so the layout matches Login/Register.
 //
 //    Form screen:    logo → "Forgot your password?" → card
-//    Success screen: logo → "Reset Password" → card   ← NEW
+//    Success screen: logo → "Reset Password" → card
 //
 // Submits to: POST /auth/forgot-password
 // Backend always returns { ok: true } regardless of whether the
@@ -111,7 +118,7 @@ export default function ForgotPassword() {
               />
             </div>
 
-            {/* ✅ FIX: Centered title section — matches Login/Register layout */}
+            {/* Centered title section */}
             <div className="text-center mb-6 sm:mb-8">
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
                 Reset Password
@@ -171,6 +178,19 @@ export default function ForgotPassword() {
                   Back to Sign in
                 </button>
               </div>
+
+              {/* ✅ NEW (Jul 2026): Cross-link to forgot-username in success state */}
+              <div className="mt-5 pt-5 border-t border-gray-100">
+                <p className="text-sm text-gray-500 mb-1">
+                  Not what you were looking for?
+                </p>
+                <button
+                  onClick={() => navigate("/forgot-username")}
+                  className="text-sm text-blue-600 hover:text-blue-700 font-medium transition-colors"
+                >
+                  Forgot your username instead?
+                </button>
+              </div>
             </div>
           </div>
         </main>
@@ -194,7 +214,7 @@ export default function ForgotPassword() {
             />
           </div>
 
-          {/* Title section — matches Login/Register layout */}
+          {/* Title section */}
           <div className="text-center mb-6 sm:mb-8">
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
               Forgot your password?
@@ -241,10 +261,20 @@ export default function ForgotPassword() {
               </button>
             </form>
 
-            <div className="mt-6 text-center">
+            {/* ✅ NEW (Jul 2026): Cross-link to forgot-username, grouped with
+                the Back to Sign in link so all recovery options are visible
+                together — users who meant to recover their username don't
+                have to go back to the login page to find the right flow. */}
+            <div className="mt-6 flex flex-col items-center gap-3">
+              <button
+                onClick={() => navigate("/forgot-username")}
+                className="text-sm text-blue-600 hover:text-blue-700 font-medium transition-colors"
+              >
+                Forgot your username instead?
+              </button>
               <button
                 onClick={() => navigate("/login")}
-                className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
               >
                 ← Back to Sign in
               </button>
@@ -268,13 +298,19 @@ export default function ForgotPassword() {
 
 // ===== END OF ForgotPassword.js =============================================
 
-// // ===================================================================================
+
 // // ========================================
 // // FORGOT PASSWORD PAGE - PRODUCTION READY
 // // ========================================
 // // File: frontend/src/pages/ForgotPassword.js
 // // Author: OneTechly
 // // Updated: April 2026
+// //
+// // ✅ FIX (Apr 2026): Added centered title section to both the form
+// //    screen and the success screen so the layout matches Login/Register.
+// //
+// //    Form screen:    logo → "Forgot your password?" → card
+// //    Success screen: logo → "Reset Password" → card   ← NEW
 // //
 // // Submits to: POST /auth/forgot-password
 // // Backend always returns { ok: true } regardless of whether the
@@ -290,21 +326,44 @@ export default function ForgotPassword() {
 // const API_URL =
 //   process.env.REACT_APP_API_URL || "https://api.pixelperfectapi.net";
 
+// // ── Shared header ─────────────────────────────────────────────────────────────
+// function PageHeader({ navigate }) {
+//   return (
+//     <header className="bg-white border-b border-gray-200">
+//       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+//         <div className="flex justify-between items-center h-14 sm:h-16">
+//           <div className="cursor-pointer" onClick={() => navigate("/")}>
+//             <PixelPerfectLogo
+//               size={window.innerWidth < 640 ? 32 : 40}
+//               showText={true}
+//             />
+//           </div>
+//           <button
+//             onClick={() => navigate("/register")}
+//             className="px-4 sm:px-6 py-1.5 sm:py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors text-sm sm:text-base"
+//           >
+//             Create account
+//           </button>
+//         </div>
+//       </div>
+//     </header>
+//   );
+// }
+
 // export default function ForgotPassword() {
 //   const navigate = useNavigate();
 
-//   const [email, setEmail]       = useState("");
-//   const [touched, setTouched]   = useState(false);
-//   const [loading, setLoading]   = useState(false);
+//   const [email,     setEmail]     = useState("");
+//   const [touched,   setTouched]   = useState(false);
+//   const [loading,   setLoading]   = useState(false);
 //   const [submitted, setSubmitted] = useState(false);
 
 //   // ── Validation ────────────────────────────────────────────────
-//   const emailError =
-//     !email.trim()
-//       ? "Email is required."
-//       : !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
-//       ? "Enter a valid email address."
-//       : "";
+//   const emailError = !email.trim()
+//     ? "Email is required."
+//     : !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
+//     ? "Enter a valid email address."
+//     : "";
 
 //   const isValid = !emailError;
 
@@ -327,7 +386,7 @@ export default function ForgotPassword() {
 //         throw new Error(data.detail || "Request failed. Please try again.");
 //       }
 
-//       // Backend always returns { ok: true } — show success regardless
+//       // Backend always returns { ok: true } — always show success
 //       setSubmitted(true);
 //     } catch (err) {
 //       toast.error(err.message || "Something went wrong. Please try again.");
@@ -341,8 +400,11 @@ export default function ForgotPassword() {
 //     return (
 //       <div className="min-h-screen bg-gray-50 flex flex-col">
 //         <PageHeader navigate={navigate} />
+
 //         <main className="flex-1 flex items-center justify-center px-4 py-8 sm:py-12">
 //           <div className="w-full max-w-md">
+
+//             {/* Logo */}
 //             <div className="flex justify-center mb-6 sm:mb-8">
 //               <PixelPerfectLogo
 //                 size={window.innerWidth < 640 ? 56 : 64}
@@ -350,7 +412,19 @@ export default function ForgotPassword() {
 //               />
 //             </div>
 
+//             {/* ✅ FIX: Centered title section — matches Login/Register layout */}
+//             <div className="text-center mb-6 sm:mb-8">
+//               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
+//                 Reset Password
+//               </h1>
+//               <p className="text-sm sm:text-base text-gray-600">
+//                 Check your inbox for the reset link
+//               </p>
+//             </div>
+
+//             {/* Success card */}
 //             <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6 sm:p-8 text-center">
+
 //               {/* Envelope icon */}
 //               <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
 //                 <svg
@@ -368,7 +442,7 @@ export default function ForgotPassword() {
 //                 </svg>
 //               </div>
 
-//               <h2 className="text-2xl font-bold text-gray-900 mb-3">
+//               <h2 className="text-xl font-bold text-gray-900 mb-3">
 //                 Check your email
 //               </h2>
 //               <p className="text-gray-600 mb-2">
@@ -382,7 +456,11 @@ export default function ForgotPassword() {
 
 //               <div className="space-y-3">
 //                 <button
-//                   onClick={() => { setSubmitted(false); setEmail(""); setTouched(false); }}
+//                   onClick={() => {
+//                     setSubmitted(false);
+//                     setEmail("");
+//                     setTouched(false);
+//                   }}
 //                   className="w-full py-3 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition-colors"
 //                 >
 //                   Try a different email
@@ -408,6 +486,8 @@ export default function ForgotPassword() {
 
 //       <main className="flex-1 flex items-center justify-center px-4 py-8 sm:py-12">
 //         <div className="w-full max-w-md">
+
+//           {/* Logo */}
 //           <div className="flex justify-center mb-6 sm:mb-8">
 //             <PixelPerfectLogo
 //               size={window.innerWidth < 640 ? 56 : 64}
@@ -415,6 +495,7 @@ export default function ForgotPassword() {
 //             />
 //           </div>
 
+//           {/* Title section — matches Login/Register layout */}
 //           <div className="text-center mb-6 sm:mb-8">
 //             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
 //               Forgot your password?
@@ -424,6 +505,7 @@ export default function ForgotPassword() {
 //             </p>
 //           </div>
 
+//           {/* Form card */}
 //           <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6 sm:p-8">
 //             <form onSubmit={handleSubmit} className="space-y-5">
 //               <div>
@@ -433,13 +515,12 @@ export default function ForgotPassword() {
 //                 <input
 //                   type="email"
 //                   value={email}
-//                   onChange={(e) => {
-//                     setEmail(e.target.value);
-//                     if (touched) setTouched(true);
-//                   }}
+//                   onChange={(e) => setEmail(e.target.value)}
 //                   onBlur={() => setTouched(true)}
 //                   className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors text-base ${
-//                     touched && emailError ? "border-red-400" : "border-gray-300"
+//                     touched && emailError
+//                       ? "border-red-400"
+//                       : "border-gray-300"
 //                   }`}
 //                   style={{ fontSize: "16px" }}
 //                   placeholder="you@example.com"
@@ -486,28 +567,5 @@ export default function ForgotPassword() {
 //   );
 // }
 
-// // ── Shared header ─────────────────────────────────────────────────────────────
-// function PageHeader({ navigate }) {
-//   return (
-//     <header className="bg-white border-b border-gray-200">
-//       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-//         <div className="flex justify-between items-center h-14 sm:h-16">
-//           <div className="cursor-pointer" onClick={() => navigate("/")}>
-//             <PixelPerfectLogo
-//               size={window.innerWidth < 640 ? 32 : 40}
-//               showText={true}
-//             />
-//           </div>
-//           <button
-//             onClick={() => navigate("/register")}
-//             className="px-4 sm:px-6 py-1.5 sm:py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors text-sm sm:text-base"
-//           >
-//             Create account
-//           </button>
-//         </div>
-//       </div>
-//     </header>
-//   );
-// }
-
 // // ===== END OF ForgotPassword.js =============================================
+

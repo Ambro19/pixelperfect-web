@@ -42,6 +42,7 @@ import FAQ          from './pages/FAQ';
 import Privacy      from './pages/Privacy';
 import Terms        from './pages/Terms';
 import Cookies      from './pages/Cookies';
+import ForgotUsername from './pages/ForgotUsername';
 
 // ✅ NEW July 2026: Careers and Community pages
 import Careers   from './pages/Careers';
@@ -204,6 +205,7 @@ function App() {
         <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
         <Route path="/signup"   element={<PublicRoute><Register /></PublicRoute>} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/forgot-username" element={<ForgotUsername />} /> 
         <Route path="/reset"           element={<ResetPassword />} />
 
         {/* ── PROTECTED ROUTES ──────────────────────────────── */}
