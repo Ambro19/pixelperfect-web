@@ -1,6 +1,17 @@
 // frontend/src/pages/ScreenshotPage.js — PixelPerfect Screenshot API
 // UPDATED: July 2026
 //
+// ✅ FIX (July 2026 — "Resets on [date]" Not Displaying):
+//   The reset-date row only rendered when subscriptionStatus.next_reset
+//   existed and parsed as a valid date. If the backend returns the date
+//   under a different key (or nested in usage/limits), the row silently
+//   never appeared. resolveNextReset() now checks several common field
+//   names: next_reset, nextReset, reset_date, resetDate,
+//   current_period_end, currentPeriodEnd, usage.next_reset.
+//   ⚠️ If the row STILL doesn't render, the backend /subscription_status
+//   response does not include the reset date at all — add `next_reset`
+//   (ISO 8601 string) to the endpoint response. Frontend is ready for it.
+//
 // ✅ FIX (July 2026 — Mount Effect Runs Only at Login, Not on Re-navigation):
 //   Changed mount useEffect dependency from [isAuthenticated, refreshSubscriptionStatus]
 //   to [] (empty array). Previously the effect only ran when isAuthenticated
@@ -10,8 +21,8 @@
 //
 // ✅ FIX (July 2026 — Billing Cycle Reset Date):
 //   Added "Resets on [date]" display under the progress bar.
-//   Reads subscriptionStatus.next_reset from the backend subscription_status
-//   endpoint. Users now see exactly when their counter will reset — tied to
+//   Reads the reset date from the backend subscription_status endpoint.
+//   Users now see exactly when their counter will reset — tied to
 //   billing cycle, not the calendar 1st of the month. No more surprise 0s.
 //
 // ✅ CONSISTENCY FIX (July 2026 — Tier Badge Colors):
@@ -48,6 +59,32 @@ const TIER_BADGE_CLASSES = {
 
 function tierBadgeClass(tier) {
   return TIER_BADGE_CLASSES[(tier || 'free').toLowerCase()] ?? TIER_BADGE_CLASSES.free;
+}
+
+// ── ✅ NEW (July 2026): robust reset-date resolution ─────────────────────────
+// The backend may expose the billing-cycle reset date under different keys
+// depending on version. Check them all; return a valid Date or null.
+function resolveNextReset(subscriptionStatus) {
+  if (!subscriptionStatus) return null;
+  const candidates = [
+    subscriptionStatus.next_reset,
+    subscriptionStatus.nextReset,
+    subscriptionStatus.reset_date,
+    subscriptionStatus.resetDate,
+    subscriptionStatus.current_period_end,
+    subscriptionStatus.currentPeriodEnd,
+    subscriptionStatus.usage?.next_reset,
+  ];
+  for (const raw of candidates) {
+    if (!raw) continue;
+    // Support both ISO strings and unix timestamps (Stripe often sends
+    // current_period_end as seconds since epoch).
+    const d = typeof raw === 'number'
+      ? new Date(raw < 1e12 ? raw * 1000 : raw)
+      : new Date(raw);
+    if (!Number.isNaN(d.getTime())) return d;
+  }
+  return null;
 }
 
 // ── Runtime API base resolution (mobile/LAN safe) ────────────────────────────
@@ -210,11 +247,17 @@ export default function ScreenshotPage() {
     return '';
   };
 
+  // ✅ FIX (July 2026): reset date resolved through resolveNextReset()
+  // so all backend field-name variants are supported.
+  const nextResetDate = useMemo(
+    () => resolveNextReset(subscriptionStatus),
+    [subscriptionStatus]
+  );
+
   const isResetOverdue = useMemo(() => {
-    if (!subscriptionStatus?.next_reset) return false;
-    const d = new Date(subscriptionStatus.next_reset);
-    return !Number.isNaN(d.getTime()) && Date.now() > d.getTime();
-  }, [subscriptionStatus]);
+    if (!nextResetDate) return false;
+    return Date.now() > nextResetDate.getTime();
+  }, [nextResetDate]);
 
   const forceRefreshIfNeeded = useCallback(async () => {
     if (!isAuthenticated || !refreshSubscriptionStatus) return;
@@ -273,15 +316,13 @@ export default function ScreenshotPage() {
     return `${screenshotsPercent.toFixed(1)}% used`;
   }, [screenshotsLimit, screenshotsPercent]);
 
-  // ✅ Billing cycle reset date for display
+  // ✅ Billing cycle reset date for display — driven by resolveNextReset()
   const resetDateLabel = useMemo(() => {
-    if (!subscriptionStatus?.next_reset) return null;
+    if (!nextResetDate) return null;
     try {
-      const d = new Date(subscriptionStatus.next_reset);
-      if (Number.isNaN(d.getTime())) return null;
-      return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+      return nextResetDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
     } catch { return null; }
-  }, [subscriptionStatus]);
+  }, [nextResetDate]);
 
   const handleCapture = async () => {
     try {
@@ -473,7 +514,8 @@ export default function ScreenshotPage() {
                 <span className="text-xs text-gray-500">{screenshotsRemainingLabel}</span>
                 <span className="text-xs font-medium text-gray-600">{screenshotsPercentLabel}</span>
               </div>
-              {/* ✅ NEW: Billing cycle reset date */}
+              {/* ✅ Billing cycle reset date — renders whenever the backend
+                  provides a reset date under any supported field name */}
               {resetDateLabel && (
                 <div className="flex items-center gap-1 mt-2 text-xs text-gray-400">
                   <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -833,6 +875,7 @@ export default function ScreenshotPage() {
 
 // ===== END OF ScreenshotPage.js ==============
 
+
 // // frontend/src/pages/ScreenshotPage.js — PixelPerfect Screenshot API
 // // UPDATED: July 2026
 // //
@@ -1135,6 +1178,10 @@ export default function ScreenshotPage() {
 //         throw new Error('Please enter a valid website URL starting with http:// or https://');
 //       }
 
+//       // ✅ FIX (July 2026): PDF requires Pro+, not Business-only.
+//       if (format === 'pdf' && !isPro) {
+//         throw new Error('PDF generation requires Pro tier or higher. Please upgrade.');
+//       }
 //       if (device && !isPro)          throw new Error('Device emulation requires Pro tier or higher. Upgrade to use this feature.');
 //       if (customJs.trim() && !isPro) throw new Error('Custom JavaScript requires Pro tier or higher. Upgrade to use this feature.');
 //       if (targetElement.trim() && !isBusiness) throw new Error('Element selection requires Business tier or higher. Upgrade to use this feature.');
@@ -1391,12 +1438,48 @@ export default function ScreenshotPage() {
 
 //           <div className="mb-4">
 //             <label className="block text-sm font-medium text-gray-700 mb-2">Format</label>
-//             <select value={format} onChange={e => setFormat(e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2">
+//             {/*
+//               ✅ FIX (July 2026 — PDF Tier Gate: Pro+ only):
+//               PDF is now available on Pro, Business, and Premium plans.
+//               Free tier users: PDF option is visually labelled as Pro+.
+//               Selecting PDF on Free tier shows an upgrade prompt and
+//               resets the format to PNG — no hard disable since native
+//               <select disabled> on option is unreliable across browsers.
+//               The backend also enforces this at 403 level.
+//             */}
+//             <select
+//               value={format}
+//               onChange={e => {
+//                 const next = e.target.value;
+//                 if (next === 'pdf' && !isPro) {
+//                   toast.error('PDF format requires Pro tier or higher.', {
+//                     duration: 4000,
+//                     icon: '🔒',
+//                   });
+//                   navigate('/pricing');
+//                   return;           // Don't change format — stay on PNG/JPEG/WebP
+//                 }
+//                 setFormat(next);
+//               }}
+//               className="w-full border border-gray-300 rounded px-3 py-2 bg-white"
+//             >
 //               <option value="png">PNG (lossless, larger file)</option>
 //               <option value="jpeg">JPEG (lossy, smaller file)</option>
 //               <option value="webp">WebP (best compression)</option>
-//               <option value="pdf">PDF (document format)</option>
+//               <option value="pdf">{isPro ? 'PDF (document format)' : 'PDF (document format) 🔒 Pro+ required'}</option>
 //             </select>
+//             {!isPro && (
+//               <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
+//                 <span>🔒</span> PDF format requires Pro tier or higher.{' '}
+//                 <button
+//                   type="button"
+//                   onClick={() => navigate('/pricing')}
+//                   className="underline font-semibold hover:text-amber-800"
+//                 >
+//                   Upgrade →
+//                 </button>
+//               </p>
+//             )}
 //           </div>
 
 //           <div className="space-y-3 mb-4">
@@ -1415,8 +1498,28 @@ export default function ScreenshotPage() {
 //             <h4 className="text-sm font-semibold text-gray-700 mb-3">Advanced Options</h4>
 //             <div className="mb-3">
 //               <label className="block text-sm text-gray-700 mb-1">Delay before capture (seconds)</label>
-//               <input type="number" value={delay} onChange={e => setDelay(parseInt(e.target.value) || 0)} className="w-full border border-gray-300 rounded px-3 py-2" min="0" max="10" />
-//               <p className="text-xs text-gray-500 mt-1">Wait time to allow page to fully load</p>
+//               {/*
+//                 ✅ FIX (July 2026 — Mobile Delay UX):
+//                 Changed from <input type="number"> to <select>.
+//                 A number input triggers the mobile numeric keyboard, forcing
+//                 users to tap, type, and dismiss — poor UX on touch screens.
+//                 A select gives a native bottom-sheet picker on mobile and a
+//                 clean dropdown on desktop. Practical values 0–10 cover 100%
+//                 of real use cases; free-form entry was rarely needed.
+//               */}
+//               <select
+//                 value={delay}
+//                 onChange={e => setDelay(parseInt(e.target.value) || 0)}
+//                 className="w-full border border-gray-300 rounded px-3 py-2 bg-white"
+//               >
+//                 <option value={0}>0 s — Capture immediately</option>
+//                 <option value={1}>1 s</option>
+//                 <option value={2}>2 s — Recommended for most sites</option>
+//                 <option value={3}>3 s</option>
+//                 <option value={5}>5 s — Recommended for heavy pages</option>
+//                 <option value={10}>10 s — Maximum</option>
+//               </select>
+//               <p className="text-xs text-gray-500 mt-1">Extra wait time after page load before capture begins</p>
 //             </div>
 //             <div>
 //               <label className="block text-sm text-gray-700 mb-1">Remove elements (CSS selectors)</label>
@@ -1606,6 +1709,5 @@ export default function ScreenshotPage() {
 //   );
 // }
 
-// // ===== END OF ScreenshotPage.js =====
-
+// // ===== END OF ScreenshotPage.js ==============
 
