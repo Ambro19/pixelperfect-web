@@ -3,7 +3,17 @@
 // ========================================
 // File: frontend/src/contexts/AuthContext.js
 // Author: OneTechly
-// Updated: February 2026 - PRODUCTION READY
+// Updated: July 2026 - PRODUCTION READY
+//
+// ✅ NEW (July 2026 — register() returns the /register response data):
+//   The backend auto-creates a Default API Key during POST /register and
+//   includes the FULL key (shown once, stored hashed) in the response.
+//   Previously register() discarded the response body entirely, so
+//   Register.js could never display the key to the new user.
+//   Now: the response body is parsed BEFORE the auto-login and returned
+//   to the caller AFTER login completes. Register.js reads
+//   result.api_key and shows the one-time "save this key" panel.
+//   No behavioral change for any caller that ignores the return value.
 //
 // ✅ FIXES APPLIED (preserved):
 // - Consistent token storage (auth_token)
@@ -14,8 +24,6 @@
 // - StrictMode double-invocation guard (didInit ref)
 // - Internal _clearAuth helper
 // - AbortController + timeouts + safety-net
-//
-// ✅ NEW (this patch):
 // - Production-safe API_URL fallback => https://api.pixelperfectapi.net
 //   (prevents accidental localhost calls in production)
 // ========================================
@@ -60,28 +68,6 @@ function resolveApiUrl() {
 
   return "http://localhost:8000";
 }
-
-// function resolveApiUrl() {
-//   const env = process.env.REACT_APP_API_URL;
-
-//   // If env is set, always trust it
-//   if (env && typeof env === "string" && env.trim()) return env.trim();
-
-//   // Production-safe fallback (IMPORTANT)
-//   if (typeof window !== "undefined") {
-//     const host = window.location.hostname;
-//     const isLocal =
-//       host === "localhost" ||
-//       host === "127.0.0.1" ||
-//       host.startsWith("192.168.") ||
-//       host.endsWith(".local");
-
-//     if (!isLocal) return "https://api.pixelperfectapi.net";
-//   }
-
-//   // Local dev fallback
-//   return "http://localhost:8000";
-// }
 
 const API_URL = resolveApiUrl();
 const TOKEN_KEY = "auth_token";
@@ -339,7 +325,16 @@ export function AuthProvider({ children }) {
           throw new Error(errorMessage);
         }
 
+        // ✅ NEW (July 2026): parse the registration response BEFORE the
+        // auto-login. It contains the one-time full api_key (plus account
+        // info) that Register.js displays in the "save this key" panel.
+        const registrationData = await safeJson(response);
+
         await login(username, password);
+
+        // ✅ NEW: hand the registration payload (api_key included) back to
+        // the caller. Callers that ignore the return value are unaffected.
+        return registrationData;
       } catch (error) {
         console.error("❌ Registration error:", error);
         if (isMounted.current) setIsLoading(false);
@@ -395,3 +390,4 @@ export function useAuth() {
 
 export default AuthContext;
 
+// ========== END OF AuthContext.js =========
