@@ -128,9 +128,7 @@ export default function Register() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [capsLockOn, setCapsLockOn] = useState(false);
 
-  // ✅ NEW: one-time API key display after successful registration
-  const [createdApiKey, setCreatedApiKey] = useState(null);
-  const [copied, setCopied] = useState(false);
+
 
   const validate = (d) => {
     const e = { username: "", email: "", password: "", confirmPassword: "" };
@@ -186,17 +184,6 @@ export default function Register() {
     });
   };
 
-  const handleCopyKey = async () => {
-    if (!createdApiKey) return;
-    try {
-      await navigator.clipboard.writeText(createdApiKey);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      toast.error("Failed to copy — please select and copy the key manually.");
-    }
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     const v = validate(formData);
@@ -220,15 +207,22 @@ export default function Register() {
 
       toast.success("Account created successfully!");
 
+      // ✅ FIX (Jul 2026 v2 — one-time key HANDOFF to the dashboard):
+      // register() auto-logs the user in, and the app's routing redirects
+      // authenticated users away from /register — which unmounted the old
+      // in-page key panel before it could render. Instead of fighting the
+      // route guard, we hand the key to the dashboard through a one-shot
+      // sessionStorage slot. ApiKeyDisplay reads it on mount, deletes it
+      // immediately, and shows the full-key "Save this now" panel there.
       const key = extractApiKey(result);
       if (key) {
-        // Show the one-time key panel instead of navigating immediately.
-        setCreatedApiKey(key);
-      } else {
-        // Graceful degradation: AuthContext didn't pass the key through.
-        // Behave exactly as before — the dashboard's Regenerate flow covers it.
-        navigate(nextPath, { replace: true });
+        try {
+          sessionStorage.setItem("pp_new_api_key", key);
+        } catch {
+          /* storage blocked — dashboard Regenerate flow still covers it */
+        }
       }
+      navigate(nextPath, { replace: true });
     } catch (err) {
       toast.error(err?.message || "Registration failed.");
     } finally {
@@ -240,78 +234,6 @@ export default function Register() {
     `w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors text-base ${
       touched[field] && (errors[field] || currentErrors[field]) ? "border-red-400" : "border-gray-300"
     }`;
-
-  // ==========================================================================
-  // ✅ NEW: One-time API key success panel (shown after registration when
-  // the backend's auto-created key is available). The user must explicitly
-  // continue — no auto-redirect that could lose the key.
-  // ==========================================================================
-  if (createdApiKey) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex flex-col">
-        <header className="bg-white border-b border-gray-200">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center h-14 sm:h-16">
-              <PixelPerfectLogo size={window.innerWidth < 640 ? 32 : 40} showText={true} />
-            </div>
-          </div>
-        </header>
-
-        <main className="flex-1 flex items-center justify-center px-4 py-8 sm:py-12">
-          <div className="w-full max-w-lg">
-            <div className="flex justify-center mb-6">
-              <PixelPerfectLogo size={window.innerWidth < 640 ? 56 : 64} showText={false} />
-            </div>
-
-            <div className="text-center mb-6">
-              <div className="text-5xl mb-3">🎉</div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
-                Account created!
-              </h1>
-              <p className="text-sm sm:text-base text-gray-600">
-                Your API key is ready. This is the <strong>only time</strong> we can
-                show it — save it somewhere safe now.
-              </p>
-            </div>
-
-            <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6 sm:p-8">
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-5">
-                <div className="bg-yellow-100 border-l-4 border-yellow-500 p-3 mb-3">
-                  <p className="text-sm font-semibold text-yellow-800">
-                    ⚠️ Save this key now! You won't be able to see it again.
-                  </p>
-                </div>
-
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <code className="flex-1 bg-white px-4 py-3 rounded border border-gray-300 font-mono text-sm break-all">
-                    {createdApiKey}
-                  </code>
-                  <button
-                    onClick={handleCopyKey}
-                    className="px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors whitespace-nowrap"
-                  >
-                    {copied ? "✅ Copied!" : "📋 Copy"}
-                  </button>
-                </div>
-              </div>
-
-              <p className="text-xs text-gray-500 mb-5">
-                Lost keys can't be recovered — but you can always generate a new
-                one from your dashboard with <strong>Regenerate Key</strong>.
-              </p>
-
-              <button
-                onClick={() => navigate(nextPath, { replace: true })}
-                className="w-full bg-blue-600 text-white py-3.5 rounded-lg font-semibold hover:bg-blue-700 active:bg-blue-800 transition-colors text-base shadow-sm min-h-[48px]"
-              >
-                I've saved my key — Continue to Dashboard →
-              </button>
-            </div>
-          </div>
-        </main>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -513,15 +435,34 @@ export default function Register() {
 // ============ END of Register.js =========
 
 
-
 // // ========================================
 // // REGISTER PAGE - PRODUCTION READY
 // // ========================================
 // // File: frontend/src/pages/Register.js
 // // Author: OneTechly
-// // Updated: Feb 2026
+// // Updated: July 2026
 // //
-// // Includes:
+// // ✅ NEW (July 2026 — Show auto-created API key at registration):
+// //   The backend auto-creates a "Default API Key" during POST /register and
+// //   returns the FULL key in the response — shown once, never recoverable
+// //   (keys are stored hashed). Previously the frontend discarded it and
+// //   navigated straight to the dashboard, so every new user landed in the
+// //   "lost key" state and had to use Regenerate Key to ever get a usable key.
+// //
+// //   Now: after successful registration, if the AuthContext register() call
+// //   returns the api_key, the page shows a one-time success panel:
+// //     - the full key in a copyable code block
+// //     - "Save this key now" warning (same pattern as ApiKeyDisplay)
+// //     - "I've saved my key — Continue to Dashboard" button
+// //   Graceful degradation: if register() does NOT return the key (e.g.
+// //   AuthContext doesn't pass the response through), registration behaves
+// //   exactly as before — immediate navigation to the dashboard, where the
+// //   user can Regenerate. Registration can never break because of this panel.
+// //
+// //   ⚠️ REQUIREMENT: AuthContext.register() must RETURN the /register
+// //   response data for the panel to appear. See deployment notes.
+// //
+// // Previous features (Feb 2026, all retained):
 // // - Inline field errors
 // // - Toast errors (global)
 // // - Disable submit when invalid
@@ -574,6 +515,20 @@ export default function Register() {
 //   return { score, label, tips };
 // }
 
+// // ✅ NEW: extract the API key from whatever shape register() returns.
+// // Backend /register returns { message, account, api_key, ... }.
+// // AuthContext may pass it through directly, nested, or not at all.
+// function extractApiKey(result) {
+//   if (!result) return null;
+//   return (
+//     result.api_key ||
+//     result.apiKey ||
+//     result.data?.api_key ||
+//     result.registration?.api_key ||
+//     null
+//   );
+// }
+
 // export default function Register() {
 //   const navigate = useNavigate();
 //   const location = useLocation();
@@ -609,6 +564,10 @@ export default function Register() {
 //   const [showPassword, setShowPassword] = useState(false);
 //   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 //   const [capsLockOn, setCapsLockOn] = useState(false);
+
+//   // ✅ NEW: one-time API key display after successful registration
+//   const [createdApiKey, setCreatedApiKey] = useState(null);
+//   const [copied, setCopied] = useState(false);
 
 //   const validate = (d) => {
 //     const e = { username: "", email: "", password: "", confirmPassword: "" };
@@ -664,6 +623,17 @@ export default function Register() {
 //     });
 //   };
 
+//   const handleCopyKey = async () => {
+//     if (!createdApiKey) return;
+//     try {
+//       await navigator.clipboard.writeText(createdApiKey);
+//       setCopied(true);
+//       setTimeout(() => setCopied(false), 2000);
+//     } catch {
+//       toast.error("Failed to copy — please select and copy the key manually.");
+//     }
+//   };
+
 //   const handleSubmit = async (e) => {
 //     e.preventDefault();
 //     const v = validate(formData);
@@ -677,13 +647,25 @@ export default function Register() {
 
 //     setLoading(true);
 //     try {
-//       await register(
+//       // ✅ NEW: capture register() return value — the backend includes the
+//       // one-time full API key in the /register response.
+//       const result = await register(
 //         formData.username.trim(),
 //         formData.email.trim(),
 //         formData.password
 //       );
+
 //       toast.success("Account created successfully!");
-//       navigate(nextPath, { replace: true });
+
+//       const key = extractApiKey(result);
+//       if (key) {
+//         // Show the one-time key panel instead of navigating immediately.
+//         setCreatedApiKey(key);
+//       } else {
+//         // Graceful degradation: AuthContext didn't pass the key through.
+//         // Behave exactly as before — the dashboard's Regenerate flow covers it.
+//         navigate(nextPath, { replace: true });
+//       }
 //     } catch (err) {
 //       toast.error(err?.message || "Registration failed.");
 //     } finally {
@@ -695,6 +677,78 @@ export default function Register() {
 //     `w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors text-base ${
 //       touched[field] && (errors[field] || currentErrors[field]) ? "border-red-400" : "border-gray-300"
 //     }`;
+
+//   // ==========================================================================
+//   // ✅ NEW: One-time API key success panel (shown after registration when
+//   // the backend's auto-created key is available). The user must explicitly
+//   // continue — no auto-redirect that could lose the key.
+//   // ==========================================================================
+//   if (createdApiKey) {
+//     return (
+//       <div className="min-h-screen bg-gray-50 flex flex-col">
+//         <header className="bg-white border-b border-gray-200">
+//           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+//             <div className="flex items-center h-14 sm:h-16">
+//               <PixelPerfectLogo size={window.innerWidth < 640 ? 32 : 40} showText={true} />
+//             </div>
+//           </div>
+//         </header>
+
+//         <main className="flex-1 flex items-center justify-center px-4 py-8 sm:py-12">
+//           <div className="w-full max-w-lg">
+//             <div className="flex justify-center mb-6">
+//               <PixelPerfectLogo size={window.innerWidth < 640 ? 56 : 64} showText={false} />
+//             </div>
+
+//             <div className="text-center mb-6">
+//               <div className="text-5xl mb-3">🎉</div>
+//               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
+//                 Account created!
+//               </h1>
+//               <p className="text-sm sm:text-base text-gray-600">
+//                 Your API key is ready. This is the <strong>only time</strong> we can
+//                 show it — save it somewhere safe now.
+//               </p>
+//             </div>
+
+//             <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6 sm:p-8">
+//               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-5">
+//                 <div className="bg-yellow-100 border-l-4 border-yellow-500 p-3 mb-3">
+//                   <p className="text-sm font-semibold text-yellow-800">
+//                     ⚠️ Save this key now! You won't be able to see it again.
+//                   </p>
+//                 </div>
+
+//                 <div className="flex flex-col sm:flex-row gap-2">
+//                   <code className="flex-1 bg-white px-4 py-3 rounded border border-gray-300 font-mono text-sm break-all">
+//                     {createdApiKey}
+//                   </code>
+//                   <button
+//                     onClick={handleCopyKey}
+//                     className="px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors whitespace-nowrap"
+//                   >
+//                     {copied ? "✅ Copied!" : "📋 Copy"}
+//                   </button>
+//                 </div>
+//               </div>
+
+//               <p className="text-xs text-gray-500 mb-5">
+//                 Lost keys can't be recovered — but you can always generate a new
+//                 one from your dashboard with <strong>Regenerate Key</strong>.
+//               </p>
+
+//               <button
+//                 onClick={() => navigate(nextPath, { replace: true })}
+//                 className="w-full bg-blue-600 text-white py-3.5 rounded-lg font-semibold hover:bg-blue-700 active:bg-blue-800 transition-colors text-base shadow-sm min-h-[48px]"
+//               >
+//                 I've saved my key — Continue to Dashboard →
+//               </button>
+//             </div>
+//           </div>
+//         </main>
+//       </div>
+//     );
+//   }
 
 //   return (
 //     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -893,4 +947,5 @@ export default function Register() {
 //   );
 // }
 
+// // ============ END of Register.js =========
 
