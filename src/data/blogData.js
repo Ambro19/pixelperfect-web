@@ -276,6 +276,16 @@ Whether you're capturing news sites, fashion catalogs, or any modern web app, Pi
   // ──────────────────────────────────────────────
   // POST 4 — Guide (Authentication)
   // ──────────────────────────────────────────────
+  // ✅ UPDATED (August 2026): Revised to reflect the registration-flow fix.
+  //   Previously this post opened by describing "You don't have an API key
+  //   yet" as a normal, expected moment of confusion. That message was
+  //   actually a BUG — auto-created keys were being shown as if they didn't
+  //   exist. Registration now displays the full key ONCE, immediately after
+  //   signup, and the dashboard correctly shows "Your API key is active"
+  //   with the key's prefix afterward. This post now describes that real,
+  //   fixed flow instead of the old confusing one.
+  //   Also corrected the example key prefix from the placeholder "pp_live_"
+  //   to PixelPerfect's actual format, "pk_...", to match the real product.
   {
     id: 4,
     slug: 'how-pixelperfect-authentication-works',
@@ -283,13 +293,13 @@ Whether you're capturing news sites, fashion catalogs, or any modern web app, Pi
     excerpt:
       'PixelPerfect uses two separate authentication systems for two distinct use cases. Understanding the difference helps you use the platform more confidently and build integrations the right way.',
     category: 'Guide',
-    date: 'March 26, 2026',
+    date: 'August 3, 2026',
     readTime: '7 min read',
     author: 'OneTechly Team',
     content: `
-When you first land on your PixelPerfect dashboard, you might notice a section that says **"You don't have an API key yet."** If you've already been capturing screenshots successfully, that message can be puzzling. You're clearly authenticated — so what does the API key actually do?
+The moment you finish creating your PixelPerfect account, your dashboard shows you a permanent API key — in full, right there on the screen, with a clear warning to save it now because it won't be shown again. That single moment is the fastest way to understand PixelPerfect's authentication model, so it's worth starting there.
 
-The answer is that PixelPerfect uses **two completely separate authentication systems**, each designed for a different use case. Understanding how they work will help you use the platform more confidently and build external integrations the right way.
+But that key isn't the only credential your account uses. Behind the scenes, PixelPerfect actually runs **two completely separate authentication systems**, each built for a different job. Understanding how they work — and why they're deliberately kept apart — will help you use the platform more confidently and build external integrations the right way.
 
 ## The Two Systems at a Glance
 
@@ -323,10 +333,12 @@ This is exactly how most modern web applications authenticate their users. It is
 A permanent API key is a long, randomly generated string that looks something like this:
 
 \`\`\`text
-pp_live_a3f2c1b9d4e8f7a1c2d3e4f5g6h7i8j9
+pk_50a710e26842a1b9d4e8f7c2d3e4f5g6h7i8j9
 \`\`\`
 
-You create it once in the dashboard by clicking **"Create API Key"**, and it remains valid indefinitely until you regenerate it.
+**You never have to go looking for it.** PixelPerfect creates your first key automatically the moment you register, and shows it to you in full — once — right there on your post-signup screen, with a "Save this key now" panel and a one-click Copy button. That's the only time the full key is ever displayed. After that moment, your dashboard shows only a masked prefix (like \`pk_50a710e2...\`) alongside a green "Your API key is active" confirmation — a reminder that the key exists and is working, without ever re-exposing the secret itself.
+
+Lost the key, or need a fresh one for a new environment? The dashboard's **Regenerate Key** button creates a new one on demand, shown in full exactly once again, while immediately invalidating the old one.
 
 Unlike a JWT, an API key is **not tied to a browser session**. It is designed to be used from **outside the web app** — in scripts, server-side code, CI/CD pipelines, or any automated system that needs to call the PixelPerfect API programmatically.
 
@@ -337,7 +349,7 @@ import requests
 
 response = requests.post(
     "https://api.pixelperfectapi.net/api/v1/screenshot",
-    headers={"Authorization": "Bearer pp_live_a3f2c1b9..."},
+    headers={"Authorization": "Bearer pk_50a710e26842a1b9..."},
     json={
         "url": "https://example.com",
         "width": 1920,
@@ -374,7 +386,7 @@ console.log(data.screenshot_url);
 - **Long-lived** — does not expire unless you explicitly regenerate it
 - **Portable** — works from any language, tool, or environment
 - **Developer-facing** — intended for code, not browser sessions
-- **Stored as a hash** — the plaintext key is shown only once at creation; PixelPerfect never stores it again
+- **Shown once, stored as a hash** — the plaintext key appears only at the moment it's created or regenerated; PixelPerfect never displays or stores the plaintext value again afterward
 
 ## Why Are They Separate?
 
@@ -401,8 +413,8 @@ All of these bypass the web app entirely. They communicate directly with the Pix
 
 ## Practical Guidance: Which One Do You Need?
 
-- **Just using the web app?** You do not need an API key. Your JWT handles everything automatically.
-- **Building an integration or automation?** Create an API key from the dashboard. Store it as an environment variable in your code — never hard-code it in source files or commit it to version control.
+- **Just using the web app?** You do not need to think about API keys at all. Your JWT handles everything automatically.
+- **Building an integration or automation?** Your key was already created at signup — grab it from the "Save this key now" screen if you're a new user, or check your dashboard's API Key section for the active prefix. Lost it? Click Regenerate. Store the value as an environment variable in your code — never hard-code it in source files or commit it to version control.
 - **Both?** Perfectly normal. Many teams use the web app day-to-day and also run automated screenshot pipelines using the API.
 
 ## Keeping Your API Key Secure
@@ -411,6 +423,7 @@ An API key is a permanent credential with the same access level as your logged-i
 
 - Store it in environment variables, not in your source code
 - Never expose it in a client-side JavaScript bundle
+- Save it the moment it's shown — it cannot be retrieved again after you navigate away
 - Regenerate it immediately from the dashboard if you suspect it has been compromised
 - Use separate keys for separate environments (staging vs. production) when possible
 
@@ -418,12 +431,12 @@ An API key is a permanent credential with the same access level as your logged-i
 
 The distinction between JWT tokens and permanent API keys is not a complexity for its own sake — it is a deliberate design choice that keeps your account secure across every context in which you use PixelPerfect.
 
-The web app handles JWT authentication silently and automatically. The permanent API key is there when you are ready to move beyond the interface and build something of your own.
+The web app handles JWT authentication silently and automatically. Your permanent API key was already waiting for you the moment you signed up — ready whenever you're ready to move beyond the interface and build something of your own.
 
-[Create your API key and start building →](/dashboard)
+[View your API key on your dashboard →](/dashboard)
 `.trim(),
   },
-
+  
   // ──────────────────────────────────────────────
   // POST 5 — Guide (SDKs)
   // ──────────────────────────────────────────────

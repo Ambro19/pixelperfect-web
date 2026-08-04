@@ -6,6 +6,18 @@
 // ✅ Business plan added
 // ✅ All links clickable
 // ✅ UPDATED: May 2026 — OneTechly → OneTechly, LLC (DOS ID 7922759)
+//
+// ✅ UPDATED: August 2026 —
+//   1. Added a dedicated "4.4 Refund Policy" section. Previously this page
+//      only covered cancellation (4.3) and never stated the no-refund
+//      policy explicitly, even though the FAQ page already committed to it
+//      ("We do not offer refunds..."). Terms is the binding legal document,
+//      so it needed to state the same policy explicitly rather than leaving
+//      it only in the FAQ. Wording mirrors the FAQ's existing refund answer
+//      so the two pages agree.
+//   2. "Stripe" in 4.2 Billing and Payments is now a clickable link to
+//      stripe.com — surfaces the real payment processor to build user
+//      trust, opens in a new tab so checkout/session state isn't disturbed.
 // ========================================
 
 import React from 'react';
@@ -132,14 +144,36 @@ const Terms = () => {
             <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">4.2 Billing and Payments</h3>
             <ul className="list-disc pl-6 text-gray-700 space-y-2">
               <li>Subscription fees are billed monthly or annually in advance</li>
-              <li>Payments are processed securely through Stripe</li>
+              {/* ✅ UPDATED (Aug 2026): "Stripe" is now a clickable link */}
+              <li>
+                Payments are processed securely through{' '}
+                <a
+                  href="https://stripe.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:underline"
+                >
+                  Stripe
+                </a>
+              </li>
               <li>All fees are non-refundable unless required by law</li>
               <li>You authorize us to charge your payment method on recurring basis</li>
             </ul>
 
-            <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">4.3 Cancellation and Refunds</h3>
+            <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">4.3 Cancellation</h3>
             <p className="text-gray-700 leading-relaxed">
-              You may cancel your subscription at any time. Your service will remain active until the end of your current billing period.
+              You may cancel your subscription at any time. Your service will remain active until the end of your current billing period. After that, your account automatically downgrades to the Free tier. All your API keys, settings, and screenshot history are preserved, and you can re-upgrade at any time.
+            </p>
+
+            {/* ✅ NEW (Aug 2026): dedicated Refund Policy section, wording
+                aligned with the FAQ's existing "Do you offer refunds?"
+                answer so the two pages state the same policy. */}
+            <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">4.4 Refund Policy</h3>
+            <p className="text-gray-700 leading-relaxed">
+              We do not offer refunds. This is why we encourage every user to start on our Free tier — 100 screenshots per month, no credit card required — before upgrading to a paid plan. This lets you evaluate PixelPerfect risk-free.
+            </p>
+            <p className="text-gray-700 leading-relaxed mt-3">
+              Once you upgrade to a paid plan (Pro, Business, or Premium), your subscription remains active for the remainder of your current billing period, and you retain full access to your paid tier's features and screenshot quota throughout that time — even if you cancel partway through. No partial or prorated refunds are issued for unused time, screenshots, or features.
             </p>
           </section>
 
@@ -313,7 +347,8 @@ const Terms = () => {
 
 export default Terms;
 
-// =========================================================
+//============== END OF Terms.js =============
+
 // // ========================================
 // // TERMS OF SERVICE PAGE - PIXELPERFECT
 // // ========================================
@@ -321,6 +356,7 @@ export default Terms;
 // // ✅ Guaranteed proper export statement
 // // ✅ Business plan added
 // // ✅ All links clickable
+// // ✅ UPDATED: May 2026 — OneTechly → OneTechly, LLC (DOS ID 7922759)
 // // ========================================
 
 // import React from 'react';
@@ -379,11 +415,11 @@ export default Terms;
 //         {/* Content */}
 //         <div className="bg-white rounded-lg shadow-sm p-8 space-y-8">
           
-//           {/* Section 1: Agreement to Terms */}
+//           {/* Section 1: Agreement to Terms — ✅ OneTechly, LLC */}
 //           <section>
 //             <h2 className="text-2xl font-semibold text-gray-900 mb-4">1. Agreement to Terms</h2>
 //             <p className="text-gray-700 leading-relaxed">
-//               These Terms of Service ("Terms") constitute a legally binding agreement between you and PixelPerfect Screenshot API ("PixelPerfect," "we," "us," or "our"), operated by OneTechly, regarding your access to and use of our screenshot API service at{' '}
+//               These Terms of Service ("Terms") constitute a legally binding agreement between you and PixelPerfect Screenshot API ("PixelPerfect," "we," "us," or "our"), operated by OneTechly, LLC, regarding your access to and use of our screenshot API service at{' '}
 //               <a href="https://pixelperfectapi.net" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
 //                 pixelperfectapi.net
 //               </a>.
@@ -431,7 +467,7 @@ export default Terms;
 //             </p>
 //           </section>
 
-//           {/* ✅ Section 4: Subscription Plans (UPDATED WITH BUSINESS TIER) */}
+//           {/* Section 4: Subscription Plans */}
 //           <section>
 //             <h2 className="text-2xl font-semibold text-gray-900 mb-4">4. Subscription Plans and Payment</h2>
             
@@ -458,7 +494,7 @@ export default Terms;
 //             </p>
 //           </section>
 
-//           {/* ✅ Section 5: API Usage (UPDATED WITH ALL TIERS) */}
+//           {/* Section 5: API Usage */}
 //           <section>
 //             <h2 className="text-2xl font-semibold text-gray-900 mb-4">5. API Usage and Limitations</h2>
             
@@ -490,11 +526,11 @@ export default Terms;
 //             </ul>
 //           </section>
 
-//           {/* Section 7-15: Additional Standard Terms */}
+//           {/* Section 7: IP — ✅ OneTechly, LLC */}
 //           <section>
 //             <h2 className="text-2xl font-semibold text-gray-900 mb-4">7. Intellectual Property</h2>
 //             <p className="text-gray-700 leading-relaxed">
-//               All content, features, and functionality of PixelPerfect are owned by OneTechly and protected by copyright, trademark, and other intellectual property laws.
+//               All content, features, and functionality of PixelPerfect are owned by OneTechly, LLC and protected by copyright, trademark, and other intellectual property laws.
 //             </p>
 //           </section>
 
@@ -523,10 +559,11 @@ export default Terms;
 //             </p>
 //           </section>
 
+//           {/* Section 11: Indemnification — ✅ OneTechly, LLC */}
 //           <section>
 //             <h2 className="text-2xl font-semibold text-gray-900 mb-4">11. Indemnification</h2>
 //             <p className="text-gray-700 leading-relaxed">
-//               You agree to indemnify and hold harmless PixelPerfect and OneTechly from any claims arising from your use of the service or violation of these Terms.
+//               You agree to indemnify and hold harmless PixelPerfect and OneTechly, LLC from any claims arising from your use of the service or violation of these Terms.
 //             </p>
 //           </section>
 
@@ -558,7 +595,7 @@ export default Terms;
 //             </p>
 //           </section>
 
-//           {/* Contact Information */}
+//           {/* Contact — ✅ OneTechly, LLC */}
 //           <section>
 //             <h2 className="text-2xl font-semibold text-gray-900 mb-4">16. Contact Information</h2>
 //             <p className="text-gray-700 leading-relaxed mb-4">
@@ -566,7 +603,7 @@ export default Terms;
 //             </p>
 //             <div className="bg-gray-50 rounded-lg p-6">
 //               <p className="text-gray-700"><strong>PixelPerfect Screenshot API</strong></p>
-//               <p className="text-gray-700">OneTechly</p>
+//               <p className="text-gray-700">OneTechly, LLC</p>
 //               <p className="text-gray-700">Albany, NY, United States</p>
 //               <p className="text-gray-700 mt-3">
 //                 Website:{' '}
@@ -611,7 +648,7 @@ export default Terms;
 //           <div className="flex flex-col md:flex-row justify-between items-center">
 //             <div className="mb-4 md:mb-0">
 //               <PixelPerfectLogo size={32} showText={true} textColor="text-white" />
-//               <p className="text-xs text-gray-400 mt-2">© 2026 All rights reserved</p>
+//               <p className="text-xs text-gray-400 mt-2">© 2026 OneTechly, LLC. All rights reserved.</p>
 //             </div>
 //             <div className="flex gap-6 text-sm text-gray-400">
 //               <button onClick={() => navigate('/privacy')} className="hover:text-white">Privacy</button>
@@ -625,7 +662,6 @@ export default Terms;
 //   );
 // };
 
-// // ✅ CRITICAL: Export statement
 // export default Terms;
 
-
+// //============== END OF Terms.js =============
