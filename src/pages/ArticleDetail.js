@@ -3,11 +3,39 @@
 // ========================================
 // File: frontend/src/pages/ArticleDetail.js
 // Author: OneTechly
-// Updated: May 2026
+// Updated: August 2026
 //
 // Renders individual help articles with dynamic loading
 // Pulls article data from helpArticles.js via getArticleBySlug
 // Dynamically imports guide component for content
+//
+// ✅ UPDATE (Aug 2026 - Round 8): SEO. This single change gives all 31
+//    indexable help articles a unique title, description and canonical.
+//
+//    a) <SEO /> on the main render, driven by lib/articleSeo.js, which derives
+//       everything from fields already in helpArticles.js (title, excerpt,
+//       category, tags). No new copy needed.
+//
+//    b) <SEO noindex /> on the "Article Not Found" branch. That branch returns
+//       HTTP 200 with a "doesn't exist" page — the textbook soft 404, and the
+//       exact error Google reported on this site in Aug 2026. A SPA cannot
+//       send a real 404 status, so noindex is the correct mitigation.
+//
+//    c) 4 articles share a guide component with another article, so they render
+//       the same content at different URLs. articleSeo.js points each at its
+//       primary via canonical, consolidating ranking signals instead of
+//       splitting them:
+//         how-to-upgrade-plan       -> managing-your-subscription
+//         cancellation-and-refunds  -> managing-your-subscription
+//         two-factor-authentication -> account-security
+//         soc2-certification        -> gdpr-compliance
+//
+//    d) 2 articles have component: null and render only "Guide Coming Soon".
+//       articleSeo.js marks them noindex — thin content Google would either
+//       ignore or treat as a soft 404.
+//
+//    e) FIXED broken link: "/api-docs" did not exist in App.js and rendered
+//       NotFoundPage. Now points to "/docs".
 //
 // ✅ FIX (Apr 2026): Removed lucide-react dependency.
 //    All icons replaced with inline SVGs.
@@ -38,6 +66,8 @@ import React, { Suspense, lazy } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { getArticleBySlug, getArticlesByCategory, getCategoryById } from '../data/helpArticles';
 import PixelPerfectLogo from '../components/PixelPerfectLogo';
+import SEO from '../components/SEO';                    // ✅ NEW (SEO)
+import { getArticleSeo } from '../lib/articleSeo';      // ✅ NEW (SEO)
 
 // ========================================
 // INLINE SVG ICONS (replaces lucide-react)
@@ -164,6 +194,17 @@ const ArticleDetail = () => {
   if (!article) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        {/* ✅ NEW (SEO): this branch returns HTTP 200 with a "not found" page —
+            a soft 404. A SPA cannot send a real 404 status, so noindex is the
+            correct signal. Without it, every mistyped or stale /help/article/*
+            URL becomes an indexable thin page. */}
+        <SEO
+          title="Article Not Found | PixelPerfect Help"
+          description="This help article could not be found."
+          path="/help"
+          noindex
+        />
+
         <div className="text-center">
           <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <IconHelpCircle className="w-8 h-8 text-red-500" />
@@ -188,8 +229,16 @@ const ArticleDetail = () => {
 
   const GuideComponent = article.component ? guideComponents[article.component] : null;
 
+  // ✅ NEW (SEO): derives title, description, canonical and JSON-LD from the
+  // article record. Handles the 4 duplicate-rendering slugs (canonical points
+  // at the primary) and the 2 null-component slugs (noindex) automatically.
+  const seo = getArticleSeo(article);
+
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* ✅ NEW (SEO) */}
+      {seo && <SEO {...seo.props} jsonLd={seo.jsonLd} />}
+
       {/* Breadcrumb Navigation */}
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -269,7 +318,9 @@ const ArticleDetail = () => {
                     </Link> — We're here to help with any questions
                   </li>
                   <li>
-                    • <Link to="/api-docs" className="text-blue-600 hover:text-blue-700 underline">
+                    {/* ✅ FIXED (Aug 2026): was "/api-docs", which is not a route
+                        in App.js and rendered NotFoundPage. Now "/docs". */}
+                    • <Link to="/docs" className="text-blue-600 hover:text-blue-700 underline">
                       View full API documentation
                     </Link> — Complete reference and examples
                   </li>
@@ -375,7 +426,7 @@ export default ArticleDetail;
 
 // ===== END OF ArticleDetail.js =====
 
-// ===================================================================
+
 // // ========================================
 // // ARTICLE DETAIL PAGE - PIXELPERFECT
 // // ========================================
@@ -402,9 +453,14 @@ export default ArticleDetail;
 // //
 // // ✅ UPDATE (May 2026 - Round 6): Added Advanced Features category imports.
 // //    New lazy-imports added:
-// //      - DeviceEmulationGuide  (Phase 1, new guide)
+// //      - DeviceEmulationGuide   (Phase 1, new guide)
 // //    JavaScriptExecutionGuide was already present (article moved from api-usage
 // //    to advanced-features in helpArticles.js; no import change needed here).
+// //
+// // ✅ UPDATE (May 2026 - Round 7): Phase 2 + Phase 3 guides wired.
+// //    New lazy-imports added:
+// //      - ElementSelectionGuide  (Phase 2, Business+)
+// //      - WebhooksGuide          (Phase 3, Business+)
 // // ========================================
 
 // import React, { Suspense, lazy } from 'react';
@@ -512,8 +568,10 @@ export default ArticleDetail;
 //   JavaScriptExecutionGuide:       lazy(() => import('../guides/JavaScriptExecutionGuide')),
 //   // ✅ NEW (May 2026): Phase 1 Device Emulation guide
 //   DeviceEmulationGuide:           lazy(() => import('../guides/DeviceEmulationGuide')),
-//   // Phase 2–4 guides have component: null in helpArticles.js and render the
-//   // "Guide Coming Soon" fallback — no lazy-import needed until they ship.
+//   // ✅ UPDATE (May 2026 - Round 7): Phase 2 + 3 guides now live
+//   ElementSelectionGuide:          lazy(() => import('../guides/ElementSelectionGuide')),
+//   WebhooksGuide:                  lazy(() => import('../guides/WebhooksGuide')),
+//   // Phase 4 guide has component: null — renders "Guide Coming Soon" until it ships.
 // };
 
 // // Loading component
@@ -745,4 +803,3 @@ export default ArticleDetail;
 // export default ArticleDetail;
 
 // // ===== END OF ArticleDetail.js =====
-

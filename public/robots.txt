@@ -1,8 +1,13 @@
+# robots.txt for https://pixelperfectapi.net
+# Serve at the domain root with Content-Type: text/plain
+# Verified against frontend/src/App.js route table, Aug 2026
+
 User-agent: *
-# Allow all public marketing pages, docs, help center, and legal pages
+
+# Public surface: marketing, docs, guides, help center, blog, legal
 Allow: /
 
-# Keep authenticated and private areas out of the index
+# Authenticated app - never crawl
 Disallow: /dashboard
 Disallow: /screenshot
 Disallow: /activity
@@ -12,10 +17,27 @@ Disallow: /subscription
 Disallow: /settings
 Disallow: /account-settings
 Disallow: /change-password
-Disallow: /api/
-Disallow: /files/
-Disallow: /user/
-Disallow: /debug/
 
-# Correct sitemap location
+# Account-recovery utilities - real routes, but no search value
+Disallow: /forgot-password
+Disallow: /forgot-username
+Disallow: /reset
+
+# Session/token query variants create duplicate URLs with no unique content
+Disallow: /*?*session=
+Disallow: /*?*token=
+
+# Build artifacts
+Disallow: /static/js/
+Disallow: /static/css/
+
+# NOTE ON ALIASES: /documentation, /help-center, /api-status and /signup are
+# NOT disallowed here. They are handled with canonical tags instead, so link
+# equity consolidates onto /docs, /help, /status and /register. Blocking them
+# would stop Google from ever reading those canonicals.
+#
+# NOTE ON /api: this is a public marketing page, not the live API. The live API
+# is on api.pixelperfectapi.net, which needs its own robots.txt with
+# "Disallow: /" - see seo_routes.py.
+
 Sitemap: https://pixelperfectapi.net/sitemap.xml

@@ -5,6 +5,81 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#3B82F6" />
 
+    <!-- =====================================================================
+         PER-PAGE SEO TAGS ARE NOT SET HERE.
+
+         Every route in this CRA build serves this same file. Any canonical or
+         og:url hardcoded here would be inherited by /pricing, /docs, /help and
+         all ~31 help articles - telling Google every page is a duplicate of the
+         homepage. That is what kept Search Console at "Indexed: 1".
+
+         Title, description, canonical, OG and Twitter tags are now set per page
+         by <SEO /> (src/components/SEO.jsx) via react-helmet-async. The tags
+         below are HOMEPAGE DEFAULTS and fallbacks only; Helmet overrides them
+         on every other route.
+
+         DO NOT re-add <link rel="canonical">, og:url, or twitter:url here.
+    ====================================================================== -->
+
+    <title>Website Screenshot API — Capture Any URL as an Image | PixelPerfect</title>
+    <meta
+      name="description"
+      content="Take full-page website screenshots with a single HTTP request. No Puppeteer to maintain, no headless browser cluster to run. Free tier available."
+    />
+    <meta name="robots" content="index,follow" />
+
+    <!-- Preconnect to the API origin -->
+    <link rel="preconnect" href="https://api.pixelperfectapi.net" />
+    <link rel="dns-prefetch" href="https://api.pixelperfectapi.net" />
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/png" sizes="32x32" href="%PUBLIC_URL%/favicons/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="%PUBLIC_URL%/favicons/favicon-16x16.png" />
+    <link rel="icon" type="image/png" sizes="48x48" href="%PUBLIC_URL%/favicons/favicon-48x48.png" />
+    <link rel="icon" type="image/png" sizes="64x64" href="%PUBLIC_URL%/favicons/favicon-64x64.png" />
+    <link rel="icon" type="image/png" sizes="128x128" href="%PUBLIC_URL%/favicons/favicon-128x128.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="%PUBLIC_URL%/favicons/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="%PUBLIC_URL%/favicons/android-chrome-192x192.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="%PUBLIC_URL%/favicons/android-chrome-512x512.png" />
+
+    <!-- Web App Manifest -->
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+
+    <!-- Default social card. <SEO /> overrides og:title / og:description /
+         og:url per page; these remain as the homepage values. -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="PixelPerfect" />
+    <meta property="og:title" content="Website Screenshot API — Capture Any URL as an Image" />
+    <meta property="og:description" content="Take full-page website screenshots with a single HTTP request. No browser cluster to maintain." />
+    <meta property="og:image" content="https://pixelperfectapi.net/favicons/social-media/pixelperfect-og-image.png" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Website Screenshot API — Capture Any URL as an Image" />
+    <meta name="twitter:description" content="Take full-page website screenshots with a single HTTP request." />
+    <meta name="twitter:image" content="https://pixelperfectapi.net/favicons/social-media/pixelperfect-twitter-card.png" />
+
+    <!-- =====================================================================
+         GOOGLE ADSENSE REMOVED
+         pixelperfectapi.net is a SaaS product — ads are not appropriate here.
+         AdSense is configured only on onetechlyambr19.blogspot.com.
+         The AdSense script and site verification were removed on 2026-05-19.
+    ====================================================================== -->
+  </head>
+
+  <body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root"></div>
+  </body>
+</html>
+
+
+<!-- <!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#3B82F6" />
+
     <!-- Primary Meta Tags -->
     <title>PixelPerfect - Screenshot API</title>
     <meta name="title" content="PixelPerfect - Screenshot API" />
@@ -58,4 +133,4 @@
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"></div>
   </body>
-</html>
+</html> -->

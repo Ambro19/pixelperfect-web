@@ -3,7 +3,7 @@
 // ========================================
 // File: frontend/src/pages/Pricing.js
 // Author: OneTechly
-// Updated: July 2026
+// Updated: August 2026
 //
 // ✅ PRODUCTION FEATURES:
 // - PixelPerfect logo: top-left header + centered above title
@@ -11,6 +11,22 @@
 // - Pricing cards: colored borders + distinct CTA buttons per tier
 // - Stripe checkout fully wired (/billing/create_checkout_session)
 // - No FAQ section (dedicated FAQ page handles all FAQ questions)
+//
+// ✅ CHANGES (Aug 2026) — TRUST:
+// - Trust badge now links "Stripe" to https://stripe.com in a new tab with
+//   rel="noopener noreferrer". Signals a real payment processor to visitors.
+//   SEO note: deliberately NOT rel="nofollow" — an outbound link to a
+//   reputable processor is a positive trust signal, not something to suppress.
+//
+// ✅ CHANGES (Aug 2026) — SEO:
+// - Added <SEO /> with a page-specific title, description and canonical
+//   (https://pixelperfectapi.net/pricing). Previously every route inherited
+//   the homepage canonical from index.html, which told Google this page was a
+//   duplicate of "/" and kept it out of the index.
+// - Added FAQPage JSON-LD reflecting the trust-badge copy already on the page.
+//   NOTE: schema.org requires FAQ answers to be VISIBLE to users. The two Q&As
+//   below restate the "Cancel anytime / No hidden fees" badge and the annual
+//   discount, both of which are rendered. Do not add Q&As that aren't on-page.
 //
 // ✅ CHANGES (Jul 2026):
 // - DYNAMIC CURRENT PLAN: fetches /subscription_status for authenticated
@@ -30,12 +46,31 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import PixelPerfectLogo from "../components/PixelPerfectLogo";
+import SEO, { PAGE_SEO, faqLd } from "../components/SEO";   // ✅ NEW
 import { useAuth } from "../contexts/AuthContext";
 import { PRICING_CONFIG } from "../config/pricing";
 import { currentApiBase as currentApiBaseFn } from "../lib/api";
 
 // Tier ranking used to decide upgrade vs. downgrade direction
 const TIER_ORDER = { free: 0, pro: 1, business: 2, premium: 3 };
+
+// ✅ NEW: FAQ structured data. Both answers restate copy rendered on this page
+// (the annual-saving pill and the trust badge), which is what schema.org
+// requires — invisible FAQ markup is a policy violation.
+const PRICING_FAQ = faqLd([
+  {
+    question: "Can I cancel my PixelPerfect subscription at any time?",
+    answer:
+      "Yes. All plans can be cancelled at any time through the billing portal. " +
+      "There are no hidden fees and payments are processed securely by Stripe.",
+  },
+  {
+    question: "How much do I save with annual billing?",
+    answer:
+      "Annual billing saves 16% compared with paying monthly on the Pro, " +
+      "Business and Premium plans.",
+  },
+]);
 
 export default function Pricing() {
   const navigate = useNavigate();
@@ -150,6 +185,10 @@ export default function Pricing() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* ✅ NEW: per-page SEO tags. Emits its own canonical (/pricing), which
+          is what stops Google folding this page into the homepage. */}
+      <SEO {...PAGE_SEO["/pricing"]} jsonLd={PRICING_FAQ} />
+
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -384,7 +423,16 @@ export default function Pricing() {
               <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
             </svg>
             <span className="text-sm text-gray-700 font-medium">
-              Secure payments processed by Stripe · Cancel anytime · No hidden fees
+              Secure payments processed by{" "}
+              <a
+                href="https://stripe.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline hover:text-blue-700"
+              >
+                Stripe
+              </a>{" "}
+              · Cancel anytime · No hidden fees
             </span>
           </div>
         </div>
@@ -394,14 +442,14 @@ export default function Pricing() {
   );
 }
 
+// ============= END OF Pricing.js ==============
 
-//////////////////////////////////////////////////////////////
 // // ========================================
 // // PRICING PAGE - PIXELPERFECT SCREENSHOT API
 // // ========================================
 // // File: frontend/src/pages/Pricing.js
 // // Author: OneTechly
-// // Updated: March 2026
+// // Updated: July 2026
 // //
 // // ✅ PRODUCTION FEATURES:
 // // - PixelPerfect logo: top-left header + centered above title
@@ -410,13 +458,21 @@ export default function Pricing() {
 // // - Stripe checkout fully wired (/billing/create_checkout_session)
 // // - No FAQ section (dedicated FAQ page handles all FAQ questions)
 // //
-// // ✅ CHANGES (Mar 2026):
-// // - Toggle changed from slide switch to pill buttons (Monthly | Annual)
-// //   to match the design in pricing.js (Manage Subscription page)
-// // - FAQ section removed — see FAQ.js for all pricing/billing questions
+// // ✅ CHANGES (Jul 2026):
+// // - DYNAMIC CURRENT PLAN: fetches /subscription_status for authenticated
+// //   users and marks the ACTUAL current tier (free/pro/business/premium)
+// //   with the green "CURRENT PLAN" badge, green border, and disabled
+// //   "✓ Current Plan" button — previously hardcoded to Free.
+// // - "MOST POPULAR" badge stays on Pro unless Pro IS the current plan
+// //   (current-plan status takes priority for the badge slot).
+// // - Tiers BELOW the current plan show "Manage in Billing" → /dashboard
+// //   (downgrades go through the Stripe billing portal, not a new
+// //   checkout session, to avoid duplicate subscriptions).
+// // - Logged-out visitors see "Get Started Free" / "Get Started with X"
+// //   and are routed to /register?plan=...
 // // ========================================
 
-// import React, { useMemo, useState } from "react";
+// import React, { useEffect, useMemo, useState } from "react";
 // import { useNavigate } from "react-router-dom";
 // import toast from "react-hot-toast";
 // import PixelPerfectLogo from "../components/PixelPerfectLogo";
@@ -424,11 +480,20 @@ export default function Pricing() {
 // import { PRICING_CONFIG } from "../config/pricing";
 // import { currentApiBase as currentApiBaseFn } from "../lib/api";
 
+// // Tier ranking used to decide upgrade vs. downgrade direction
+// const TIER_ORDER = { free: 0, pro: 1, business: 2, premium: 3 };
+
 // export default function Pricing() {
 //   const navigate = useNavigate();
 //   const { isAuthenticated, token } = useAuth();
 //   const [billingCycle, setBillingCycle] = useState("monthly");
 //   const [isProcessing, setIsProcessing] = useState(false);
+
+//   // ✅ NEW: current tier state
+//   // - null  → still loading (or logged out)
+//   // - "free" | "pro" | "business" | "premium" → resolved tier
+//   const [currentTier, setCurrentTier] = useState(null);
+//   const [tierLoaded, setTierLoaded] = useState(false);
 
 //   const yearly = billingCycle === "yearly";
 
@@ -437,13 +502,51 @@ export default function Pricing() {
 //     []
 //   );
 
-//   async function startCheckout(planId) {
-//     if (planId === "free") {
-//       toast("You're already on the Free plan!");
-//       return;
+//   // ✅ NEW: fetch the authenticated user's subscription tier
+//   useEffect(() => {
+//     let cancelled = false;
+
+//     async function fetchTier() {
+//       if (!isAuthenticated || !token) {
+//         setCurrentTier(null);
+//         setTierLoaded(true);
+//         return;
+//       }
+//       try {
+//         const apiBase = currentApiBaseFn().replace(/\/+$/, "");
+//         const res = await fetch(`${apiBase}/subscription_status`, {
+//           headers: { Authorization: `Bearer ${token}` },
+//         });
+//         if (!res.ok) throw new Error(`Status ${res.status}`);
+//         const data = await res.json();
+
+//         // Backend may return { tier: "pro" } or { subscription_tier: "pro" } —
+//         // normalize defensively and fall back to "free".
+//         const tier = String(data?.tier || data?.subscription_tier || "free").toLowerCase();
+//         if (!cancelled) {
+//           setCurrentTier(TIER_ORDER[tier] !== undefined ? tier : "free");
+//         }
+//       } catch {
+//         // Non-fatal: page still works, we just don't mark a current plan.
+//         if (!cancelled) setCurrentTier(isAuthenticated ? "free" : null);
+//       } finally {
+//         if (!cancelled) setTierLoaded(true);
+//       }
 //     }
+
+//     fetchTier();
+//     return () => {
+//       cancelled = true;
+//     };
+//   }, [isAuthenticated, token]);
+
+//   async function startCheckout(planId) {
 //     if (!isAuthenticated) {
 //       navigate(`/register?plan=${encodeURIComponent(planId)}`);
+//       return;
+//     }
+//     if (planId === currentTier) {
+//       toast(`You're already on the ${PRICING_CONFIG.tiers[planId]?.name || planId} plan!`);
 //       return;
 //     }
 
@@ -483,6 +586,12 @@ export default function Pricing() {
 //     } finally {
 //       setIsProcessing(false);
 //     }
+//   }
+
+//   // ✅ NEW: downgrades route through the billing portal on the dashboard
+//   function goToBilling() {
+//     toast("Use “Manage Subscription & Billing” to change your plan.");
+//     navigate("/dashboard");
 //   }
 
 //   return (
@@ -544,8 +653,7 @@ export default function Pricing() {
 
 //         {/*
 //           ── Billing Toggle ─────────────────────────────────────────────────────
-//           ✅ CHANGED: Pill button style (Monthly | Annual) matching pricing.js.
-//              Old code used a slide/thumb toggle which looked inconsistent.
+//           Pill button style (Monthly | Annual) matching pricing.js.
 //         */}
 //         <div className="flex justify-center items-center mb-12">
 //           <div className="inline-flex items-center bg-gray-100 rounded-full p-1 gap-1">
@@ -584,28 +692,45 @@ export default function Pricing() {
 //           {tiers.map((tier) => {
 //             const price = yearly ? tier.price.yearly : tier.price.monthly;
 
-//             // Border + shadow per tier
-//             const cardBorder =
-//               tier.id === "free"
-//                 ? "border-2 border-green-500 shadow-lg"
-//                 : tier.id === "pro"
-//                 ? "border-2 border-blue-500 shadow-lg"
-//                 : tier.id === "business"
-//                 ? "border-2 border-purple-400 shadow-md hover:shadow-lg"
-//                 : "border-2 border-orange-400 shadow-md hover:shadow-lg";
+//             // ✅ NEW: dynamic current-plan detection
+//             const isCurrent = tierLoaded && currentTier === tier.id;
+//             const isLowerTier =
+//               tierLoaded &&
+//               currentTier !== null &&
+//               TIER_ORDER[tier.id] < TIER_ORDER[currentTier];
 
-//             // Badge label + color
-//             const badge =
-//               tier.id === "free" ? { label: "CURRENT PLAN", cls: "bg-green-500" }
-//               : tier.id === "pro" ? { label: "MOST POPULAR",  cls: "bg-blue-500"  }
+//             // Border + shadow per tier — current plan always gets green
+//             const cardBorder = isCurrent
+//               ? "border-2 border-green-500 shadow-lg"
+//               : tier.id === "free"
+//               ? "border-2 border-gray-200 shadow-md hover:shadow-lg"
+//               : tier.id === "pro"
+//               ? "border-2 border-blue-500 shadow-lg"
+//               : tier.id === "business"
+//               ? "border-2 border-purple-400 shadow-md hover:shadow-lg"
+//               : "border-2 border-orange-400 shadow-md hover:shadow-lg";
+
+//             // ✅ NEW: badge logic — CURRENT PLAN wins the badge slot;
+//             // MOST POPULAR shows on Pro only when Pro is not the current plan
+//             const badge = isCurrent
+//               ? { label: "CURRENT PLAN", cls: "bg-green-500" }
+//               : tier.id === "pro"
+//               ? { label: "MOST POPULAR", cls: "bg-blue-500" }
 //               : null;
 
 //             // CTA button style per tier
 //             const btnCls =
-//               tier.id === "pro"      ? "bg-blue-600 hover:bg-blue-700 text-white"
+//               tier.id === "free"     ? "bg-gray-700 hover:bg-gray-800 text-white"
+//               : tier.id === "pro"      ? "bg-blue-600 hover:bg-blue-700 text-white"
 //               : tier.id === "business" ? "bg-purple-600 hover:bg-purple-700 text-white"
-//               : tier.id === "premium"  ? "bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white"
-//               : "";
+//               : "bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white";
+
+//             // ✅ NEW: CTA label depends on auth state and tier direction
+//             const ctaLabel = !isAuthenticated
+//               ? tier.id === "free"
+//                 ? "Get Started Free"
+//                 : `Get Started with ${tier.name}`
+//               : `Upgrade to ${tier.name}`;
 
 //             return (
 //               <div key={tier.id}
@@ -654,11 +779,23 @@ export default function Pricing() {
 //                     ))}
 //                   </ul>
 
-//                   {/* CTA */}
-//                   {tier.id === "free" ? (
+//                   {/* ── CTA — four states ──────────────────────────────────
+//                       1. Current plan          → disabled ✓ Current Plan
+//                       2. Lower than current    → Manage in Billing (portal)
+//                       3. Higher than current   → Upgrade via Stripe checkout
+//                       4. Logged out            → Get Started → /register  */}
+//                   {isCurrent ? (
 //                     <button disabled
 //                       className="w-full py-3 bg-gray-100 text-gray-500 rounded-lg font-semibold cursor-not-allowed mt-auto">
 //                       ✓ Current Plan
+//                     </button>
+//                   ) : isLowerTier ? (
+//                     <button
+//                       onClick={goToBilling}
+//                       disabled={isProcessing}
+//                       className="w-full py-3 rounded-lg font-semibold transition-all mt-auto border-2 border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+//                     >
+//                       Manage in Billing
 //                     </button>
 //                   ) : (
 //                     <button
@@ -676,7 +813,7 @@ export default function Pricing() {
 //                           Processing…
 //                         </span>
 //                       ) : (
-//                         `Upgrade to ${tier.name}`
+//                         ctaLabel
 //                       )}
 //                     </button>
 //                   )}
@@ -693,7 +830,16 @@ export default function Pricing() {
 //               <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
 //             </svg>
 //             <span className="text-sm text-gray-700 font-medium">
-//               Secure payments processed by Stripe · Cancel anytime · No hidden fees
+//               Secure payments processed by{" "}
+//               <a
+//                 href="https://stripe.com"
+//                 target="_blank"
+//                 rel="noopener noreferrer"
+//                 className="underline hover:text-blue-700"
+//               >
+//                 Stripe
+//               </a>{" "}
+//               · Cancel anytime · No hidden fees
 //             </span>
 //           </div>
 //         </div>
@@ -702,4 +848,3 @@ export default function Pricing() {
 //     </div>
 //   );
 // }
-

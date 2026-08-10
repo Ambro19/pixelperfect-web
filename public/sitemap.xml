@@ -13,16 +13,10 @@
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://pixelperfectapi.net/about</loc>
+    <loc>https://pixelperfectapi.net/features</loc>
     <lastmod>2026-08-08</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://pixelperfectapi.net/contact</loc>
-    <lastmod>2026-08-08</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://pixelperfectapi.net/docs</loc>
@@ -31,52 +25,22 @@
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://pixelperfectapi.net/docs/quickstart</loc>
+    <loc>https://pixelperfectapi.net/api</loc>
     <lastmod>2026-08-08</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://pixelperfectapi.net/docs/authentication</loc>
+    <loc>https://pixelperfectapi.net/guides</loc>
     <lastmod>2026-08-08</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://pixelperfectapi.net/docs/full-page</loc>
+    <loc>https://pixelperfectapi.net/status</loc>
     <lastmod>2026-08-08</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://pixelperfectapi.net/docs/element-selection</loc>
-    <lastmod>2026-08-08</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://pixelperfectapi.net/docs/webhooks</loc>
-    <lastmod>2026-08-08</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://pixelperfectapi.net/docs/batch-jobs</loc>
-    <lastmod>2026-08-08</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://pixelperfectapi.net/docs/errors</loc>
-    <lastmod>2026-08-08</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://pixelperfectapi.net/docs/rate-limits</loc>
-    <lastmod>2026-08-08</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
+    <changefreq>daily</changefreq>
+    <priority>0.4</priority>
   </url>
   <url>
     <loc>https://pixelperfectapi.net/help</loc>
@@ -85,28 +49,46 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://pixelperfectapi.net/help/getting-started</loc>
+    <loc>https://pixelperfectapi.net/faq</loc>
     <lastmod>2026-08-08</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://pixelperfectapi.net/help/api-keys</loc>
+    <loc>https://pixelperfectapi.net/contact</loc>
     <lastmod>2026-08-08</lastmod>
     <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://pixelperfectapi.net/blog</loc>
+    <lastmod>2026-08-08</lastmod>
+    <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://pixelperfectapi.net/help/billing</loc>
+    <loc>https://pixelperfectapi.net/about</loc>
     <lastmod>2026-08-08</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
+    <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://pixelperfectapi.net/help/troubleshooting</loc>
+    <loc>https://pixelperfectapi.net/community</loc>
     <lastmod>2026-08-08</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
+    <priority>0.4</priority>
+  </url>
+  <url>
+    <loc>https://pixelperfectapi.net/careers</loc>
+    <lastmod>2026-08-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.4</priority>
+  </url>
+  <url>
+    <loc>https://pixelperfectapi.net/privacy</loc>
+    <lastmod>2026-08-08</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
   </url>
   <url>
     <loc>https://pixelperfectapi.net/terms</loc>
@@ -115,7 +97,7 @@
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://pixelperfectapi.net/privacy</loc>
+    <loc>https://pixelperfectapi.net/cookies</loc>
     <lastmod>2026-08-08</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
@@ -133,3 +115,4 @@
     <priority>0.4</priority>
   </url>
 </urlset>
+

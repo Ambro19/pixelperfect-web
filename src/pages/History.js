@@ -1,8 +1,19 @@
 // frontend/src/pages/History.js — PixelPerfect Screenshot API
 // CONVERTED FROM: YCD History.js
 // PURPOSE: Complete screenshot history with robust caching and error handling
-// UPDATED: March 2026
-//   ✅ FIX: screenshot_url resolution — relative paths AND localhost URLs now
+// UPDATED: August 2026
+//   ✅ NEW (Aug 2026 — "Image expired" state):
+//      R2 deletes the actual screenshot image file 7 days after capture
+//      (per FAQ storage policy), but the database History record is
+//      permanent — it never expires. Previously, clicking "View Screenshot"
+//      on any entry older than 7 days produced a raw, unexplained 404,
+//      because the link was rendered identically regardless of age.
+//      Now: each item's created_at is compared against a 7-day window.
+//      If expired, "View Screenshot" is replaced with a muted, non-clickable
+//      "Image expired" indicator instead of a dead link — turning an
+//      unexplained error into an expected, clearly-labeled state.
+//      See RESET_LOGIC.md §4 for the documented policy this implements.
+//   ✅ FIX (Mar 2026): screenshot_url resolution — relative paths AND localhost URLs now
 //           correctly resolved so "View Screenshot" works on mobile/LAN devices
 
 import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react';
@@ -45,6 +56,24 @@ function resolveApiBase() {
 }
 
 const API_BASE_URL = resolveApiBase();
+
+// ✅ NEW (Aug 2026): R2 image retention window. Must match the actual R2
+// lifecycle rule configured on the pixelperfect-screenshots bucket (see FAQ:
+// "Screenshots are stored for 7 days by default"). If that lifecycle rule
+// ever changes, update this constant to match — it drives purely cosmetic
+// "Image expired" labeling on the frontend and has no effect on the actual
+// storage deletion, which is controlled entirely by R2's own lifecycle policy.
+const IMAGE_RETENTION_DAYS = 7;
+const IMAGE_RETENTION_MS = IMAGE_RETENTION_DAYS * 24 * 60 * 60 * 1000;
+
+// ✅ NEW (Aug 2026): true once a capture is older than the R2 retention
+// window — meaning the linked image file has almost certainly already been
+// deleted from storage, even though this database record persists forever.
+function isImageExpired(createdAtIso) {
+  const created = parseServerTime(createdAtIso);
+  if (!created || Number.isNaN(created.getTime())) return false;
+  return Date.now() - created.getTime() > IMAGE_RETENTION_MS;
+}
 
 // ✅ FIX: Resolve any screenshot URL to a fully-qualified URL.
 // Batch jobs (and some screenshot captures) store relative paths like
@@ -694,7 +723,12 @@ export default function History() {
             </div>
           ) : (
             <div className="divide-y divide-gray-100">
-              {filtered.map((item, index) => (
+              {filtered.map((item, index) => {
+                // ✅ NEW (Aug 2026): resolve expiry once per item render.
+                // See IMAGE_RETENTION_DAYS / isImageExpired above.
+                const expired = isImageExpired(item.created_at);
+
+                return (
                 <div
                   key={item.id}
                   className={`p-6 transition-colors duration-150 ${
@@ -758,7 +792,29 @@ export default function History() {
 
                       {/* ✅ Action buttons */}
                       <div className="mt-3 flex flex-wrap gap-2">
-                        {item.screenshot_url ? (
+                        {!item.screenshot_url ? (
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 text-gray-400
+                                           border border-gray-200 rounded-lg text-sm font-medium cursor-not-allowed">
+                            🔗 No preview available
+                          </span>
+                        ) : expired ? (
+                          // ✅ NEW (Aug 2026): "Image expired" state — the R2
+                          // file is gone after 7 days, so instead of a dead
+                          // link that would 404, show a clear, non-clickable
+                          // label explaining why. Metadata above still shows
+                          // correctly since the database record is permanent.
+                          <span
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-700
+                                       border border-amber-200 rounded-lg text-sm font-medium cursor-default"
+                            title={`Screenshot images are automatically removed after ${IMAGE_RETENTION_DAYS} days to manage storage costs. This entry's details remain in your history permanently.`}
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            Image expired
+                          </span>
+                        ) : (
                           <a
                             href={item.screenshot_url}
                             target="_blank"
@@ -773,11 +829,6 @@ export default function History() {
                             </svg>
                             View Screenshot
                           </a>
-                        ) : (
-                          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 text-gray-400
-                                           border border-gray-200 rounded-lg text-sm font-medium cursor-not-allowed">
-                            🔗 No preview available
-                          </span>
                         )}
 
                         <button
@@ -808,7 +859,8 @@ export default function History() {
                     </div>
                   )}
                 </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </section>
@@ -851,13 +903,15 @@ export default function History() {
   );
 }
 
-///////////////////////////////////////////////////////////////////////////////////
+// // ============ END of History.js =========
+
+
 // // frontend/src/pages/History.js — PixelPerfect Screenshot API
 // // CONVERTED FROM: YCD History.js
 // // PURPOSE: Complete screenshot history with robust caching and error handling
 // // UPDATED: March 2026
-// //   ✅ FIX: screenshot_url resolution — relative paths now get API base prepended
-// //           so "View Screenshot" works on mobile and in production (not localhost)
+// //   ✅ FIX: screenshot_url resolution — relative paths AND localhost URLs now
+// //           correctly resolved so "View Screenshot" works on mobile/LAN devices
 
 // import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 // import { useNavigate } from 'react-router-dom';
@@ -908,9 +962,19 @@ export default function History() {
 //   if (!rawUrl || typeof rawUrl !== 'string') return null;
 //   const trimmed = rawUrl.trim();
 //   if (!trimmed) return null;
-//   // Already a full URL — use as-is (R2, CDN, or any http/https URL)
-//   if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) return trimmed;
-//   // Relative path — prefix with backend origin
+
+//   // ✅ MOBILE FIX: URLs stored as http://localhost:8000/screenshots/... are
+//   // unreachable on mobile — "localhost" on the phone resolves to the phone
+//   // itself, not the dev PC. Replace with the correct LAN API base.
+//   if (/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?/.test(trimmed)) {
+//     return trimmed.replace(/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?/, API_BASE_URL.replace(/\/$/, ''));
+//   }
+
+//   // Already a full https URL (CDN/R2) — use as-is
+//   if (trimmed.startsWith('https://')) return trimmed;
+//   // Full http URL with a non-localhost host — use as-is
+//   if (trimmed.startsWith('http://')) return trimmed;
+//   // Relative path — prefix with backend API base
 //   return `${API_BASE_URL}${trimmed.startsWith('/') ? '' : '/'}${trimmed}`;
 // }
 
@@ -1694,3 +1758,5 @@ export default function History() {
 //     </div>
 //   );
 // }
+
+// // // ============ END of Histoir.js =========
