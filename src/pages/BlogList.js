@@ -77,8 +77,9 @@ const BlogList = () => {
             PixelPerfect Blog
           </h1>
           <p className="text-base sm:text-lg text-gray-600 max-w-2xl mx-auto">
-            Welcome to our central hub for all digital content, announcements, and key developments. 
-            Explore the full spectrum of our expert insights, industry analysis, and community updates.
+            Engineering write-ups from building and running a screenshot API in
+            production — headless browser reliability, authentication design,
+            automation patterns, and the bugs we hit along the way.
           </p>
         </div>
       </div>
@@ -165,14 +166,14 @@ const BlogList = () => {
             Ready to Get Started?
           </h2>
           <p className="text-blue-100 mb-6 text-sm sm:text-base">
-            Join thousands of developers using PixelPerfect to capture perfect screenshots.
+            Use PixelPerfect to capture any URL with a single API call. 100 free screenshots every month, no credit card required.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button
               onClick={() => navigate('/register')}
               className="px-8 py-3 bg-white text-blue-600 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
             >
-              Start Free Trial
+              Get Started Free
             </button>
             <button
               onClick={() => navigate('/pricing')}
