@@ -393,7 +393,7 @@ export default function Features() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button onClick={() => navigate('/register')} className="px-8 py-4 bg-white text-blue-600 font-bold rounded-xl hover:bg-gray-100 transition-colors shadow-lg text-lg">
-              Start Free Trial →
+              Get Started Free →
             </button>
             <button onClick={() => navigate('/pricing')} className="px-8 py-4 bg-blue-700 text-white font-bold rounded-xl hover:bg-blue-800 transition-colors border-2 border-white text-lg">
               View Pricing

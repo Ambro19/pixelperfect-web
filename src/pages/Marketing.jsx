@@ -124,7 +124,7 @@ export default function Marketing() {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center mb-6 sm:mb-8 px-4">
-            <button onClick={() => navigate('/register')} className="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 bg-blue-600 text-white text-base sm:text-lg font-semibold rounded-lg hover:bg-blue-700 transition-colors shadow-lg">Start Free Trial →</button>
+            <button onClick={() => navigate('/register')} className="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 bg-blue-600 text-white text-base sm:text-lg font-semibold rounded-lg hover:bg-blue-700 transition-colors shadow-lg">Get Started Free →</button>
             <button onClick={() => navigate('/docs')} className="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 bg-white text-blue-600 text-base sm:text-lg font-semibold rounded-lg border-2 border-blue-600 hover:bg-blue-50 transition-colors">View Documentation 📄</button>
           </div>
 
@@ -189,10 +189,10 @@ export default function Marketing() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl sm:text-4xl font-bold mb-3 sm:mb-4">Ready to Get Started?</h2>
           <p className="text-base sm:text-lg md:text-xl mb-6 sm:mb-8 opacity-90">
-            Join thousands of developers using PixelPerfect to capture perfect screenshots.
+           Join developers using PixelPerfect to capture any URL with a single API call. Results in seconds, 100 free screenshots every month, no credit card required.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center px-4">
-            <button onClick={() => navigate('/register')} className="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 bg-white text-blue-600 text-base sm:text-lg font-semibold rounded-lg hover:bg-gray-100 transition-colors shadow-lg">Start Free Trial</button>
+            <button onClick={() => navigate('/register')} className="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 bg-white text-blue-600 text-base sm:text-lg font-semibold rounded-lg hover:bg-gray-100 transition-colors shadow-lg">Get Started Free </button>
             <button onClick={() => navigate('/pricing')} className="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 bg-blue-700 text-white text-base sm:text-lg font-semibold rounded-lg hover:bg-blue-800 transition-colors border-2 border-white">View Pricing</button>
           </div>
         </div>
@@ -209,7 +209,7 @@ export default function Marketing() {
               <p className="text-sm sm:text-base text-gray-500 mt-1">Developer insights, guides, and real-world engineering articles</p>
             </div>
             <button onClick={() => navigate('/blog')} className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-700 transition-colors flex-shrink-0">
-              Visit Blog
+              Visit PixelPerfect Blog
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
             </button>
           </div>
@@ -237,7 +237,7 @@ export default function Marketing() {
 
           <div className="mt-6 sm:hidden">
             <button onClick={() => navigate('/blog')} className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-700 transition-colors">
-              Visit Blog
+              Visit PixelPerfect Blog
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
             </button>
           </div>

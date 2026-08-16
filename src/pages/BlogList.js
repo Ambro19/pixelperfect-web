@@ -79,7 +79,7 @@ const BlogList = () => {
           <p className="text-base sm:text-lg text-gray-600 max-w-2xl mx-auto">
             Engineering write-ups from building and running a screenshot API in
             production — headless browser reliability, authentication design,
-            automation patterns, and the bugs we hit along the way.
+            automation patterns, and the bugs we hit and fixed along the way.
           </p>
         </div>
       </div>
