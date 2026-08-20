@@ -1,45 +1,49 @@
 // frontend/src/pages/ScreenshotPage.js — PixelPerfect Screenshot API
-// UPDATED: July 2026
+// UPDATED: August 2026
 //
-// ✅ FIX (July 2026 — "Resets on [date]" Not Displaying):
-//   The reset-date row only rendered when subscriptionStatus.next_reset
-//   existed and parsed as a valid date. If the backend returns the date
-//   under a different key (or nested in usage/limits), the row silently
-//   never appeared. resolveNextReset() now checks several common field
-//   names: next_reset, nextReset, reset_date, resetDate,
-//   current_period_end, currentPeriodEnd, usage.next_reset.
-//   ⚠️ If the row STILL doesn't render, the backend /subscription_status
-//   response does not include the reset date at all — add `next_reset`
-//   (ISO 8601 string) to the endpoint response. Frontend is ready for it.
+// ============================================================================
+// ✅ FIX (Aug 2026 — Device Preset reported the wrong dimensions)
+// ============================================================================
+//   Reproduction: choose Quick Preset "Laptop (1366x768)", then choose Device
+//   Preset "iPad Pro 11\"". Capture. Screenshot Details reported 1366×768 —
+//   the Quick Preset — even though the capture actually used the iPad
+//   viewport (1024×1366).
 //
-// ✅ FIX (July 2026 — Mount Effect Runs Only at Login, Not on Re-navigation):
-//   Changed mount useEffect dependency from [isAuthenticated, refreshSubscriptionStatus]
-//   to [] (empty array). Previously the effect only ran when isAuthenticated
-//   changed — once at login, never on re-navigation in the SPA.
-//   With [], React Router v6's unmount+remount on navigation triggers a fresh
-//   fetch every time the user visits ScreenshotPage. Ensures usage is current.
+//   Root cause: when a device preset is supplied, Playwright's device
+//   descriptor overrides viewport/user-agent/DPR inside the browser context,
+//   but the width/height carried back through the response were still the
+//   request's width/height fields. The user was shown values that had been
+//   overridden and discarded.
 //
-// ✅ FIX (July 2026 — Billing Cycle Reset Date):
-//   Added "Resets on [date]" display under the progress bar.
-//   Reads the reset date from the backend subscription_status endpoint.
-//   Users now see exactly when their counter will reset — tied to
-//   billing cycle, not the calendar 1st of the month. No more surprise 0s.
+//   Fix, in three parts:
+//     1. DEVICE_PRESETS now carries the real viewport of every device, so the
+//        UI knows the true dimensions without waiting for the API.
+//     2. Screenshot Details reports the device viewport (and names the device)
+//        whenever a device preset was used, falling back to the API response
+//        and then the request fields.
+//     3. The UI now makes the override visible BEFORE capture: selecting a
+//        device dims the Quick Presets and the Width/Height inputs and shows
+//        an inline banner. The old behaviour let a user set 1366×768 with no
+//        signal that it would be ignored.
 //
-// ✅ CONSISTENCY FIX (July 2026 — Tier Badge Colors):
-//   Extracted tier badge colors into TIER_BADGE_CLASSES: PRO=blue,
-//   BUSINESS=purple, FREE=yellow, PREMIUM=green. Matches DashboardPage.js.
-//
-// ⚠️  BACKEND NOTE (models.py — now fixed separately):
-//   Business batch_requests changed 500 → 200. models.py now reads all
-//   limits from .env so there is only one source of truth.
+// ✅ UI REFRESH (Aug 2026 — Screenshot Configuration):
+//   Quick Presets were flat grey buttons with no selected state — you could
+//   not tell which preset was active. They are now segmented cards with an
+//   explicit active state (blue ring + tint), an icon per device class, and
+//   the dimensions on a second line. Format select, section headers and the
+//   capture button were given matching treatment. No logic changed.
 //
 // Previous fixes (all retained):
+// ✅ FIX (July 2026 — "Resets on [date]" Not Displaying): resolveNextReset()
+//   checks next_reset, nextReset, reset_date, resetDate, current_period_end,
+//   currentPeriodEnd, usage.next_reset.
+// ✅ FIX (July 2026 — Mount effect runs on every navigation): dependency []
+// ✅ FIX (July 2026 — Billing cycle reset date display)
+// ✅ CONSISTENCY FIX (July 2026 — Tier badge colors)
 // ✅ FIX (May 2026 — Phase 2): Element Selection (Business+) with CSS crop
 // ✅ FIX (May 2026 — Phase 1): Device emulation, Custom JS, Wait for selector
 // ✅ FIX (Apr 2026): friendlyError() translates raw Playwright errors
 // ✅ FIX (Mar 2026): resolveApiBase() replaces build-time env var fallback
-// ✅ FIX: break-all on error/URL boxes for mobile overflow
-// ✅ FIX: URL display — long URLs no longer overflow the green confirmation box
 
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -61,9 +65,6 @@ function tierBadgeClass(tier) {
   return TIER_BADGE_CLASSES[(tier || 'free').toLowerCase()] ?? TIER_BADGE_CLASSES.free;
 }
 
-// ── ✅ NEW (July 2026): robust reset-date resolution ─────────────────────────
-// The backend may expose the billing-cycle reset date under different keys
-// depending on version. Check them all; return a valid Date or null.
 function resolveNextReset(subscriptionStatus) {
   if (!subscriptionStatus) return null;
   const candidates = [
@@ -77,8 +78,6 @@ function resolveNextReset(subscriptionStatus) {
   ];
   for (const raw of candidates) {
     if (!raw) continue;
-    // Support both ISO strings and unix timestamps (Stripe often sends
-    // current_period_end as seconds since epoch).
     const d = typeof raw === 'number'
       ? new Date(raw < 1e12 ? raw * 1000 : raw)
       : new Date(raw);
@@ -87,7 +86,6 @@ function resolveNextReset(subscriptionStatus) {
   return null;
 }
 
-// ── Runtime API base resolution (mobile/LAN safe) ────────────────────────────
 function resolveApiBase() {
   const env = (
     process.env.REACT_APP_API_URL ||
@@ -145,26 +143,38 @@ function friendlyError(msg) {
   return msg;
 }
 
+// ── Quick Presets — now carry an icon for the segmented card UI ──────────────
 const VIEWPORT_PRESETS = {
-  desktop:   { width: 1920, height: 1080, name: 'Desktop (1920x1080)'   },
-  laptop:    { width: 1366, height: 768,  name: 'Laptop (1366x768)'     },
-  tablet:    { width: 768,  height: 1024, name: 'Tablet (768x1024)'     },
-  mobile:    { width: 375,  height: 667,  name: 'Mobile (375x667)'      },
-  ultrawide: { width: 3440, height: 1440, name: 'Ultrawide (3440x1440)' },
+  desktop:   { width: 1920, height: 1080, name: 'Desktop',   icon: '🖥️' },
+  laptop:    { width: 1366, height: 768,  name: 'Laptop',    icon: '💻' },
+  tablet:    { width: 768,  height: 1024, name: 'Tablet',    icon: '📟' },
+  mobile:    { width: 375,  height: 667,  name: 'Mobile',    icon: '📱' },
+  ultrawide: { width: 3440, height: 1440, name: 'Ultrawide', icon: '🖥️' },
 };
 
+// ── Device Presets ───────────────────────────────────────────────────────────
+// ✅ FIX (Aug 2026): each preset now carries its REAL viewport. Previously the
+// dimensions existed only inside the label string, so the UI had no way to
+// report what a device capture actually produced — it fell back to the
+// width/height inputs, which the device descriptor had already overridden.
+// These values match Playwright's device registry (see SUPPORTED_DEVICES in
+// screenshot_service.py). If Playwright updates a descriptor, update here too.
 const DEVICE_PRESETS = [
-  { key: '',                  label: '— No device preset (use width/height) —'     },
-  { key: 'iphone_13',         label: '📱 iPhone 13 (390×844, Safari)'              },
-  { key: 'iphone_13_pro_max', label: '📱 iPhone 13 Pro Max (428×926, Safari)'      },
-  { key: 'iphone_se',         label: '📱 iPhone SE (375×667, Safari)'              },
-  { key: 'pixel_5',           label: '📱 Google Pixel 5 (393×851, Chrome)'         },
-  { key: 'pixel_7',           label: '📱 Google Pixel 7 (412×915, Chrome)'         },
-  { key: 'ipad_pro',          label: '📟 iPad Pro 11" (1024×1366, Safari)'         },
-  { key: 'ipad_mini',         label: '📟 iPad Mini (768×1024, Safari)'             },
-  { key: 'galaxy_s9',         label: '📱 Samsung Galaxy S9+ (320×658, Chrome)'    },
-  { key: 'galaxy_tab_s4',     label: '📟 Samsung Galaxy Tab S4 (712×1138, Chrome)' },
+  { key: '',                  label: '— No device preset (use width/height) —', width: null, height: null, icon: '' },
+  { key: 'iphone_13',         label: 'iPhone 13 (390×844, Safari)',              width: 390,  height: 844,  icon: '📱' },
+  { key: 'iphone_13_pro_max', label: 'iPhone 13 Pro Max (428×926, Safari)',      width: 428,  height: 926,  icon: '📱' },
+  { key: 'iphone_se',         label: 'iPhone SE (375×667, Safari)',              width: 375,  height: 667,  icon: '📱' },
+  { key: 'pixel_5',           label: 'Google Pixel 5 (393×851, Chrome)',         width: 393,  height: 851,  icon: '📱' },
+  { key: 'pixel_7',           label: 'Google Pixel 7 (412×915, Chrome)',         width: 412,  height: 915,  icon: '📱' },
+  { key: 'ipad_pro',          label: 'iPad Pro 11" (1024×1366, Safari)',         width: 1024, height: 1366, icon: '📟' },
+  { key: 'ipad_mini',         label: 'iPad Mini (768×1024, Safari)',             width: 768,  height: 1024, icon: '📟' },
+  { key: 'galaxy_s9',         label: 'Samsung Galaxy S9+ (320×658, Chrome)',     width: 320,  height: 658,  icon: '📱' },
+  { key: 'galaxy_tab_s4',     label: 'Samsung Galaxy Tab S4 (712×1138, Chrome)', width: 712,  height: 1138, icon: '📟' },
 ];
+
+function deviceByKey(key) {
+  return DEVICE_PRESETS.find(d => d.key === key) || null;
+}
 
 const JS_PLACEHOLDER = `// Examples:
 // Hide a cookie banner:
@@ -187,6 +197,7 @@ export default function ScreenshotPage() {
   const [websiteUrl,     setWebsiteUrl]     = useState('');
   const [width,          setWidth]          = useState(1920);
   const [height,         setHeight]         = useState(1080);
+  const [activePreset,   setActivePreset]   = useState('desktop');   // ✅ NEW: selected-state tracking
   const [format,         setFormat]         = useState('png');
   const [fullPage,       setFullPage]       = useState(false);
   const [darkMode,       setDarkMode]       = useState(false);
@@ -222,6 +233,12 @@ export default function ScreenshotPage() {
 
   const xUiValidUrl = isValidUrl(websiteUrl);
 
+  // ✅ NEW (Aug 2026): a device preset overrides width/height inside the
+  // browser context, so the UI treats it as the authoritative source and
+  // visibly disables the fields it supersedes.
+  const selectedDevice   = useMemo(() => (device ? deviceByKey(device) : null), [device]);
+  const deviceOverriding = Boolean(selectedDevice && selectedDevice.key);
+
   const limits      = useMemo(() => subscriptionStatus?.limits || {}, [subscriptionStatus]);
   const usage       = useMemo(() => subscriptionStatus?.usage  || {}, [subscriptionStatus]);
   const isUnlimited = (l) => l === 'unlimited' || l === Infinity;
@@ -247,8 +264,6 @@ export default function ScreenshotPage() {
     return '';
   };
 
-  // ✅ FIX (July 2026): reset date resolved through resolveNextReset()
-  // so all backend field-name variants are supported.
   const nextResetDate = useMemo(
     () => resolveNextReset(subscriptionStatus),
     [subscriptionStatus]
@@ -264,7 +279,6 @@ export default function ScreenshotPage() {
     try { await refreshSubscriptionStatus(); } catch {}
   }, [isAuthenticated, refreshSubscriptionStatus]);
 
-  // ✅ FIX: dependency [] → runs on every mount (every navigation to this page)
   useEffect(() => {
     if (isAuthenticated && refreshSubscriptionStatus) {
       refreshSubscriptionStatus().catch(() => {});
@@ -316,7 +330,6 @@ export default function ScreenshotPage() {
     return `${screenshotsPercent.toFixed(1)}% used`;
   }, [screenshotsLimit, screenshotsPercent]);
 
-  // ✅ Billing cycle reset date for display — driven by resolveNextReset()
   const resetDateLabel = useMemo(() => {
     if (!nextResetDate) return null;
     try {
@@ -341,7 +354,6 @@ export default function ScreenshotPage() {
         throw new Error('Please enter a valid website URL starting with http:// or https://');
       }
 
-      // ✅ FIX (July 2026): PDF requires Pro+, not Business-only.
       if (format === 'pdf' && !isPro) {
         throw new Error('PDF generation requires Pro tier or higher. Please upgrade.');
       }
@@ -373,15 +385,34 @@ export default function ScreenshotPage() {
       if (data.js_warning)       setJsWarning(data.js_warning);
       if (data.element_selector) setElementCaptured(data.element_selector);
 
+      // ✅ FIX (Aug 2026 — Device Preset dimensions):
+      // Resolution order for the dimensions we report back to the user:
+      //   1. The device preset's real viewport, when a device was used. The
+      //      descriptor overrides viewport/UA/DPR inside the browser context,
+      //      so the width/height inputs were never applied and must not be
+      //      shown. This is the case that was previously wrong — it displayed
+      //      the Quick Preset the user had also set.
+      //   2. Whatever the API reported.
+      //   3. The requested width/height, as a last resort.
+      const usedDevice = device ? deviceByKey(device) : null;
+      const reportedWidth  = usedDevice?.width  ?? data.width  ?? width;
+      const reportedHeight = usedDevice?.height ?? data.height ?? height;
+
       setScreenshotUrl(data.screenshot_url || '');
       setScreenshotData({
-        id:         data.screenshot_id,
-        url:        websiteUrl,
-        width:      data.width,
-        height:     data.height,
-        format:     data.format,
-        size:       data.size_bytes,
-        created_at: data.created_at,
+        id:          data.screenshot_id,
+        url:         websiteUrl,
+        width:       reportedWidth,
+        height:      reportedHeight,
+        format:      data.format,
+        size:        data.size_bytes,
+        created_at:  data.created_at,
+        // ✅ NEW: carried through so Details can name the device explicitly
+        deviceKey:   usedDevice?.key   || '',
+        deviceLabel: usedDevice?.label || '',
+        deviceIcon:  usedDevice?.icon  || '',
+        fullPage,
+        darkMode,
       });
       setScreenshotCompleted(true);
       toast.success('📸 Screenshot captured!');
@@ -409,21 +440,27 @@ export default function ScreenshotPage() {
     toast.success('💾 Screenshot downloaded!');
   };
 
-  const applyPreset = (preset) => {
+  // ✅ UPDATED: also records which preset is active so the card can highlight.
+  const applyPreset = (key, preset) => {
     setWidth(preset.width);
     setHeight(preset.height);
-    toast.success(`Applied ${preset.name} preset`);
+    setActivePreset(key);
   };
 
-  const primaryBtnClass = `flex-1 py-3 px-6 rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+  // ✅ NEW: manual width/height edits clear the active preset highlight,
+  // so the UI never claims a preset is applied when it no longer matches.
+  const handleWidthChange = (v) => { setWidth(v); setActivePreset(''); };
+  const handleHeightChange = (v) => { setHeight(v); setActivePreset(''); };
+
+  const primaryBtnClass = `flex-1 py-3.5 px-6 rounded-xl font-semibold text-base transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 ${
     xUiPrimaryDisabled
-      ? 'bg-gray-300 text-gray-600 cursor-not-allowed opacity-70'
-      : 'bg-blue-600 hover:bg-blue-700 text-white focus:ring-blue-500'
+      ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+      : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30 focus:ring-blue-500'
   }`;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200">
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-gray-100">
+      <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="cursor-pointer" onClick={() => navigate('/dashboard')}>
@@ -448,12 +485,12 @@ export default function ScreenshotPage() {
         </div>
       </header>
 
-      <div className="max-w-4xl mx-auto p-6">
+      <div className="max-w-4xl mx-auto p-4 sm:p-6">
         <div className="text-center mb-6">
           <div className="flex justify-center items-center mb-4">
             <PixelPerfectLogo size={64} showText={false} />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Capture Website Screenshot</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2 tracking-tight">Capture Website Screenshot</h1>
           <div className="text-sm text-gray-600 mb-2">
             Logged in as{' '}
             <span className="font-semibold text-blue-600">{user?.username || 'User'}</span>{' '}
@@ -461,11 +498,11 @@ export default function ScreenshotPage() {
           </div>
 
           {/* Subscription card */}
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4 mb-4 mt-4 shadow-sm">
-            <div className="flex items-center justify-between mb-2">
-              <div className="text-sm">
-                <span className="font-semibold">Current Plan:</span>{' '}
-                <span className={`ml-1 px-3 py-1.5 rounded-lg text-sm font-bold shadow-sm ${tierBadgeClass(tier)}`}>
+          <div className="bg-white border border-gray-200 rounded-2xl p-5 mb-4 mt-4 shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <div className="text-sm flex items-center gap-2">
+                <span className="font-semibold text-gray-700">Current Plan:</span>
+                <span className={`px-3 py-1 rounded-lg text-xs font-bold tracking-wide ${tierBadgeClass(tier)}`}>
                   {(tier || 'free').toUpperCase()}
                 </span>
               </div>
@@ -490,32 +527,24 @@ export default function ScreenshotPage() {
               </button>
             </div>
 
-            <div className="grid grid-cols-1 gap-2 mt-2 text-xs">
-              <div className="font-medium">📸 Screenshots: {safeFormatUsage('screenshots')}</div>
-            </div>
-
-            {/* Progress bar */}
-            <div className="mt-4 bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+            {/* Progress */}
+            <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
               <div className="flex justify-between items-center mb-2">
                 <span className="text-sm font-semibold text-gray-700">📸 Screenshots Used This Month</span>
                 <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
                   {safeFormatUsage('screenshots')}
                 </span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+              <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
                 <div
-                  className="bg-gradient-to-r from-blue-500 via-blue-600 to-indigo-600 h-3 rounded-full transition-all duration-500 ease-out relative"
+                  className="bg-gradient-to-r from-blue-500 to-indigo-600 h-2.5 rounded-full transition-all duration-500 ease-out"
                   style={{ width: `${screenshotsPercent}%` }}
-                >
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-20 animate-pulse" />
-                </div>
+                />
               </div>
               <div className="flex justify-between items-center mt-2">
                 <span className="text-xs text-gray-500">{screenshotsRemainingLabel}</span>
                 <span className="text-xs font-medium text-gray-600">{screenshotsPercentLabel}</span>
               </div>
-              {/* ✅ Billing cycle reset date — renders whenever the backend
-                  provides a reset date under any supported field name */}
               {resetDateLabel && (
                 <div className="flex items-center gap-1 mt-2 text-xs text-gray-400">
                   <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -530,31 +559,37 @@ export default function ScreenshotPage() {
         </div>
 
         {/* Example websites */}
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6 shadow-sm">
-          <h3 className="text-green-800 font-semibold mb-2">✅ Try These Example Websites:</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-            <div>
-              <div className="font-medium text-green-700">Example.com</div>
-              <div className="text-green-600">Simple test website</div>
-              <button onClick={() => setWebsiteUrl('https://example.com')} className="text-xs text-green-500 hover:text-green-700 underline mt-1">Use this URL</button>
-            </div>
-            <div>
-              <div className="font-medium text-green-700">GitHub.com</div>
-              <div className="text-green-600">Popular code hosting site</div>
-              <button onClick={() => setWebsiteUrl('https://github.com')} className="text-xs text-green-500 hover:text-green-700 underline mt-1">Use this URL</button>
-            </div>
+        <div className="bg-white border border-emerald-200 rounded-2xl p-4 mb-6 shadow-sm">
+          <h3 className="text-emerald-800 font-semibold mb-3 text-sm flex items-center gap-2">
+            <span className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center text-xs">✓</span>
+            Try these example websites
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {[
+              { url: 'https://example.com', name: 'Example.com', desc: 'Simple test website' },
+              { url: 'https://github.com',  name: 'GitHub.com',  desc: 'Popular code hosting site' },
+            ].map(x => (
+              <button
+                key={x.url}
+                onClick={() => setWebsiteUrl(x.url)}
+                className="text-left p-3 rounded-xl border border-gray-200 hover:border-emerald-400 hover:bg-emerald-50 transition-all group"
+              >
+                <div className="font-medium text-gray-800 text-sm group-hover:text-emerald-800">{x.name}</div>
+                <div className="text-xs text-gray-500">{x.desc}</div>
+              </button>
+            ))}
           </div>
         </div>
 
         {/* URL Input */}
         <div className="mb-3">
-          <label className="block text-sm font-medium text-gray-700 mb-2">Enter Website URL:</label>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">Enter Website URL</label>
           <input
             type="text"
             placeholder="https://example.com"
             value={websiteUrl}
             onChange={e => setWebsiteUrl(e.target.value)}
-            className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+            className="w-full border border-gray-300 p-3.5 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-sm"
           />
         </div>
 
@@ -563,119 +598,153 @@ export default function ScreenshotPage() {
           let displayDomain = websiteUrl;
           try { displayDomain = new URL(websiteUrl).hostname; } catch {}
           return (
-            <div className="mb-5 rounded-lg border border-green-200 bg-green-50 overflow-hidden shadow-sm">
-              <div className="flex items-center gap-2 px-4 py-2.5 bg-green-100 border-b border-green-200">
-                <span className="flex-shrink-0 w-5 h-5 rounded-full bg-green-500 text-white text-xs flex items-center justify-center font-bold">✓</span>
-                <span className="text-sm font-semibold text-green-800">Valid URL detected</span>
-                <span className="ml-auto text-xs font-medium text-green-700 bg-green-200 px-2 py-0.5 rounded-full truncate max-w-[180px]" title={displayDomain}>{displayDomain}</span>
+            <div className="mb-5 rounded-xl border border-emerald-200 bg-emerald-50 overflow-hidden shadow-sm">
+              <div className="flex items-center gap-2 px-4 py-2.5 bg-emerald-100 border-b border-emerald-200">
+                <span className="flex-shrink-0 w-5 h-5 rounded-full bg-emerald-500 text-white text-xs flex items-center justify-center font-bold">✓</span>
+                <span className="text-sm font-semibold text-emerald-800">Valid URL detected</span>
+                <span className="ml-auto text-xs font-medium text-emerald-700 bg-emerald-200 px-2 py-0.5 rounded-full truncate max-w-[180px]" title={displayDomain}>{displayDomain}</span>
               </div>
               <div className="px-4 py-2.5" title={websiteUrl}>
-                <p className="text-xs font-mono text-green-700 break-all leading-relaxed">{websiteUrl}</p>
+                <p className="text-xs font-mono text-emerald-700 break-all leading-relaxed">{websiteUrl}</p>
               </div>
             </div>
           );
         })()}
 
         {/* Screenshot Configuration */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-          <h3 className="text-lg font-semibold mb-4">📐 Screenshot Configuration</h3>
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-5 sm:p-6 mb-6">
+          <h3 className="text-lg font-bold text-gray-900 mb-5 flex items-center gap-2">
+            <span className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center text-base">📐</span>
+            Screenshot Configuration
+          </h3>
 
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Quick Presets:</label>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
-              {Object.entries(VIEWPORT_PRESETS).map(([key, preset]) => (
-                <button key={key} onClick={() => applyPreset(preset)} className="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm transition-colors">{preset.name}</button>
-              ))}
+          {/*
+            ✅ FIX (Aug 2026 — Device Preset precedence, part 3 of 3):
+            When a device preset is active it overrides viewport entirely, so
+            the Quick Presets and Width/Height inputs are visibly disabled and
+            explained. Previously a user could set "Laptop 1366x768" AND a
+            device, with nothing indicating the first would be discarded — and
+            the result screen then reported the discarded value.
+          */}
+          {deviceOverriding && (
+            <div className="mb-5 flex items-start gap-3 bg-purple-50 border border-purple-200 rounded-xl px-4 py-3">
+              <span className="text-lg leading-none mt-0.5">{selectedDevice.icon}</span>
+              <div className="text-sm text-purple-900">
+                <span className="font-semibold">Device preset active — {selectedDevice.label}</span>
+                <p className="text-xs text-purple-700 mt-0.5">
+                  Quick Presets and Width/Height are ignored while a device is selected.
+                  This capture will use {selectedDevice.width}×{selectedDevice.height}.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDevice('')}
+                className="ml-auto flex-shrink-0 text-xs font-semibold text-purple-700 hover:text-purple-900 underline"
+              >
+                Clear
+              </button>
+            </div>
+          )}
+
+          {/* Quick Presets — segmented cards with an explicit active state */}
+          <div className={`mb-5 transition-opacity ${deviceOverriding ? 'opacity-40 pointer-events-none' : ''}`}>
+            <label className="block text-sm font-semibold text-gray-700 mb-2.5">Quick Presets</label>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+              {Object.entries(VIEWPORT_PRESETS).map(([key, preset]) => {
+                const isActive = activePreset === key && !deviceOverriding;
+                return (
+                  <button
+                    key={key}
+                    onClick={() => applyPreset(key, preset)}
+                    disabled={deviceOverriding}
+                    className={`px-3 py-2.5 rounded-xl text-left transition-all border-2 ${
+                      isActive
+                        ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-500/20 shadow-sm'
+                        : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-sm">{preset.icon}</span>
+                      <span className={`text-sm font-semibold ${isActive ? 'text-blue-700' : 'text-gray-700'}`}>
+                        {preset.name}
+                      </span>
+                    </div>
+                    <div className={`text-xs mt-0.5 font-mono ${isActive ? 'text-blue-500' : 'text-gray-400'}`}>
+                      {preset.width}×{preset.height}
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div className={`grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5 transition-opacity ${deviceOverriding ? 'opacity-40 pointer-events-none' : ''}`}>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Width (px)</label>
-              <input type="number" value={width} onChange={e => setWidth(parseInt(e.target.value) || 1920)} className="w-full border border-gray-300 rounded px-3 py-2" min="320" max="3840" />
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Width (px)</label>
+              <input type="number" value={width} disabled={deviceOverriding}
+                onChange={e => handleWidthChange(parseInt(e.target.value) || 1920)}
+                className="w-full border border-gray-300 rounded-xl px-3.5 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all disabled:bg-gray-50"
+                min="320" max="3840" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Height (px)</label>
-              <input type="number" value={height} onChange={e => setHeight(parseInt(e.target.value) || 1080)} className="w-full border border-gray-300 rounded px-3 py-2" min="240" max="2160" />
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Height (px)</label>
+              <input type="number" value={height} disabled={deviceOverriding}
+                onChange={e => handleHeightChange(parseInt(e.target.value) || 1080)}
+                className="w-full border border-gray-300 rounded-xl px-3.5 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all disabled:bg-gray-50"
+                min="240" max="2160" />
             </div>
           </div>
 
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Format</label>
-            {/*
-              ✅ FIX (July 2026 — PDF Tier Gate: Pro+ only):
-              PDF is now available on Pro, Business, and Premium plans.
-              Free tier users: PDF option is visually labelled as Pro+.
-              Selecting PDF on Free tier shows an upgrade prompt and
-              resets the format to PNG — no hard disable since native
-              <select disabled> on option is unreliable across browsers.
-              The backend also enforces this at 403 level.
-            */}
+          <div className="mb-5">
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Format</label>
             <select
               value={format}
               onChange={e => {
                 const next = e.target.value;
                 if (next === 'pdf' && !isPro) {
-                  toast.error('PDF format requires Pro tier or higher.', {
-                    duration: 4000,
-                    icon: '🔒',
-                  });
+                  toast.error('PDF format requires Pro tier or higher.', { duration: 4000, icon: '🔒' });
                   navigate('/pricing');
-                  return;           // Don't change format — stay on PNG/JPEG/WebP
+                  return;
                 }
                 setFormat(next);
               }}
-              className="w-full border border-gray-300 rounded px-3 py-2 bg-white"
+              className="w-full border border-gray-300 rounded-xl px-3.5 py-2.5 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
             >
-              <option value="png">PNG (lossless, larger file)</option>
-              <option value="jpeg">JPEG (lossy, smaller file)</option>
-              <option value="webp">WebP (best compression)</option>
-              <option value="pdf">{isPro ? 'PDF (document format)' : 'PDF (document format) 🔒 Pro+ required'}</option>
+              <option value="png">PNG — lossless, larger file</option>
+              <option value="jpeg">JPEG — lossy, smaller file</option>
+              <option value="webp">WebP — best compression</option>
+              <option value="pdf">{isPro ? 'PDF — document format' : 'PDF — document format 🔒 Pro+ required'}</option>
             </select>
             {!isPro && (
-              <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
+              <p className="text-xs text-amber-700 mt-2 flex items-center gap-1 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
                 <span>🔒</span> PDF format requires Pro tier or higher.{' '}
-                <button
-                  type="button"
-                  onClick={() => navigate('/pricing')}
-                  className="underline font-semibold hover:text-amber-800"
-                >
+                <button type="button" onClick={() => navigate('/pricing')} className="underline font-semibold hover:text-amber-900">
                   Upgrade →
                 </button>
               </p>
             )}
           </div>
 
-          <div className="space-y-3 mb-4">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" checked={fullPage} onChange={e => setFullPage(e.target.checked)} className="w-4 h-4" />
-              <span className="text-sm text-gray-700">Capture full page (scroll entire page)</span>
-            </label>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" checked={darkMode} onChange={e => setDarkMode(e.target.checked)} className="w-4 h-4" />
-              <span className="text-sm text-gray-700">Use dark mode</span>
-            </label>
+          <div className="space-y-2 mb-5">
+            {[
+              { checked: fullPage, set: setFullPage, label: 'Capture full page (scroll entire page)' },
+              { checked: darkMode, set: setDarkMode, label: 'Use dark mode' },
+            ].map(o => (
+              <label key={o.label} className="flex items-center gap-3 cursor-pointer p-2.5 rounded-xl hover:bg-gray-50 transition-colors">
+                <input type="checkbox" checked={o.checked} onChange={e => o.set(e.target.checked)}
+                  className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500" />
+                <span className="text-sm text-gray-700">{o.label}</span>
+              </label>
+            ))}
           </div>
 
           {/* Standard Advanced Options */}
-          <div className="border-t border-gray-200 pt-4">
-            <h4 className="text-sm font-semibold text-gray-700 mb-3">Advanced Options</h4>
-            <div className="mb-3">
-              <label className="block text-sm text-gray-700 mb-1">Delay before capture (seconds)</label>
-              {/*
-                ✅ FIX (July 2026 — Mobile Delay UX):
-                Changed from <input type="number"> to <select>.
-                A number input triggers the mobile numeric keyboard, forcing
-                users to tap, type, and dismiss — poor UX on touch screens.
-                A select gives a native bottom-sheet picker on mobile and a
-                clean dropdown on desktop. Practical values 0–10 cover 100%
-                of real use cases; free-form entry was rarely needed.
-              */}
-              <select
-                value={delay}
-                onChange={e => setDelay(parseInt(e.target.value) || 0)}
-                className="w-full border border-gray-300 rounded px-3 py-2 bg-white"
-              >
+          <div className="border-t border-gray-200 pt-5">
+            <h4 className="text-sm font-bold text-gray-700 mb-3">Advanced Options</h4>
+            <div className="mb-4">
+              <label className="block text-sm text-gray-700 mb-1.5">Delay before capture (seconds)</label>
+              <select value={delay} onChange={e => setDelay(parseInt(e.target.value) || 0)}
+                className="w-full border border-gray-300 rounded-xl px-3.5 py-2.5 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
                 <option value={0}>0 s — Capture immediately</option>
                 <option value={1}>1 s</option>
                 <option value={2}>2 s — Recommended for most sites</option>
@@ -683,77 +752,111 @@ export default function ScreenshotPage() {
                 <option value={5}>5 s — Recommended for heavy pages</option>
                 <option value={10}>10 s — Maximum</option>
               </select>
-              <p className="text-xs text-gray-500 mt-1">Extra wait time after page load before capture begins</p>
+              <p className="text-xs text-gray-500 mt-1.5">Extra wait time after page load before capture begins</p>
             </div>
             <div>
-              <label className="block text-sm text-gray-700 mb-1">Remove elements (CSS selectors)</label>
-              <input type="text" value={removeElements} onChange={e => setRemoveElements(e.target.value)} placeholder=".cookie-banner, #popup, .ads" className="w-full border border-gray-300 rounded px-3 py-2" />
-              <p className="text-xs text-gray-500 mt-1">Comma-separated CSS selectors to hide before capture</p>
+              <label className="block text-sm text-gray-700 mb-1.5">Remove elements (CSS selectors)</label>
+              <input type="text" value={removeElements} onChange={e => setRemoveElements(e.target.value)}
+                placeholder=".cookie-banner, #popup, .ads"
+                className="w-full border border-gray-300 rounded-xl px-3.5 py-2.5 font-mono text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" />
+              <p className="text-xs text-gray-500 mt-1.5">Comma-separated CSS selectors to hide before capture</p>
             </div>
           </div>
 
           {/* Pro & Business features */}
-          <div className="border-t border-gray-200 mt-4 pt-4">
-            <button type="button" onClick={() => setAdvancedProOpen(o => !o)} className="w-full flex items-center justify-between py-1 mb-1 hover:opacity-80 transition-opacity">
-              <h4 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                ⚡ Pro & Business Features
-                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-purple-100 text-purple-700 border border-purple-200">Pro+</span>
+          <div className="border-t border-gray-200 mt-5 pt-5">
+            <button type="button" onClick={() => setAdvancedProOpen(o => !o)}
+              className="w-full flex items-center justify-between py-1 hover:opacity-80 transition-opacity">
+              <h4 className="text-sm font-bold text-gray-700 flex items-center gap-2">
+                ⚡ Pro &amp; Business Features
+                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold bg-purple-100 text-purple-700 border border-purple-200">Pro+</span>
+                {deviceOverriding && (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold bg-blue-100 text-blue-700 border border-blue-200">
+                    Device active
+                  </span>
+                )}
               </h4>
-              <svg className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${advancedProOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${advancedProOpen ? 'rotate-180' : ''}`}
+                fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
               </svg>
             </button>
 
             {advancedProOpen && (
-              <div className="space-y-5 mt-3">
+              <div className="space-y-5 mt-4">
                 {!isPro && (
-                  <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 text-sm text-purple-800">
+                  <div className="bg-purple-50 border border-purple-200 rounded-xl p-3.5 text-sm text-purple-800">
                     🔒 Device emulation, Custom JavaScript, and Wait for selector require <strong>Pro tier or higher</strong>.{' '}
                     <button type="button" onClick={() => navigate('/pricing')} className="underline font-semibold hover:text-purple-900">Upgrade →</button>
                   </div>
                 )}
 
                 <div>
-                  <label className="block text-sm text-gray-700 mb-1">📱 Device Preset <span className="text-xs text-purple-600 font-semibold">(Pro+)</span></label>
-                  <select value={device} onChange={e => setDevice(e.target.value)} disabled={!isPro} className={`w-full border border-gray-300 rounded px-3 py-2 text-sm ${!isPro ? 'opacity-50 cursor-not-allowed bg-gray-50' : ''}`}>
-                    {DEVICE_PRESETS.map(d => <option key={d.key} value={d.key}>{d.label}</option>)}
+                  <label className="block text-sm text-gray-700 mb-1.5">
+                    📱 Device Preset <span className="text-xs text-purple-600 font-semibold">(Pro+)</span>
+                  </label>
+                  <select value={device} onChange={e => setDevice(e.target.value)} disabled={!isPro}
+                    className={`w-full border rounded-xl px-3.5 py-2.5 text-sm transition-all ${
+                      !isPro ? 'opacity-50 cursor-not-allowed bg-gray-50 border-gray-300'
+                             : deviceOverriding ? 'border-purple-400 bg-purple-50 ring-2 ring-purple-500/20'
+                             : 'border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
+                    }`}>
+                    {DEVICE_PRESETS.map(d => (
+                      <option key={d.key} value={d.key}>{d.icon ? `${d.icon} ${d.label}` : d.label}</option>
+                    ))}
                   </select>
-                  {device && isPro && <p className="text-xs text-gray-500 mt-1">Device preset overrides the width/height fields above.</p>}
+                  <p className="text-xs text-gray-500 mt-1.5">
+                    Device presets override Width/Height and set the correct user-agent and pixel ratio.
+                  </p>
                 </div>
 
                 <div>
-                  <label className="block text-sm text-gray-700 mb-1">⏳ Wait for CSS Selector <span className="text-xs text-purple-600 font-semibold">(Pro+)</span></label>
-                  <input type="text" value={waitForSelector} onChange={e => setWaitForSelector(e.target.value)} disabled={!isPro} placeholder="#main-content  or  .hero-section" className={`w-full border border-gray-300 rounded px-3 py-2 text-sm font-mono ${!isPro ? 'opacity-50 cursor-not-allowed bg-gray-50' : ''}`} />
-                  <p className="text-xs text-gray-500 mt-1">Waits up to 10 seconds for this element to appear before capturing.</p>
+                  <label className="block text-sm text-gray-700 mb-1.5">
+                    ⏳ Wait for CSS Selector <span className="text-xs text-purple-600 font-semibold">(Pro+)</span>
+                  </label>
+                  <input type="text" value={waitForSelector} onChange={e => setWaitForSelector(e.target.value)}
+                    disabled={!isPro} placeholder="#main-content  or  .hero-section"
+                    className={`w-full border border-gray-300 rounded-xl px-3.5 py-2.5 text-sm font-mono transition-all ${!isPro ? 'opacity-50 cursor-not-allowed bg-gray-50' : 'focus:ring-2 focus:ring-blue-500 focus:border-blue-500'}`} />
+                  <p className="text-xs text-gray-500 mt-1.5">Waits up to 10 seconds for this element to appear before capturing.</p>
                 </div>
 
                 <div>
-                  <label className="block text-sm text-gray-700 mb-1">{'</>'} Custom JavaScript <span className="text-xs text-purple-600 font-semibold">(Pro+)</span></label>
-                  <textarea value={customJs} onChange={e => setCustomJs(e.target.value)} disabled={!isPro} placeholder={JS_PLACEHOLDER} maxLength={10000} rows={6}
-                    className={`w-full border border-gray-300 rounded px-3 py-2 text-sm font-mono resize-y ${!isPro ? 'opacity-50 cursor-not-allowed bg-gray-50' : 'bg-gray-900 text-green-400'}`}
+                  <label className="block text-sm text-gray-700 mb-1.5">
+                    {'</>'} Custom JavaScript <span className="text-xs text-purple-600 font-semibold">(Pro+)</span>
+                  </label>
+                  <textarea value={customJs} onChange={e => setCustomJs(e.target.value)} disabled={!isPro}
+                    placeholder={JS_PLACEHOLDER} maxLength={10000} rows={6}
+                    className={`w-full border border-gray-300 rounded-xl px-3.5 py-2.5 text-sm font-mono resize-y transition-all ${!isPro ? 'opacity-50 cursor-not-allowed bg-gray-50' : 'bg-slate-900 text-emerald-400 border-slate-700 focus:ring-2 focus:ring-blue-500'}`}
                     style={isPro ? { lineHeight: '1.6' } : {}} />
-                  <div className="flex justify-between mt-1">
+                  <div className="flex justify-between mt-1.5">
                     <p className="text-xs text-gray-500">Executes after page load, before capture. Errors are non-fatal.</p>
-                    <p className={`text-xs flex-shrink-0 ml-2 ${customJs.length > 9500 ? 'text-red-500 font-semibold' : 'text-gray-400'}`}>{customJs.length.toLocaleString()} / 10,000</p>
+                    <p className={`text-xs flex-shrink-0 ml-2 ${customJs.length > 9500 ? 'text-red-500 font-semibold' : 'text-gray-400'}`}>
+                      {customJs.length.toLocaleString()} / 10,000
+                    </p>
                   </div>
                 </div>
 
                 <div className="border-t border-dashed border-gray-300 pt-4">
                   <div className="flex items-center gap-2 mb-3">
-                    <span className="text-sm font-semibold text-gray-700">🏢 Business Features</span>
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-indigo-100 text-indigo-700 border border-indigo-200">Business+</span>
+                    <span className="text-sm font-bold text-gray-700">🏢 Business Features</span>
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold bg-indigo-100 text-indigo-700 border border-indigo-200">Business+</span>
                   </div>
                   {isPro && !isBusiness && (
-                    <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-3 text-sm text-indigo-800 mb-3">
+                    <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-3.5 text-sm text-indigo-800 mb-3">
                       🔒 Element selection requires <strong>Business tier or higher</strong>.{' '}
                       <button type="button" onClick={() => navigate('/pricing')} className="underline font-semibold hover:text-indigo-900">Upgrade →</button>
                     </div>
                   )}
                   <div>
-                    <label className="block text-sm text-gray-700 mb-1">✂️ Element Selection — Crop to CSS Selector <span className="text-xs text-indigo-600 font-semibold">(Business+)</span></label>
-                    <input type="text" value={targetElement} onChange={e => setTargetElement(e.target.value)} disabled={!isBusiness} placeholder="#hero  or  .pricing-table  or  main > article"
-                      className={`w-full border border-gray-300 rounded px-3 py-2 text-sm font-mono ${!isBusiness ? 'opacity-50 cursor-not-allowed bg-gray-50' : ''}`} />
-                    <p className="text-xs text-gray-500 mt-1">Captures the full page, then automatically crops to this element's bounding box. Returns HTTP 400 if the selector matches nothing.</p>
+                    <label className="block text-sm text-gray-700 mb-1.5">
+                      ✂️ Element Selection — Crop to CSS Selector <span className="text-xs text-indigo-600 font-semibold">(Business+)</span>
+                    </label>
+                    <input type="text" value={targetElement} onChange={e => setTargetElement(e.target.value)}
+                      disabled={!isBusiness} placeholder="#hero  or  .pricing-table  or  main > article"
+                      className={`w-full border border-gray-300 rounded-xl px-3.5 py-2.5 text-sm font-mono transition-all ${!isBusiness ? 'opacity-50 cursor-not-allowed bg-gray-50' : 'focus:ring-2 focus:ring-blue-500 focus:border-blue-500'}`} />
+                    <p className="text-xs text-gray-500 mt-1.5">
+                      Captures the full page, then automatically crops to this element's bounding box. Returns HTTP 400 if the selector matches nothing.
+                    </p>
                   </div>
                 </div>
               </div>
@@ -762,13 +865,13 @@ export default function ScreenshotPage() {
         </div>
 
         {atLimit('screenshots') && (
-          <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg mb-4 shadow-sm">
+          <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl mb-4 shadow-sm">
             ⚠️ Monthly screenshot limit reached. Please upgrade your plan.
           </div>
         )}
 
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg mb-4 shadow-sm overflow-hidden">
+          <div className="bg-red-50 border border-red-200 rounded-xl mb-4 shadow-sm overflow-hidden">
             <div className="flex items-center gap-2 px-4 py-2.5 bg-red-100 border-b border-red-200">
               <span className="flex-shrink-0 text-red-600 font-bold">⚠️</span>
               <span className="text-sm font-semibold text-red-800">Screenshot failed</span>
@@ -779,8 +882,9 @@ export default function ScreenshotPage() {
           </div>
         )}
 
-        <div className="flex gap-4 mb-6">
-          <button onClick={handleCapture} disabled={xUiPrimaryDisabled} aria-disabled={xUiPrimaryDisabled} title={xUiDisabledReason()} className={primaryBtnClass}>
+        <div className="flex gap-3 mb-6">
+          <button onClick={handleCapture} disabled={xUiPrimaryDisabled} aria-disabled={xUiPrimaryDisabled}
+            title={xUiDisabledReason()} className={primaryBtnClass}>
             {isLoading ? '⏳ Capturing…' : '📸 Capture Screenshot'}
           </button>
           <button
@@ -792,17 +896,17 @@ export default function ScreenshotPage() {
               setTargetElement('');
               pollStopRef.current = true;
             }}
-            className="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+            className="px-6 py-3.5 border border-gray-300 rounded-xl text-gray-700 font-medium hover:bg-white hover:border-gray-400 transition-all focus:outline-none focus:ring-2 focus:ring-gray-400"
           >
             🗑️ Clear
           </button>
         </div>
 
         {jsWarning && (
-          <div className="bg-amber-50 border border-amber-300 rounded-lg mb-4 shadow-sm overflow-hidden">
+          <div className="bg-amber-50 border border-amber-300 rounded-xl mb-4 shadow-sm overflow-hidden">
             <div className="flex items-center gap-2 px-4 py-2.5 bg-amber-100 border-b border-amber-200">
               <span className="text-amber-600 font-bold">⚠️</span>
-              <span className="text-sm font-semibold text-amber-800">JavaScript Warning — screenshot still captured</span>
+              <span className="text-sm font-semibold text-amber-800">JavaScript warning — screenshot still captured</span>
             </div>
             <div className="px-4 py-2.5">
               <p className="text-xs font-mono text-amber-700 break-all leading-relaxed">{jsWarning}</p>
@@ -811,50 +915,119 @@ export default function ScreenshotPage() {
         )}
 
         {elementCaptured && (
-          <div className="bg-green-50 border border-green-300 rounded-lg mb-4 shadow-sm overflow-hidden">
-            <div className="flex items-center gap-2 px-4 py-2.5 bg-green-100 border-b border-green-200">
-              <span className="text-green-600 font-bold">✂️</span>
-              <span className="text-sm font-semibold text-green-800">Element captured — cropped to selector</span>
+          <div className="bg-emerald-50 border border-emerald-300 rounded-xl mb-4 shadow-sm overflow-hidden">
+            <div className="flex items-center gap-2 px-4 py-2.5 bg-emerald-100 border-b border-emerald-200">
+              <span className="text-emerald-600 font-bold">✂️</span>
+              <span className="text-sm font-semibold text-emerald-800">Element captured — cropped to selector</span>
             </div>
             <div className="px-4 py-2.5">
-              <p className="text-xs font-mono text-green-700 break-all leading-relaxed">{elementCaptured}</p>
+              <p className="text-xs font-mono text-emerald-700 break-all leading-relaxed">{elementCaptured}</p>
             </div>
           </div>
         )}
 
         {screenshotUrl && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-            <h2 className="text-xl font-semibold mb-4 text-gray-900 flex items-center">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-5 sm:p-6 mb-6">
+            <h2 className="text-xl font-bold mb-4 text-gray-900 flex items-center gap-2">
               {format === 'pdf' ? '📄' : '🖼️'} Screenshot Result
-              {screenshotCompleted && <span className="ml-2 text-green-600 text-sm font-normal">✅ Capture Complete</span>}
+              {screenshotCompleted && (
+                <span className="ml-1 inline-flex items-center gap-1 text-emerald-700 text-xs font-semibold bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-lg">
+                  ✅ Capture complete
+                </span>
+              )}
             </h2>
             {format === 'pdf' ? (
               <div className="mb-4">
-                <div className="rounded-lg overflow-hidden border border-gray-300 shadow-lg bg-gray-100" style={{ height: '500px' }}>
+                <div className="rounded-xl overflow-hidden border border-gray-300 shadow-lg bg-gray-100" style={{ height: '500px' }}>
                   <iframe src={screenshotUrl} title="PDF preview" className="w-full h-full" style={{ border: 'none' }} />
                 </div>
                 <p className="text-xs text-gray-500 mt-2 text-center">📱 If the PDF doesn't display above, use the buttons below to download or open it.</p>
               </div>
             ) : (
-              <div className="bg-gray-50 p-4 rounded-lg mb-4">
-                <img src={screenshotUrl} alt="Screenshot preview" className="max-w-full h-auto border border-gray-300 rounded shadow-lg mx-auto" />
+              <div className="bg-gray-50 p-3 rounded-xl mb-4 border border-gray-100">
+                <img src={screenshotUrl} alt="Screenshot preview" className="max-w-full h-auto border border-gray-300 rounded-lg shadow-md mx-auto" />
               </div>
             )}
+
+            {/*
+              ✅ FIX (Aug 2026 — Device Preset dimensions, part 2 of 3):
+              Details now report the DEVICE viewport when a device preset was
+              used, and name the device explicitly. Previously this row showed
+              the Quick Preset's width/height, which the device descriptor had
+              already overridden and discarded — so the user was told 1366×768
+              for a capture actually taken at 1024×1366.
+            */}
             {screenshotData && (
-              <div className="bg-gradient-to-r from-green-50 to-blue-50 p-4 rounded-lg mb-4 border border-green-200">
-                <div className="font-semibold text-gray-800 mb-1">{format === 'pdf' ? '📄 PDF Details' : '✅ Screenshot Details'}</div>
-                <div className="text-sm text-gray-800 break-all">URL: {screenshotData.url}</div>
-                <div className="text-sm text-gray-800">Dimensions: {screenshotData.width}×{screenshotData.height}</div>
-                <div className="text-sm text-gray-800">Format: {screenshotData.format?.toUpperCase()}</div>
-                {elementCaptured && <div className="text-sm text-gray-800">Element: <code className="bg-gray-100 px-1 rounded text-xs font-mono">{elementCaptured}</code></div>}
-                {screenshotData.size && <div className="text-sm text-gray-800">Size: {(screenshotData.size / 1024).toFixed(2)} KB</div>}
+              <div className="bg-gradient-to-r from-emerald-50 to-blue-50 p-4 rounded-xl mb-4 border border-emerald-200">
+                <div className="font-bold text-gray-800 mb-2 text-sm">
+                  {format === 'pdf' ? '📄 PDF Details' : '✅ Screenshot Details'}
+                </div>
+                <dl className="space-y-1.5 text-sm">
+                  <div className="flex gap-2">
+                    <dt className="text-gray-500 flex-shrink-0 w-24">URL</dt>
+                    <dd className="text-gray-800 break-all">{screenshotData.url}</dd>
+                  </div>
+
+                  {screenshotData.deviceLabel && (
+                    <div className="flex gap-2">
+                      <dt className="text-gray-500 flex-shrink-0 w-24">Device</dt>
+                      <dd className="text-gray-800 font-medium">
+                        {screenshotData.deviceIcon} {screenshotData.deviceLabel}
+                      </dd>
+                    </div>
+                  )}
+
+                  <div className="flex gap-2">
+                    <dt className="text-gray-500 flex-shrink-0 w-24">Dimensions</dt>
+                    <dd className="text-gray-800 font-mono">
+                      {screenshotData.width}×{screenshotData.height}
+                      {screenshotData.deviceLabel && (
+                        <span className="ml-2 text-xs text-purple-600 font-sans font-medium">
+                          (device viewport)
+                        </span>
+                      )}
+                    </dd>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <dt className="text-gray-500 flex-shrink-0 w-24">Format</dt>
+                    <dd className="text-gray-800">{screenshotData.format?.toUpperCase()}</dd>
+                  </div>
+
+                  {(screenshotData.fullPage || screenshotData.darkMode) && (
+                    <div className="flex gap-2">
+                      <dt className="text-gray-500 flex-shrink-0 w-24">Options</dt>
+                      <dd className="text-gray-800 flex flex-wrap gap-1.5">
+                        {screenshotData.fullPage && <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">Full page</span>}
+                        {screenshotData.darkMode && <span className="text-xs bg-gray-800 text-white px-2 py-0.5 rounded">Dark mode</span>}
+                      </dd>
+                    </div>
+                  )}
+
+                  {elementCaptured && (
+                    <div className="flex gap-2">
+                      <dt className="text-gray-500 flex-shrink-0 w-24">Element</dt>
+                      <dd><code className="bg-white px-1.5 py-0.5 rounded text-xs font-mono border border-gray-200">{elementCaptured}</code></dd>
+                    </div>
+                  )}
+
+                  {screenshotData.size && (
+                    <div className="flex gap-2">
+                      <dt className="text-gray-500 flex-shrink-0 w-24">Size</dt>
+                      <dd className="text-gray-800 font-mono">{(screenshotData.size / 1024).toFixed(2)} KB</dd>
+                    </div>
+                  )}
+                </dl>
               </div>
             )}
+
             <div className="flex gap-3 flex-wrap">
-              <button onClick={handleDownload} className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors">
+              <button onClick={handleDownload}
+                className="bg-emerald-600 text-white px-5 py-2.5 rounded-xl font-medium hover:bg-emerald-700 transition-colors shadow-sm">
                 {format === 'pdf' ? '📥 Download PDF' : '💾 Download'}
               </button>
-              <a href={screenshotUrl} target="_blank" rel="noopener noreferrer" className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+              <a href={screenshotUrl} target="_blank" rel="noopener noreferrer"
+                className="bg-blue-600 text-white px-5 py-2.5 rounded-xl font-medium hover:bg-blue-700 transition-colors shadow-sm">
                 {format === 'pdf' ? '📄 Open PDF' : '🔗 Open in New Tab'}
               </a>
             </div>
@@ -862,10 +1035,10 @@ export default function ScreenshotPage() {
         )}
 
         <div className="text-center mb-6">
-          <div className="flex gap-4 justify-center flex-wrap">
-            <button onClick={() => navigate('/dashboard')} className="bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700 transition-colors">← Back to Dashboard</button>
-            <button onClick={() => navigate('/history')}   className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">📚 View History</button>
-            <button onClick={() => navigate('/activity')}  className="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition-colors">📋 Recent Activity</button>
+          <div className="flex gap-3 justify-center flex-wrap">
+            <button onClick={() => navigate('/dashboard')} className="bg-gray-700 text-white px-5 py-2.5 rounded-xl font-medium hover:bg-gray-800 transition-colors">← Back to Dashboard</button>
+            <button onClick={() => navigate('/history')}   className="bg-blue-600 text-white px-5 py-2.5 rounded-xl font-medium hover:bg-blue-700 transition-colors">📚 View History</button>
+            <button onClick={() => navigate('/activity')}  className="bg-purple-600 text-white px-5 py-2.5 rounded-xl font-medium hover:bg-purple-700 transition-colors">📋 Recent Activity</button>
           </div>
         </div>
       </div>
@@ -875,9 +1048,19 @@ export default function ScreenshotPage() {
 
 // ===== END OF ScreenshotPage.js ==============
 
-
 // // frontend/src/pages/ScreenshotPage.js — PixelPerfect Screenshot API
 // // UPDATED: July 2026
+// //
+// // ✅ FIX (July 2026 — "Resets on [date]" Not Displaying):
+// //   The reset-date row only rendered when subscriptionStatus.next_reset
+// //   existed and parsed as a valid date. If the backend returns the date
+// //   under a different key (or nested in usage/limits), the row silently
+// //   never appeared. resolveNextReset() now checks several common field
+// //   names: next_reset, nextReset, reset_date, resetDate,
+// //   current_period_end, currentPeriodEnd, usage.next_reset.
+// //   ⚠️ If the row STILL doesn't render, the backend /subscription_status
+// //   response does not include the reset date at all — add `next_reset`
+// //   (ISO 8601 string) to the endpoint response. Frontend is ready for it.
 // //
 // // ✅ FIX (July 2026 — Mount Effect Runs Only at Login, Not on Re-navigation):
 // //   Changed mount useEffect dependency from [isAuthenticated, refreshSubscriptionStatus]
@@ -888,8 +1071,8 @@ export default function ScreenshotPage() {
 // //
 // // ✅ FIX (July 2026 — Billing Cycle Reset Date):
 // //   Added "Resets on [date]" display under the progress bar.
-// //   Reads subscriptionStatus.next_reset from the backend subscription_status
-// //   endpoint. Users now see exactly when their counter will reset — tied to
+// //   Reads the reset date from the backend subscription_status endpoint.
+// //   Users now see exactly when their counter will reset — tied to
 // //   billing cycle, not the calendar 1st of the month. No more surprise 0s.
 // //
 // // ✅ CONSISTENCY FIX (July 2026 — Tier Badge Colors):
@@ -926,6 +1109,32 @@ export default function ScreenshotPage() {
 
 // function tierBadgeClass(tier) {
 //   return TIER_BADGE_CLASSES[(tier || 'free').toLowerCase()] ?? TIER_BADGE_CLASSES.free;
+// }
+
+// // ── ✅ NEW (July 2026): robust reset-date resolution ─────────────────────────
+// // The backend may expose the billing-cycle reset date under different keys
+// // depending on version. Check them all; return a valid Date or null.
+// function resolveNextReset(subscriptionStatus) {
+//   if (!subscriptionStatus) return null;
+//   const candidates = [
+//     subscriptionStatus.next_reset,
+//     subscriptionStatus.nextReset,
+//     subscriptionStatus.reset_date,
+//     subscriptionStatus.resetDate,
+//     subscriptionStatus.current_period_end,
+//     subscriptionStatus.currentPeriodEnd,
+//     subscriptionStatus.usage?.next_reset,
+//   ];
+//   for (const raw of candidates) {
+//     if (!raw) continue;
+//     // Support both ISO strings and unix timestamps (Stripe often sends
+//     // current_period_end as seconds since epoch).
+//     const d = typeof raw === 'number'
+//       ? new Date(raw < 1e12 ? raw * 1000 : raw)
+//       : new Date(raw);
+//     if (!Number.isNaN(d.getTime())) return d;
+//   }
+//   return null;
 // }
 
 // // ── Runtime API base resolution (mobile/LAN safe) ────────────────────────────
@@ -1088,11 +1297,17 @@ export default function ScreenshotPage() {
 //     return '';
 //   };
 
+//   // ✅ FIX (July 2026): reset date resolved through resolveNextReset()
+//   // so all backend field-name variants are supported.
+//   const nextResetDate = useMemo(
+//     () => resolveNextReset(subscriptionStatus),
+//     [subscriptionStatus]
+//   );
+
 //   const isResetOverdue = useMemo(() => {
-//     if (!subscriptionStatus?.next_reset) return false;
-//     const d = new Date(subscriptionStatus.next_reset);
-//     return !Number.isNaN(d.getTime()) && Date.now() > d.getTime();
-//   }, [subscriptionStatus]);
+//     if (!nextResetDate) return false;
+//     return Date.now() > nextResetDate.getTime();
+//   }, [nextResetDate]);
 
 //   const forceRefreshIfNeeded = useCallback(async () => {
 //     if (!isAuthenticated || !refreshSubscriptionStatus) return;
@@ -1151,15 +1366,13 @@ export default function ScreenshotPage() {
 //     return `${screenshotsPercent.toFixed(1)}% used`;
 //   }, [screenshotsLimit, screenshotsPercent]);
 
-//   // ✅ Billing cycle reset date for display
+//   // ✅ Billing cycle reset date for display — driven by resolveNextReset()
 //   const resetDateLabel = useMemo(() => {
-//     if (!subscriptionStatus?.next_reset) return null;
+//     if (!nextResetDate) return null;
 //     try {
-//       const d = new Date(subscriptionStatus.next_reset);
-//       if (Number.isNaN(d.getTime())) return null;
-//       return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+//       return nextResetDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
 //     } catch { return null; }
-//   }, [subscriptionStatus]);
+//   }, [nextResetDate]);
 
 //   const handleCapture = async () => {
 //     try {
@@ -1351,7 +1564,8 @@ export default function ScreenshotPage() {
 //                 <span className="text-xs text-gray-500">{screenshotsRemainingLabel}</span>
 //                 <span className="text-xs font-medium text-gray-600">{screenshotsPercentLabel}</span>
 //               </div>
-//               {/* ✅ NEW: Billing cycle reset date */}
+//               {/* ✅ Billing cycle reset date — renders whenever the backend
+//                   provides a reset date under any supported field name */}
 //               {resetDateLabel && (
 //                 <div className="flex items-center gap-1 mt-2 text-xs text-gray-400">
 //                   <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
