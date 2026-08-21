@@ -15,6 +15,31 @@
 //   out of sync. Java example added here, reusing the exact same snippet
 //   from API.js's codeExamples.java.screenshot for consistency across both
 //   surfaces.
+//
+// ✅ NEW (Aug 2026): Support section (id="support").
+//   The sidebar linked to #support but no element with that id existed, so
+//   the link was inert — the URL changed to /docs#support and the page did
+//   not move. Same for the mobile path, which calls handleNavClick('#support').
+//   The anchor now exists, with scroll-mt-20 so the heading clears the
+//   sticky header.
+//
+// ✅ FIX (Aug 2026): footer "Contact support" no longer points at
+//   mailto:support@pixelperfectapi.net — that mailbox is not configured
+//   (SMTP is onetechly@gmail.com, contact form posts to /contact), so mail
+//   sent there would have bounced or vanished. Now routes to /contact.
+//
+// ✅ FIX (Aug 2026): documented endpoint paths corrected against main.py.
+//   The docs advertised /v1/screenshot and /v1/batch/submit; the app registers
+//   @app.post("/api/v1/screenshot") and @app.post("/api/v1/batch/submit").
+//   Every published example therefore 404'd on the first run — the worst
+//   possible first impression, since the cURL block is the first thing a
+//   developer executes. Six occurrences updated: the four language snippets
+//   (curl, JS, Python, Java) and the two <code> labels under API Endpoints.
+//
+//   Note on the trailing slash: the POST route has NO trailing slash. main.py
+//   sets app.router.redirect_slashes = True, so /api/v1/screenshot/ answers
+//   with a 307 to the slashless path — which curl silently drops unless the
+//   caller passes -L. Documenting the exact registered path avoids that trap.
 
 import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -98,10 +123,17 @@ function CodeBlock({ code, language }) {
 
 // ============================================================================
 // Code strings — extracted so CodeBlock receives a clean string (no JSX noise)
+//
+// ✅ VERIFIED (Aug 2026) against backend/main.py:
+//    POST /api/v1/screenshot     — thin wrapper, keeps enforce_tier_concurrency
+//    POST /api/v1/batch/submit   — Pro+ batch capture
+//    Base host from CUSTOM_API_DOMAIN = https://api.pixelperfectapi.net,
+//    so the full URL is https://api.pixelperfectapi.net/api/v1/screenshot.
+//    Neither route has a trailing slash.
 // ============================================================================
 const SNIPPETS = {
   curlQuickStart:
-`curl -X POST https://api.pixelperfectapi.net/v1/screenshot \\
+`curl -X POST https://api.pixelperfectapi.net/api/v1/screenshot \\
   -H "Authorization: Bearer YOUR_API_KEY" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -150,7 +182,7 @@ const SNIPPETS = {
 `const axios = require('axios');
 
 const screenshot = await axios.post(
-  'https://api.pixelperfectapi.net/v1/screenshot',
+  'https://api.pixelperfectapi.net/api/v1/screenshot',
   {
     url: 'https://example.com',
     width: 1920,
@@ -171,7 +203,7 @@ console.log(screenshot.data.screenshot_url);`,
 `import requests
 
 response = requests.post(
-    'https://api.pixelperfectapi.net/v1/screenshot',
+    'https://api.pixelperfectapi.net/api/v1/screenshot',
     json={
         'url': 'https://example.com',
         'width': 1920,
@@ -208,7 +240,7 @@ String body = """
 
 HttpRequest request = HttpRequest.newBuilder()
     .uri(URI.create(
-        "https://api.pixelperfectapi.net/v1/screenshot"))
+        "https://api.pixelperfectapi.net/api/v1/screenshot"))
     .header("Authorization", "Bearer YOUR_API_KEY")
     .header("Content-Type", "application/json")
     .POST(HttpRequest.BodyPublishers.ofString(body))
@@ -347,7 +379,7 @@ export default function Documentation() {
           <main className="flex-1 min-w-0">
 
             {/* Getting Started */}
-            <div id="getting-started" className="mb-8 sm:mb-12">
+            <div id="getting-started" className="mb-8 sm:mb-12 scroll-mt-20">
               <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3 sm:mb-4">
                 Getting Started
               </h1>
@@ -398,7 +430,7 @@ export default function Documentation() {
             </div>
 
             {/* Authentication */}
-            <div id="authentication" className="mb-8 sm:mb-12">
+            <div id="authentication" className="mb-8 sm:mb-12 scroll-mt-20">
               <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3 sm:mb-4">
                 Authentication
               </h2>
@@ -416,7 +448,7 @@ export default function Documentation() {
             </div>
 
             {/* API Endpoints */}
-            <div id="endpoints" className="mb-8 sm:mb-12">
+            <div id="endpoints" className="mb-8 sm:mb-12 scroll-mt-20">
               <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3 sm:mb-4">
                 API Endpoints
               </h2>
@@ -427,7 +459,7 @@ export default function Documentation() {
                   <span className="bg-green-100 text-green-800 px-2.5 py-1 rounded font-mono text-xs sm:text-sm font-semibold">
                     POST
                   </span>
-                  <code className="text-sm sm:text-lg font-mono break-all text-gray-900">/v1/screenshot</code>
+                  <code className="text-sm sm:text-lg font-mono break-all text-gray-900">/api/v1/screenshot</code>
                 </div>
                 <p className="text-sm sm:text-base text-gray-700 mb-4">Capture a screenshot of any website.</p>
 
@@ -444,7 +476,7 @@ export default function Documentation() {
                   <span className="bg-green-100 text-green-800 px-2.5 py-1 rounded font-mono text-xs sm:text-sm font-semibold">
                     POST
                   </span>
-                  <code className="text-sm sm:text-lg font-mono break-all text-gray-900">/v1/batch/submit</code>
+                  <code className="text-sm sm:text-lg font-mono break-all text-gray-900">/api/v1/batch/submit</code>
                 </div>
                 <p className="text-sm sm:text-base text-gray-700 mb-4">
                   Capture multiple screenshots in one request (Pro+ only).
@@ -456,7 +488,7 @@ export default function Documentation() {
             </div>
 
             {/* Code Examples */}
-            <div id="examples" className="mb-8 sm:mb-12">
+            <div id="examples" className="mb-8 sm:mb-12 scroll-mt-20">
               <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3 sm:mb-4">
                 Code Examples
               </h2>
@@ -479,7 +511,7 @@ export default function Documentation() {
             </div>
 
             {/* Error Codes */}
-            <div id="errors" className="mb-8 sm:mb-12">
+            <div id="errors" className="mb-8 sm:mb-12 scroll-mt-20">
               <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3 sm:mb-4">
                 Error Codes
               </h2>
@@ -495,9 +527,11 @@ export default function Documentation() {
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {[
-                      { code: '400', desc: 'Bad Request - Invalid parameters' },
+                      { code: '400', desc: 'Bad Request - Invalid parameters, unreachable URL, or width above your plan limit' },
                       { code: '401', desc: 'Unauthorized - Invalid or missing API key' },
-                      { code: '429', desc: 'Too Many Requests - Rate limit exceeded' },
+                      { code: '403', desc: 'Forbidden - Your plan does not include this feature (e.g. PDF format, batch capture, device emulation)' },
+                      { code: '404', desc: 'Not Found - No screenshot with that ID, or it belongs to another account' },
+                      { code: '429', desc: 'Too Many Requests - Monthly screenshot limit reached, or too many concurrent captures for your plan' },
                       { code: '500', desc: 'Internal Server Error - Something went wrong' },
                     ].map((e) => (
                       <tr key={e.code}>
@@ -512,9 +546,11 @@ export default function Documentation() {
               {/* Mobile cards */}
               <div className="sm:hidden space-y-3">
                 {[
-                  { code: '400', desc: 'Bad Request - Invalid parameters' },
+                  { code: '400', desc: 'Bad Request - Invalid parameters, unreachable URL, or width above your plan limit' },
                   { code: '401', desc: 'Unauthorized - Invalid or missing API key' },
-                  { code: '429', desc: 'Too Many Requests - Rate limit exceeded' },
+                  { code: '403', desc: 'Forbidden - Your plan does not include this feature (e.g. PDF format, batch capture, device emulation)' },
+                  { code: '404', desc: 'Not Found - No screenshot with that ID, or it belongs to another account' },
+                  { code: '429', desc: 'Too Many Requests - Monthly screenshot limit reached, or too many concurrent captures for your plan' },
                   { code: '500', desc: 'Internal Server Error - Something went wrong' },
                 ].map((e) => (
                   <div key={e.code} className="bg-white border border-gray-200 rounded-lg p-4">
@@ -522,6 +558,86 @@ export default function Documentation() {
                     <div className="text-sm text-gray-700">{e.desc}</div>
                   </div>
                 ))}
+              </div>
+            </div>
+
+            {/* ✅ NEW (Aug 2026): Support section.
+                The sidebar linked to #support but no such anchor existed, so
+                the link was inert — the URL changed and the page did not move. */}
+            <div id="support" className="mb-8 sm:mb-12 scroll-mt-20">
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3 sm:mb-4">
+                Support
+              </h2>
+              <p className="text-sm sm:text-base text-gray-700 mb-5">
+                Stuck on something? Here's where to go, fastest route first.
+              </p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <button
+                  onClick={() => navigate('/help')}
+                  className="text-left border border-gray-200 rounded-xl p-4 hover:border-blue-400 hover:bg-blue-50 transition-all group"
+                >
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className="text-xl">📚</span>
+                    <span className="font-semibold text-gray-900 group-hover:text-blue-700">Help Center</span>
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    Guides on API keys, batch processing, rate limits, webhooks and
+                    troubleshooting.
+                  </p>
+                </button>
+
+                <button
+                  onClick={() => navigate('/faq')}
+                  className="text-left border border-gray-200 rounded-xl p-4 hover:border-blue-400 hover:bg-blue-50 transition-all group"
+                >
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className="text-xl">❓</span>
+                    <span className="font-semibold text-gray-900 group-hover:text-blue-700">FAQ</span>
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    Storage retention, plan limits, supported formats and billing questions.
+                  </p>
+                </button>
+
+                <button
+                  onClick={() => navigate('/contact')}
+                  className="text-left border border-gray-200 rounded-xl p-4 hover:border-blue-400 hover:bg-blue-50 transition-all group"
+                >
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className="text-xl">✉️</span>
+                    <span className="font-semibold text-gray-900 group-hover:text-blue-700">Contact Support</span>
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    Technical questions, billing, or enterprise enquiries. We reply within
+                    24 hours.
+                  </p>
+                </button>
+
+                <button
+                  onClick={() => navigate('/api-status')}
+                  className="text-left border border-gray-200 rounded-xl p-4 hover:border-blue-400 hover:bg-blue-50 transition-all group"
+                >
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className="text-xl">📡</span>
+                    <span className="font-semibold text-gray-900 group-hover:text-blue-700">API Status</span>
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    Live operational status. Check here first if requests are failing.
+                  </p>
+                </button>
+              </div>
+
+              <div className="mt-5 bg-blue-50 border border-blue-200 rounded-xl p-4">
+                <h4 className="font-semibold text-gray-900 mb-1.5 text-sm">Before you write in</h4>
+                <p className="text-sm text-gray-700 mb-2">
+                  Including these three things gets you a useful answer on the first reply:
+                </p>
+                <ul className="text-sm text-gray-700 space-y-1 list-disc list-inside">
+                  <li>The <code className="bg-white px-1 rounded text-xs">screenshot_id</code> from the failing response</li>
+                  <li>The target URL you were capturing</li>
+                  <li>The full error message, not a paraphrase</li>
+                </ul>
               </div>
             </div>
 
@@ -537,10 +653,18 @@ export default function Documentation() {
               <PixelPerfectLogo size={28} showText={true} />
             </div>
             <p className="text-xs sm:text-sm text-gray-500">
+              {/* ✅ FIX (Aug 2026): was mailto:support@pixelperfectapi.net, which is
+                  not a configured mailbox — SMTP is onetechly@gmail.com and the
+                  contact form posts to /contact. Emails to the old address would
+                  have bounced or vanished. */}
               Need help?{' '}
-              <a href="mailto:support@pixelperfectapi.net" className="text-blue-600 hover:text-blue-700">
+              <button
+                type="button"
+                onClick={() => navigate('/contact')}
+                className="text-blue-600 hover:text-blue-700 font-medium"
+              >
                 Contact support
-              </a>
+              </button>
             </p>
           </div>
         </div>
@@ -549,5 +673,558 @@ export default function Documentation() {
   );
 }
 
-// ============ END OF Documentation.js ========
+// ============ END OF Documentation.jsx ========
+
+// // ========================================
+// // DOCUMENTATION PAGE - FULLY MOBILE RESPONSIVE
+// // ========================================
+// // File: frontend/src/pages/Documentation.jsx
+// // Author: OneTechly
+// // Purpose: Mobile-first API documentation
+// // ✅ FIXED: Corrected URL from cdn.pixelperfect.com to cdn.pixelperfectapi.net
+// // ✅ ADDED: Copy button on all code blocks (consistent with BlogPost.jsx pattern)
+// // Updated: August 2026
+// //
+// // ✅ NEW (Aug 2026): Java example added to Code Examples section.
+// //   API.js (the interactive playground) already had Java, PHP, Go, and C
+// //   language support since April 2026 — but this page (the static reference
+// //   docs) only ever had JavaScript and Python. The two docs surfaces were
+// //   out of sync. Java example added here, reusing the exact same snippet
+// //   from API.js's codeExamples.java.screenshot for consistency across both
+// //   surfaces.
+
+// import React, { useState, useCallback } from 'react';
+// import { useNavigate } from 'react-router-dom';
+// import PixelPerfectLogo from '../components/PixelPerfectLogo';
+
+// // ============================================================================
+// // CodeBlock — reusable dark code block with Copy button
+// // Matches the copy-button style used in BlogPost.jsx
+// // ============================================================================
+// function CodeBlock({ code, language }) {
+//   const [copied, setCopied] = useState(false);
+
+//   const handleCopy = useCallback(() => {
+//     if (navigator.clipboard && navigator.clipboard.writeText) {
+//       navigator.clipboard.writeText(code).then(() => {
+//         setCopied(true);
+//         setTimeout(() => setCopied(false), 2000);
+//       });
+//     } else {
+//       // Fallback for non-HTTPS / older browsers (e.g. 192.168.x.x LAN)
+//       const el = document.createElement('textarea');
+//       el.value = code;
+//       el.style.position = 'fixed';
+//       el.style.opacity = '0';
+//       document.body.appendChild(el);
+//       el.select();
+//       document.execCommand('copy');
+//       document.body.removeChild(el);
+//       setCopied(true);
+//       setTimeout(() => setCopied(false), 2000);
+//     }
+//   }, [code]);
+
+//   return (
+//     <div className="rounded-lg overflow-hidden">
+//       {/* Header bar: language label + Copy button */}
+//       <div className="flex items-center justify-between bg-gray-800 px-3 sm:px-4 py-1.5">
+//         {language ? (
+//           <span className="text-xs font-mono font-semibold text-gray-400 uppercase tracking-wider">
+//             {language}
+//           </span>
+//         ) : (
+//           <span />
+//         )}
+//         <button
+//           onClick={handleCopy}
+//           className="flex items-center gap-1.5 text-xs font-medium
+//                      text-gray-400 hover:text-white
+//                      hover:bg-gray-700 transition-colors
+//                      px-2 py-0.5 rounded"
+//           title="Copy to clipboard"
+//         >
+//           {copied ? (
+//             <>
+//               <svg className="w-3.5 h-3.5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+//                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+//               </svg>
+//               <span className="text-green-400">Copied!</span>
+//             </>
+//           ) : (
+//             <>
+//               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+//                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+//                   d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+//               </svg>
+//               Copy
+//             </>
+//           )}
+//         </button>
+//       </div>
+
+//       {/* Code body */}
+//       <div className="bg-gray-900 overflow-x-auto">
+//         <pre className="p-3 sm:p-4 text-xs sm:text-sm text-gray-100 whitespace-pre">
+//           <code>{code}</code>
+//         </pre>
+//       </div>
+//     </div>
+//   );
+// }
+
+// // ============================================================================
+// // Code strings — extracted so CodeBlock receives a clean string (no JSX noise)
+// // ============================================================================
+// const SNIPPETS = {
+//   curlQuickStart:
+// `curl -X POST https://api.pixelperfectapi.net/v1/screenshot \\
+//   -H "Authorization: Bearer YOUR_API_KEY" \\
+//   -H "Content-Type: application/json" \\
+//   -d '{
+//     "url": "https://example.com",
+//     "format": "png",
+//     "width": 1920,
+//     "height": 1080
+//   }'`,
+
+//   authHeader: `Authorization: Bearer YOUR_API_KEY`,
+
+//   screenshotRequest:
+// `{
+//   "url": "https://example.com",
+//   "width": 1920,
+//   "height": 1080,
+//   "format": "png",
+//   "full_page": false,
+//   "dark_mode": false
+// }`,
+
+//   screenshotResponse:
+// `{
+//   "screenshot_id": "abc123",
+//   "screenshot_url": "https://cdn.pixelperfectapi.net/abc123.png",
+//   "width": 1920,
+//   "height": 1080,
+//   "format": "png",
+//   "size_bytes": 245678,
+//   "created_at": "2026-01-07T12:00:00Z"
+// }`,
+
+//   batchRequest:
+// `{
+//   "urls": [
+//     "https://example.com",
+//     "https://github.com",
+//     "https://google.com"
+//   ],
+//   "width": 1920,
+//   "height": 1080,
+//   "format": "png"
+// }`,
+
+//   javascript:
+// `const axios = require('axios');
+
+// const screenshot = await axios.post(
+//   'https://api.pixelperfectapi.net/v1/screenshot',
+//   {
+//     url: 'https://example.com',
+//     width: 1920,
+//     height: 1080,
+//     format: 'png'
+//   },
+//   {
+//     headers: {
+//       'Authorization': 'Bearer YOUR_API_KEY',
+//       'Content-Type': 'application/json'
+//     }
+//   }
+// );
+
+// console.log(screenshot.data.screenshot_url);`,
+
+//   python:
+// `import requests
+
+// response = requests.post(
+//     'https://api.pixelperfectapi.net/v1/screenshot',
+//     json={
+//         'url': 'https://example.com',
+//         'width': 1920,
+//         'height': 1080,
+//         'format': 'png'
+//     },
+//     headers={
+//         'Authorization': 'Bearer YOUR_API_KEY',
+//         'Content-Type': 'application/json'
+//     }
+// )
+
+// data = response.json()
+// print(data['screenshot_url'])`,
+
+//   // ✅ NEW (Aug 2026): Java example — reuses the exact snippet from
+//   // API.js's codeExamples.java.screenshot so both docs surfaces agree.
+//   java:
+// `import java.net.URI;
+// import java.net.http.HttpClient;
+// import java.net.http.HttpRequest;
+// import java.net.http.HttpResponse;
+
+// HttpClient client = HttpClient.newHttpClient();
+
+// String body = """
+//     {
+//       "url": "https://example.com",
+//       "width": 1920,
+//       "height": 1080,
+//       "format": "png"
+//     }
+//     """;
+
+// HttpRequest request = HttpRequest.newBuilder()
+//     .uri(URI.create(
+//         "https://api.pixelperfectapi.net/v1/screenshot"))
+//     .header("Authorization", "Bearer YOUR_API_KEY")
+//     .header("Content-Type", "application/json")
+//     .POST(HttpRequest.BodyPublishers.ofString(body))
+//     .build();
+
+// HttpResponse<String> response = client.send(
+//     request, HttpResponse.BodyHandlers.ofString());
+
+// System.out.println(response.body());`,
+// };
+
+// // ============================================================================
+// // Main component
+// // ============================================================================
+// export default function Documentation() {
+//   const navigate = useNavigate();
+//   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+//   const handleNavClick = (hash) => {
+//     setSidebarOpen(false);
+//     window.location.hash = hash;
+//   };
+
+//   return (
+//     <div className="min-h-screen bg-gray-50">
+//       {/* ── Header ─────────────────────────────────────────────────────── */}
+//       <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
+//         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+//           <div className="flex justify-between items-center h-14 sm:h-16">
+//             <div className="flex items-center gap-3">
+//               {/* Hamburger (mobile only) */}
+//               <button
+//                 onClick={() => setSidebarOpen(!sidebarOpen)}
+//                 className="lg:hidden p-2 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
+//                 aria-label="Toggle menu"
+//               >
+//                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+//                   {sidebarOpen ? (
+//                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+//                   ) : (
+//                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+//                   )}
+//                 </svg>
+//               </button>
+
+//               <div className="cursor-pointer" onClick={() => navigate('/')}>
+//                 <PixelPerfectLogo size={window.innerWidth < 640 ? 32 : 40} showText={true} />
+//               </div>
+//             </div>
+
+//             <div className="flex items-center gap-2 sm:gap-3">
+//               <button
+//                 onClick={() => navigate('/dashboard')}
+//                 className="hidden sm:block px-3 sm:px-4 py-1.5 sm:py-2 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
+//               >
+//                 Dashboard
+//               </button>
+//               <button
+//                 onClick={() => navigate('/register')}
+//                 className="px-4 sm:px-6 py-1.5 sm:py-2 text-sm sm:text-base bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors shadow-sm"
+//               >
+//                 Get Started
+//               </button>
+//             </div>
+//           </div>
+//         </div>
+//       </header>
+
+//       {/* Mobile sidebar overlay */}
+//       {sidebarOpen && (
+//         <div
+//           className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+//           onClick={() => setSidebarOpen(false)}
+//         />
+//       )}
+
+//       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
+//         <div className="flex gap-4 lg:gap-8 relative">
+
+//           {/* ── Sidebar ──────────────────────────────────────────────── */}
+//           <aside
+//             className={`
+//               fixed lg:static inset-y-0 left-0 z-40
+//               w-64 lg:w-64 flex-shrink-0
+//               bg-white lg:bg-transparent
+//               border-r lg:border-0 border-gray-200
+//               transform transition-transform duration-300 ease-in-out
+//               ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+//               overflow-y-auto pt-20 lg:pt-0 pb-6 lg:pb-0
+//             `}
+//           >
+//             <nav className="space-y-1 px-4 lg:px-0">
+//               <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+//                 API Docs
+//               </div>
+//               <a href="#getting-started" onClick={() => handleNavClick('#getting-started')}
+//                 className="block px-3 py-2.5 text-blue-600 bg-blue-50 rounded-lg font-medium text-sm">
+//                 Getting Started
+//               </a>
+//               <a href="#authentication" onClick={() => handleNavClick('#authentication')}
+//                 className="block px-3 py-2.5 text-gray-700 hover:bg-gray-100 rounded-lg text-sm">
+//                 Authentication
+//               </a>
+//               <a href="#endpoints" onClick={() => handleNavClick('#endpoints')}
+//                 className="block px-3 py-2.5 text-gray-700 hover:bg-gray-100 rounded-lg text-sm">
+//                 API Endpoints
+//               </a>
+//               <a href="#examples" onClick={() => handleNavClick('#examples')}
+//                 className="block px-3 py-2.5 text-gray-700 hover:bg-gray-100 rounded-lg text-sm">
+//                 Code Examples
+//               </a>
+//               <a href="#errors" onClick={() => handleNavClick('#errors')}
+//                 className="block px-3 py-2.5 text-gray-700 hover:bg-gray-100 rounded-lg text-sm">
+//                 Error Codes
+//               </a>
+
+//               <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mt-6 mb-3">
+//                 Resources
+//               </div>
+//               <button onClick={() => { navigate('/pricing'); setSidebarOpen(false); }}
+//                 className="block w-full text-left px-3 py-2.5 text-gray-700 hover:bg-gray-100 rounded-lg text-sm">
+//                 Pricing
+//               </button>
+//               <button onClick={() => { navigate('/api-status'); setSidebarOpen(false); }}
+//                 className="block w-full text-left px-3 py-2.5 text-gray-700 hover:bg-gray-100 rounded-lg text-sm">
+//                 API Status
+//               </button>
+//               <a href="#support" onClick={() => handleNavClick('#support')}
+//                 className="block px-3 py-2.5 text-gray-700 hover:bg-gray-100 rounded-lg text-sm">
+//                 Support
+//               </a>
+//             </nav>
+//           </aside>
+
+//           {/* ── Main Content ─────────────────────────────────────────── */}
+//           <main className="flex-1 min-w-0">
+
+//             {/* Getting Started */}
+//             <div id="getting-started" className="mb-8 sm:mb-12">
+//               <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3 sm:mb-4">
+//                 Getting Started
+//               </h1>
+//               <p className="text-base sm:text-lg text-gray-600 mb-6 sm:mb-8">
+//                 Welcome to the PixelPerfect API documentation. Get started capturing
+//                 pixel-perfect screenshots in minutes.
+//               </p>
+
+//               <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 sm:p-6 mb-6 sm:mb-8">
+//                 <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4">Quick Start</h2>
+
+//                 <div className="mb-6">
+//                   <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">
+//                     1. Get Your API Key
+//                   </h3>
+//                   <p className="text-sm sm:text-base text-gray-700 mb-3">
+//                     Sign up for a free account and grab your API key from the dashboard.
+//                   </p>
+//                   <button
+//                     onClick={() => navigate('/register')}
+//                     className="w-full sm:w-auto bg-blue-600 text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-blue-700 transition-colors text-sm sm:text-base"
+//                   >
+//                     Get API Key
+//                   </button>
+//                 </div>
+
+//                 <div>
+//                   <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">
+//                     2. Make your first request
+//                   </h3>
+//                   <CodeBlock code={SNIPPETS.curlQuickStart} language="bash" />
+//                 </div>
+//               </div>
+
+//               <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+//                 <div className="flex items-start gap-2 text-green-800">
+//                   <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+//                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+//                   </svg>
+//                   <div className="flex-1">
+//                     <span className="font-semibold text-sm sm:text-base">Success!</span>
+//                     <p className="text-green-700 mt-1 text-sm">
+//                       You'll receive a JSON response with the screenshot URL. That's it!
+//                     </p>
+//                   </div>
+//                 </div>
+//               </div>
+//             </div>
+
+//             {/* Authentication */}
+//             <div id="authentication" className="mb-8 sm:mb-12">
+//               <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3 sm:mb-4">
+//                 Authentication
+//               </h2>
+//               <p className="text-sm sm:text-base text-gray-700 mb-4">
+//                 All API requests require authentication using a Bearer token. Include your
+//                 API key in the Authorization header:
+//               </p>
+//               <CodeBlock code={SNIPPETS.authHeader} language="http" />
+//               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mt-4">
+//                 <p className="text-xs sm:text-sm text-yellow-800">
+//                   <strong>⚠️ Keep your API key secure!</strong> Never expose it in
+//                   client-side code or public repositories.
+//                 </p>
+//               </div>
+//             </div>
+
+//             {/* API Endpoints */}
+//             <div id="endpoints" className="mb-8 sm:mb-12">
+//               <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3 sm:mb-4">
+//                 API Endpoints
+//               </h2>
+
+//               {/* Screenshot endpoint */}
+//               <div className="border border-gray-200 rounded-lg p-4 sm:p-6 mb-4">
+//                 <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-3">
+//                   <span className="bg-green-100 text-green-800 px-2.5 py-1 rounded font-mono text-xs sm:text-sm font-semibold">
+//                     POST
+//                   </span>
+//                   <code className="text-sm sm:text-lg font-mono break-all text-gray-900">/v1/screenshot</code>
+//                 </div>
+//                 <p className="text-sm sm:text-base text-gray-700 mb-4">Capture a screenshot of any website.</p>
+
+//                 <h4 className="font-semibold text-gray-900 mb-2 text-sm sm:text-base">Request Body:</h4>
+//                 <CodeBlock code={SNIPPETS.screenshotRequest} language="json" />
+
+//                 <h4 className="font-semibold text-gray-900 mb-2 mt-4 text-sm sm:text-base">Response:</h4>
+//                 <CodeBlock code={SNIPPETS.screenshotResponse} language="json" />
+//               </div>
+
+//               {/* Batch endpoint */}
+//               <div className="border border-gray-200 rounded-lg p-4 sm:p-6">
+//                 <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-3">
+//                   <span className="bg-green-100 text-green-800 px-2.5 py-1 rounded font-mono text-xs sm:text-sm font-semibold">
+//                     POST
+//                   </span>
+//                   <code className="text-sm sm:text-lg font-mono break-all text-gray-900">/v1/batch/submit</code>
+//                 </div>
+//                 <p className="text-sm sm:text-base text-gray-700 mb-4">
+//                   Capture multiple screenshots in one request (Pro+ only).
+//                 </p>
+
+//                 <h4 className="font-semibold text-gray-900 mb-2 text-sm sm:text-base">Request Body:</h4>
+//                 <CodeBlock code={SNIPPETS.batchRequest} language="json" />
+//               </div>
+//             </div>
+
+//             {/* Code Examples */}
+//             <div id="examples" className="mb-8 sm:mb-12">
+//               <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3 sm:mb-4">
+//                 Code Examples
+//               </h2>
+
+//               <div className="mb-6">
+//                 <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3">JavaScript / Node.js</h3>
+//                 <CodeBlock code={SNIPPETS.javascript} language="javascript" />
+//               </div>
+
+//               <div className="mb-6">
+//                 <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3">Python</h3>
+//                 <CodeBlock code={SNIPPETS.python} language="python" />
+//               </div>
+
+//               {/* ✅ NEW (Aug 2026): Java example */}
+//               <div className="mb-6">
+//                 <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3">Java</h3>
+//                 <CodeBlock code={SNIPPETS.java} language="java" />
+//               </div>
+//             </div>
+
+//             {/* Error Codes */}
+//             <div id="errors" className="mb-8 sm:mb-12">
+//               <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3 sm:mb-4">
+//                 Error Codes
+//               </h2>
+
+//               {/* Desktop table */}
+//               <div className="hidden sm:block border border-gray-200 rounded-lg overflow-hidden">
+//                 <table className="min-w-full divide-y divide-gray-200">
+//                   <thead className="bg-gray-50">
+//                     <tr>
+//                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Code</th>
+//                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+//                     </tr>
+//                   </thead>
+//                   <tbody className="bg-white divide-y divide-gray-200">
+//                     {[
+//                       { code: '400', desc: 'Bad Request - Invalid parameters' },
+//                       { code: '401', desc: 'Unauthorized - Invalid or missing API key' },
+//                       { code: '429', desc: 'Too Many Requests - Rate limit exceeded' },
+//                       { code: '500', desc: 'Internal Server Error - Something went wrong' },
+//                     ].map((e) => (
+//                       <tr key={e.code}>
+//                         <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900">{e.code}</td>
+//                         <td className="px-6 py-4 text-sm text-gray-700">{e.desc}</td>
+//                       </tr>
+//                     ))}
+//                   </tbody>
+//                 </table>
+//               </div>
+
+//               {/* Mobile cards */}
+//               <div className="sm:hidden space-y-3">
+//                 {[
+//                   { code: '400', desc: 'Bad Request - Invalid parameters' },
+//                   { code: '401', desc: 'Unauthorized - Invalid or missing API key' },
+//                   { code: '429', desc: 'Too Many Requests - Rate limit exceeded' },
+//                   { code: '500', desc: 'Internal Server Error - Something went wrong' },
+//                 ].map((e) => (
+//                   <div key={e.code} className="bg-white border border-gray-200 rounded-lg p-4">
+//                     <div className="font-mono text-sm font-semibold text-gray-900 mb-1">{e.code}</div>
+//                     <div className="text-sm text-gray-700">{e.desc}</div>
+//                   </div>
+//                 ))}
+//               </div>
+//             </div>
+
+//           </main>
+//         </div>
+//       </div>
+
+//       {/* Footer */}
+//       <footer className="bg-white border-t border-gray-200 mt-8 sm:mt-12">
+//         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+//           <div className="text-center">
+//             <div className="flex justify-center mb-3 sm:mb-4">
+//               <PixelPerfectLogo size={28} showText={true} />
+//             </div>
+//             <p className="text-xs sm:text-sm text-gray-500">
+//               Need help?{' '}
+//               <a href="mailto:support@pixelperfectapi.net" className="text-blue-600 hover:text-blue-700">
+//                 Contact support
+//               </a>
+//             </p>
+//           </div>
+//         </div>
+//       </footer>
+//     </div>
+//   );
+// }
+
+// // ============ END OF Documentation.js ========
 
