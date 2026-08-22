@@ -1061,7 +1061,7 @@ export default function ScreenshotPage() {
   );
 }
 
-// ===== END OF ScreenshotPage.js ==============
+// ===== END OF ScreenshotPage.js ========
 
 
 // // frontend/src/pages/ScreenshotPage.js — PixelPerfect Screenshot API
