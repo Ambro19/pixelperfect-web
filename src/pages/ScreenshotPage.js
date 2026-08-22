@@ -3,53 +3,59 @@ import { Link } from "react-router-dom";
 
 export default function ScreenshotPage() {
   return (
-    <div className="px-6 py-10 max-w-3xl mx-auto">
-      <h1 className="text-3xl font-bold text-gray-900 mb-4">
+    <div className="px-4 py-8 sm:px-6 sm:py-10 max-w-3xl mx-auto">
+      <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">
         Capture Website Screenshot
       </h1>
 
-      <div className="bg-yellow-50 border border-yellow-300 text-yellow-800 px-4 py-4 rounded-md mb-6">
-        <h2 className="text-xl font-semibold mb-1">Service Temporarily Unavailable</h2>
-        <p className="leading-relaxed">
-          Our single‑screenshot capture service is currently experiencing a technical issue.
-          We’re actively working on restoring full functionality as quickly as possible.
-          Thank you for your patience — the feature will be available again very soon.
+      {/* Status Notice */}
+      <div className="bg-red-50 border border-red-300 text-red-800 px-4 py-4 rounded-md mb-6">
+        <h2 className="text-lg sm:text-xl font-semibold mb-1">
+          Temporary Service Outage
+        </h2>
+        <p className="leading-relaxed text-sm sm:text-base">
+          Our single‑screenshot capture service is currently experiencing a technical
+          issue. We’re actively working on restoring full functionality as quickly
+          as possible. Thank you for your patience — the feature will be available
+          again very soon.
         </p>
       </div>
 
-      <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6 mb-8">
+      {/* Explanation Box */}
+      <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-5 sm:p-6 mb-8">
         <h3 className="text-lg font-semibold text-gray-800 mb-3">
           What’s Happening?
         </h3>
-        <p className="text-gray-700 leading-relaxed mb-4">
-          The screenshot engine is undergoing maintenance due to unexpected instability
+        <p className="text-gray-700 leading-relaxed text-sm sm:text-base mb-4">
+          Our screenshot engine is undergoing maintenance due to unexpected instability
           detected earlier today. This affects single‑URL captures only — your dashboard,
-          history, and account settings remain fully accessible.
+          history, API keys, and account settings remain fully accessible.
         </p>
 
-        <p className="text-gray-700 leading-relaxed">
+        <p className="text-gray-700 leading-relaxed text-sm sm:text-base">
           We will update this page the moment the service is restored.
         </p>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-4">
+      {/* Navigation Buttons */}
+      <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
         <Link
           to="/dashboard"
-          className="inline-flex items-center justify-center px-5 py-3 rounded-md bg-blue-600 text-white font-medium hover:bg-blue-700 transition"
+          className="inline-flex items-center justify-center px-5 py-3 rounded-md bg-blue-600 text-white font-medium hover:bg-blue-700 transition text-center"
         >
           Back to Dashboard
         </Link>
 
         <Link
           to="/history"
-          className="inline-flex items-center justify-center px-5 py-3 rounded-md bg-gray-100 text-gray-800 font-medium hover:bg-gray-200 transition"
+          className="inline-flex items-center justify-center px-5 py-3 rounded-md bg-gray-100 text-gray-800 font-medium hover:bg-gray-200 transition text-center"
         >
           View History
         </Link>
 
         <Link
           to="/activity"
-          className="inline-flex items-center justify-center px-5 py-3 rounded-md bg-gray-100 text-gray-800 font-medium hover:bg-gray-200 transition"
+          className="inline-flex items-center justify-center px-5 py-3 rounded-md bg-gray-100 text-gray-800 font-medium hover:bg-gray-200 transition text-center"
         >
           Recent Activity
         </Link>
@@ -57,7 +63,6 @@ export default function ScreenshotPage() {
     </div>
   );
 }
-
 
 
 // // frontend/src/pages/ScreenshotPage.js — PixelPerfect Screenshot API
