@@ -1,28 +1,39 @@
 // frontend/src/pages/BatchJobs.js — PixelPerfect Screenshot API
 // UPDATED: August 2026
 //
-// ✅ UI REFRESH (Aug 2026): brought in line with ScreenshotPage.js.
-//   - Page background is the same slate→gray gradient
-//   - Sticky translucent header
-//   - Quick Presets are segmented cards with an explicit ACTIVE state.
-//     Previously they were flat grey buttons that fired a toast and gave no
-//     visual indication of which preset was applied — you could not tell
-//     1366x768 came from "Laptop" or from typing it by hand.
-//   - Cards use rounded-2xl, inputs rounded-xl, matching the capture page
-//   - Format select, checkboxes and submit button restyled to match
+// ✅ FIX (Aug 2026 — Example cards rendered on one line, centred):
+//   "Two simple sitesFast, reliable — good for a first run" ran together with
+//   no break. The two lines were block-level <div>s inside a <button>, which
+//   should have stacked — but <button> carries a user-agent `text-align:center`
+//   and its own display context, and the result rendered inline and centred
+//   anyway. Rather than fight it with `block`, the button is now an explicit
+//   `flex flex-col items-start` container. A flex column CANNOT put its
+//   children on the same line, so the break is guaranteed regardless of
+//   inherited text-align or display. Same fix applied in ScreenshotPage.js.
+//
+// ✅ NEW (Aug 2026 — "Screenshot expired" state, parity with History.js):
+//   R2 removes the image file 7 days after capture, but the batch job record
+//   is permanent. Previously the per-item "View" link rendered identically at
+//   any age, so clicking one on an old job produced an unexplained 404.
+//   Items older than the retention window now show a muted, non-clickable
+//   "Screenshot expired" label instead. Expiry is derived from the JOB's
+//   created_at — batch items do not carry their own timestamp, and every item
+//   in a job is captured within minutes of it, so the job time is accurate to
+//   well within a 7-day window.
+//
+// ✅ NEW (Aug 2026): footer action buttons — "View Recent Activity" and
+//   "Capture New Screenshot" — matching History.js. The batch page previously
+//   dead-ended: once your jobs were done there was no onward navigation
+//   except the browser back button or the header.
+//
+// ✅ UI REFRESH (Aug 2026): brought in line with ScreenshotPage.js —
+//   slate→gray gradient, sticky translucent header, segmented Quick Presets
+//   with an explicit ACTIVE state, rounded-2xl cards, rounded-xl inputs.
 //
 // ✅ NEW (Aug 2026): scroll-to-top button, matching History.js.
-//   Batch pages get long once several jobs with expanded item lists are on
-//   screen, and there was no way back to the submit form except manual
-//   scrolling.
-//
-// ✅ NEW (Aug 2026): example URL cards. The capture page offers one-click
-//   example sites; batch had nothing, so a first-time user faced an empty
-//   textarea with no idea what valid input looked like.
 //
 // Previous updates (all retained):
 //   ✅ FIX (July 2026 — Delay UX parity with ScreenshotPage.js): <select>
-//   ✅ Preset toast notifications
 //   ✅ Live polling every 2s while processing
 //   ✅ Progress bar per job
 //   ✅ Per-item screenshot_url resolved to correct absolute URL
@@ -62,6 +73,33 @@ function resolveApiBase() {
 const API_BASE_URL = resolveApiBase();
 const POLL_INTERVAL_MS = 2000;
 
+// ── ✅ NEW (Aug 2026): R2 retention window — must match History.js ──────────
+// Kept identical to IMAGE_RETENTION_DAYS in History.js. If the R2 lifecycle
+// rule on the pixelperfect-screenshots bucket ever changes, update BOTH files.
+// This drives purely cosmetic labelling; actual deletion is R2's lifecycle
+// policy and is unaffected by this constant.
+const IMAGE_RETENTION_DAYS = 7;
+const IMAGE_RETENTION_MS   = IMAGE_RETENTION_DAYS * 24 * 60 * 60 * 1000;
+
+// Timestamp parsing — matches History.js parseServerTime(). The backend emits
+// naive UTC strings without a zone suffix, so a bare `new Date(str)` would be
+// read as LOCAL time and skew expiry by the user's UTC offset.
+function parseServerTime(ts) {
+  if (!ts) return null;
+  if (/Z$|[+-]\d{2}:\d{2}$/.test(ts)) return new Date(ts);
+  return new Date(`${ts}Z`);
+}
+
+// ✅ NEW (Aug 2026): true once a capture is older than the R2 retention window.
+// Batch ITEMS carry no timestamp of their own, so we use the parent JOB's
+// created_at. Every item in a job is captured within minutes of it, which is
+// accurate to well within a 7-day window.
+function isImageExpired(createdAtIso) {
+  const created = parseServerTime(createdAtIso);
+  if (!created || Number.isNaN(created.getTime())) return false;
+  return Date.now() - created.getTime() > IMAGE_RETENTION_MS;
+}
+
 function resolveScreenshotUrl(rawUrl) {
   if (!rawUrl || typeof rawUrl !== 'string') return null;
   const t = rawUrl.trim();
@@ -74,7 +112,7 @@ function resolveScreenshotUrl(rawUrl) {
   return `${API_BASE_URL}${t.startsWith('/') ? '' : '/'}${t}`;
 }
 
-// ── ✅ Viewport presets — keyed so the active card can be highlighted ────────
+// ── Viewport presets — keyed so the active card can be highlighted ───────────
 const VIEWPORT_PRESETS = {
   desktop: { label: 'Desktop', sub: '1920×1080', w: 1920, h: 1080, icon: '🖥️' },
   laptop:  { label: 'Laptop',  sub: '1366×768',  w: 1366, h: 768,  icon: '💻' },
@@ -91,8 +129,6 @@ const DELAY_OPTIONS = [
   { value: 10, label: '10 s — Maximum' },
 ];
 
-// ✅ NEW (Aug 2026): example batches, mirroring the capture page's example
-// cards. A first-time batch user previously faced an empty textarea.
 const EXAMPLE_BATCHES = [
   {
     name: 'Two simple sites',
@@ -197,6 +233,12 @@ function JobCard({ job, token, onRetry, onDelete }) {
   const isActive  = job.status === 'processing' || job.status === 'queued';
   const hasFailed = job.failed > 0;
 
+  // ✅ NEW (Aug 2026): resolve expiry ONCE per job rather than per item.
+  // Batch items carry no timestamp of their own; every item in a job is
+  // captured within minutes of the job, so the job's created_at is accurate
+  // to well within the 7-day retention window.
+  const jobExpired = isImageExpired(job.created_at);
+
   const handleRetry = async () => {
     setRetrying(true);
     try {
@@ -260,10 +302,23 @@ function JobCard({ job, token, onRetry, onDelete }) {
           >
             {job.id}
           </span>
-          <span className="flex-shrink-0 px-2.5 py-0.5 rounded-lg text-xs font-semibold
-                           bg-indigo-100 text-indigo-800">
-            {(job.format || 'png').toUpperCase()}
-          </span>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {/* ✅ NEW (Aug 2026): job-level expired badge, so the state is
+                visible without expanding the item list. */}
+            {jobExpired && (
+              <span
+                className="px-2.5 py-0.5 rounded-lg text-xs font-semibold
+                           bg-amber-100 text-amber-800 border border-amber-200"
+                title={`Screenshot images are removed after ${IMAGE_RETENTION_DAYS} days. Job details remain in your history permanently.`}
+              >
+                Expired
+              </span>
+            )}
+            <span className="px-2.5 py-0.5 rounded-lg text-xs font-semibold
+                             bg-indigo-100 text-indigo-800">
+              {(job.format || 'png').toUpperCase()}
+            </span>
+          </div>
         </div>
 
         <div className="mb-2">
@@ -336,6 +391,24 @@ function JobCard({ job, token, onRetry, onDelete }) {
 
       {expanded && (
         <div className="border-t border-gray-100 divide-y divide-gray-50">
+          {/* ✅ NEW (Aug 2026): explain the expired state once, at the top of
+              the list, rather than repeating it on every row. */}
+          {jobExpired && (
+            <div className="px-4 sm:px-5 py-3 bg-amber-50 flex items-start gap-2">
+              <svg className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" fill="none"
+                   viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <p className="text-xs text-amber-800 leading-relaxed">
+                <strong>Images from this job have expired.</strong>{' '}
+                Screenshot files are removed after {IMAGE_RETENTION_DAYS} days to manage
+                storage costs. The job record and all its details remain in your history
+                permanently.
+              </p>
+            </div>
+          )}
+
           {(job.items || []).map((item) => {
             const viewUrl = resolveScreenshotUrl(item.screenshot_url);
             return (
@@ -375,7 +448,24 @@ function JobCard({ job, token, onRetry, onDelete }) {
                     {item.status}
                   </span>
 
-                  {viewUrl ? (
+                  {/* ✅ NEW (Aug 2026): "Screenshot expired" replaces the View
+                      link once the R2 file is gone. Previously the link
+                      rendered identically at any age and 404'd with no
+                      explanation — see History.js for the same treatment. */}
+                  {viewUrl && jobExpired ? (
+                    <span
+                      className="inline-flex items-center gap-1 px-2.5 py-1
+                                 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg
+                                 text-xs font-medium cursor-default"
+                      title={`Screenshot images are automatically removed after ${IMAGE_RETENTION_DAYS} days to manage storage costs. This entry's details remain in your history permanently.`}
+                    >
+                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      Screenshot expired
+                    </span>
+                  ) : viewUrl ? (
                     <a
                       href={viewUrl}
                       target="_blank"
@@ -418,7 +508,7 @@ export default function BatchJobs() {
   const [format,         setFormat]         = useState('png');
   const [width,          setWidth]          = useState(1920);
   const [height,         setHeight]         = useState(1080);
-  const [activePreset,   setActivePreset]   = useState('desktop');   // ✅ NEW
+  const [activePreset,   setActivePreset]   = useState('desktop');
   const [fullPage,       setFullPage]       = useState(false);
 
   const [darkMode,       setDarkMode]       = useState(false);
@@ -434,7 +524,6 @@ export default function BatchJobs() {
   const [submittedJobId, setSubmittedJobId] = useState(null);
   const [loadingJobs,    setLoadingJobs]    = useState(false);
 
-  // ✅ NEW (Aug 2026): scroll-to-top, matching History.js
   const [showScrollToTop, setShowScrollToTop] = useState(false);
 
   const pollRef    = useRef(null);
@@ -444,8 +533,8 @@ export default function BatchJobs() {
 
   useEffect(() => {
     mountedRef.current = true;
-    // ✅ NEW: same 400px threshold History.js uses, so the button appears at
-    // the same point on both pages.
+    // Same 400px threshold History.js uses, so the button appears at the same
+    // point on both pages.
     const onScroll = () => setShowScrollToTop(window.scrollY > 400);
     window.addEventListener('scroll', onScroll);
     return () => {
@@ -466,9 +555,6 @@ export default function BatchJobs() {
   const parsedUrls = extractUrls(urlText);
   const urlCount   = uploadedFile ? '(from file)' : parsedUrls.length;
 
-  // ✅ UPDATED: records the active preset so the card can highlight, and drops
-  // the toast — the visual active state now communicates it without an
-  // interruption on every click.
   const applyPreset = (key, preset) => {
     setWidth(preset.w);
     setHeight(preset.h);
@@ -698,9 +784,13 @@ export default function BatchJobs() {
           </div>
         )}
 
-        {/* ✅ NEW (Aug 2026): example batches — parity with the capture page.
-            Each card is a single block with the title and description on
-            separate lines, so they never run together. */}
+        {/* ✅ FIX (Aug 2026 — cards rendered on one line, centred):
+            These were block-level <div>s inside a <button>. They should have
+            stacked, but <button> carries a user-agent `text-align: center` and
+            its own display context, and the result rendered inline and centred
+            regardless. The button is now an explicit `flex flex-col
+            items-start` container — a flex column CANNOT place its children on
+            the same line, so the break holds no matter what the parent does. */}
         {hasAccess && (
           <div className="bg-white border border-emerald-200 rounded-2xl p-4 mb-6 shadow-sm">
             <h3 className="text-emerald-800 font-semibold mb-3 text-sm flex items-center gap-2">
@@ -712,12 +802,15 @@ export default function BatchJobs() {
                 <button
                   key={ex.name}
                   onClick={() => { setUrlText(ex.urls); setUploadedFile(null); }}
-                  className="text-left p-3 rounded-xl border border-gray-200 hover:border-emerald-400 hover:bg-emerald-50 transition-all group"
+                  className="flex flex-col items-start text-left p-3 rounded-xl border border-gray-200
+                             hover:border-emerald-400 hover:bg-emerald-50 transition-all group w-full"
                 >
-                  <div className="block font-medium text-gray-800 text-sm group-hover:text-emerald-800">
+                  <span className="font-medium text-gray-800 text-sm group-hover:text-emerald-800">
                     {ex.name}
-                  </div>
-                  <div className="block text-xs text-gray-500 mt-0.5">{ex.desc}</div>
+                  </span>
+                  <span className="text-xs text-gray-500 mt-0.5">
+                    {ex.desc}
+                  </span>
                 </button>
               ))}
             </div>
@@ -730,7 +823,7 @@ export default function BatchJobs() {
             Screenshot Configuration
           </h2>
 
-          {/* Quick Presets — segmented cards with an active state */}
+          {/* Quick Presets — flex column inside each card, same reason as above */}
           <div className="mb-5">
             <label className="block text-sm font-semibold text-gray-700 mb-2.5">Quick Presets</label>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -740,21 +833,22 @@ export default function BatchJobs() {
                   <button
                     key={key}
                     onClick={() => applyPreset(key, p)}
-                    className={`px-3 py-2.5 rounded-xl text-left transition-all border-2 ${
+                    className={`flex flex-col items-start text-left px-3 py-2.5 rounded-xl
+                                transition-all border-2 w-full ${
                       isActive
                         ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-500/20 shadow-sm'
                         : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
                     }`}
                   >
-                    <div className="flex items-center gap-1.5">
+                    <span className="flex items-center gap-1.5">
                       <span className="text-sm">{p.icon}</span>
                       <span className={`text-sm font-semibold ${isActive ? 'text-blue-700' : 'text-gray-700'}`}>
                         {p.label}
                       </span>
-                    </div>
-                    <div className={`text-xs mt-0.5 font-mono ${isActive ? 'text-blue-500' : 'text-gray-400'}`}>
+                    </span>
+                    <span className={`text-xs mt-0.5 font-mono ${isActive ? 'text-blue-500' : 'text-gray-400'}`}>
                       {p.sub}
-                    </div>
+                    </span>
                   </button>
                 );
               })}
@@ -994,9 +1088,32 @@ export default function BatchJobs() {
           )}
         </div>
 
-        {/* ✅ NEW (Aug 2026): scroll-to-top — identical to History.js.
-            Batch pages get long once several jobs with expanded item lists
-            are open; there was previously no way back to the submit form. */}
+        {/* ✅ NEW (Aug 2026): footer actions, matching History.js.
+            The batch page previously dead-ended — once your jobs were done
+            there was no onward navigation except the browser back button. */}
+        <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <button
+            onClick={() => navigate('/activity')}
+            className="flex items-center justify-center gap-2 px-6 py-4 bg-indigo-600 text-white
+                       rounded-xl hover:bg-indigo-700 transition-colors font-medium"
+          >
+            📋 <span>View Recent Activity</span>
+          </button>
+          <button
+            onClick={() => navigate('/screenshot')}
+            className="flex items-center justify-center gap-2 px-6 py-4 bg-green-600 text-white
+                       rounded-xl hover:bg-green-700 transition-colors font-medium"
+          >
+            🚀 <span>Capture New Screenshot</span>
+          </button>
+        </div>
+
+        <footer className="mt-6 text-center">
+          <div className="inline-flex items-center gap-2 text-sm text-gray-500 bg-white px-4 py-2 rounded-lg border">
+            ℹ️ Screenshot images expire after {IMAGE_RETENTION_DAYS} days • Job records are permanent
+          </div>
+        </footer>
+
         {showScrollToTop && (
           <button
             onClick={scrollToTop}
@@ -1017,35 +1134,39 @@ export default function BatchJobs() {
 // ======= END OF BatchJobs.js ======
 
 // // frontend/src/pages/BatchJobs.js — PixelPerfect Screenshot API
-// // UPDATED: July 2026
+// // UPDATED: August 2026
 // //
-// // ✅ FIX (July 2026 — Delay UX parity with ScreenshotPage.js):
-// //   "Delay before capture" changed from <input type="number"> to <select>
-// //   with labelled options (0 s — Capture immediately … 10 s — Maximum).
-// //   Same rationale as the ScreenshotPage fix: a number input triggers the
-// //   mobile numeric keyboard (tap, type, dismiss — poor touch UX), while a
-// //   select gives a native bottom-sheet picker on mobile and a clean
-// //   dropdown on desktop. Values 0–10 cover 100% of real use cases.
-// //   Both pages now share the identical delay control.
+// // ✅ UI REFRESH (Aug 2026): brought in line with ScreenshotPage.js.
+// //   - Page background is the same slate→gray gradient
+// //   - Sticky translucent header
+// //   - Quick Presets are segmented cards with an explicit ACTIVE state.
+// //     Previously they were flat grey buttons that fired a toast and gave no
+// //     visual indication of which preset was applied — you could not tell
+// //     1366x768 came from "Laptop" or from typing it by hand.
+// //   - Cards use rounded-2xl, inputs rounded-xl, matching the capture page
+// //   - Format select, checkboxes and submit button restyled to match
+// //
+// // ✅ NEW (Aug 2026): scroll-to-top button, matching History.js.
+// //   Batch pages get long once several jobs with expanded item lists are on
+// //   screen, and there was no way back to the submit form except manual
+// //   scrolling.
+// //
+// // ✅ NEW (Aug 2026): example URL cards. The capture page offers one-click
+// //   example sites; batch had nothing, so a first-time user faced an empty
+// //   textarea with no idea what valid input looked like.
 // //
 // // Previous updates (all retained):
-// //   ✅ Preset toast notifications (Desktop/Laptop/Mobile) — matches ScreenshotPage.js
+// //   ✅ FIX (July 2026 — Delay UX parity with ScreenshotPage.js): <select>
+// //   ✅ Preset toast notifications
 // //   ✅ Live polling every 2s while processing
 // //   ✅ Progress bar per job
 // //   ✅ Per-item screenshot_url resolved to correct absolute URL
 // //   ✅ File upload (CSV/TXT/TSV) + textarea URL input
-// //   ✅ Retry failed items + delete job
-// //   ✅ Cancel button for queued/processing jobs
+// //   ✅ Retry failed items + delete job + cancel job
 // //   ✅ MOBILE FIX: resolveScreenshotUrl handles localhost URLs on LAN devices
-// //   ✅ MOBILE UI FIX: JobCard fully stacked layout — no overlapping badges/buttons
-// //   ✅ MOBILE FIX (Mar 2026): URL parser uses regex extraction instead of
-// //      line-start filter so URLs embedded in Android share-sheet lines
-// //      (e.g. "Page Title https://...") are correctly counted and submitted.
-// //   ✅ FIX (Apr 2026): Added Tablet (768x1024) viewport preset.
-// //      Preset buttons now use a 2-column grid on mobile/tablet so all four
-// //      presets (Desktop, Laptop, Tablet, Mobile) fit without overflow.
-// //   ✅ (Apr 2026): UI parity with ScreenshotPage.js — batch users can now
-// //      set dark_mode, delay, and remove_elements from the dashboard.
+// //   ✅ MOBILE UI FIX: JobCard fully stacked layout
+// //   ✅ MOBILE FIX (Mar 2026): regex URL extraction for Android share-sheet lines
+// //   ✅ FIX (Apr 2026): Tablet preset added, 2-column grid on mobile
 
 // import React, { useState, useEffect, useCallback, useRef } from 'react';
 // import { useNavigate } from 'react-router-dom';
@@ -1088,15 +1209,14 @@ export default function BatchJobs() {
 //   return `${API_BASE_URL}${t.startsWith('/') ? '' : '/'}${t}`;
 // }
 
-// // ── ✅ Viewport presets — Desktop / Laptop / Tablet / Mobile ─────────────────
-// const VIEWPORT_PRESETS = [
-//   { label: 'Desktop',  sub: '1920×1080', w: 1920, h: 1080 },
-//   { label: 'Laptop',   sub: '1366×768',  w: 1366, h: 768  },
-//   { label: 'Tablet',   sub: '768×1024',  w: 768,  h: 1024 },
-//   { label: 'Mobile',   sub: '375×667',   w: 375,  h: 667  },
-// ];
+// // ── ✅ Viewport presets — keyed so the active card can be highlighted ────────
+// const VIEWPORT_PRESETS = {
+//   desktop: { label: 'Desktop', sub: '1920×1080', w: 1920, h: 1080, icon: '🖥️' },
+//   laptop:  { label: 'Laptop',  sub: '1366×768',  w: 1366, h: 768,  icon: '💻' },
+//   tablet:  { label: 'Tablet',  sub: '768×1024',  w: 768,  h: 1024, icon: '📟' },
+//   mobile:  { label: 'Mobile',  sub: '375×667',   w: 375,  h: 667,  icon: '📱' },
+// };
 
-// // ── ✅ NEW (July 2026): delay options — identical to ScreenshotPage.js ───────
 // const DELAY_OPTIONS = [
 //   { value: 0,  label: '0 s — Capture immediately' },
 //   { value: 1,  label: '1 s' },
@@ -1104,6 +1224,21 @@ export default function BatchJobs() {
 //   { value: 3,  label: '3 s' },
 //   { value: 5,  label: '5 s — Recommended for heavy pages' },
 //   { value: 10, label: '10 s — Maximum' },
+// ];
+
+// // ✅ NEW (Aug 2026): example batches, mirroring the capture page's example
+// // cards. A first-time batch user previously faced an empty textarea.
+// const EXAMPLE_BATCHES = [
+//   {
+//     name: 'Two simple sites',
+//     desc: 'Fast, reliable — good for a first run',
+//     urls: 'https://example.com\nhttps://github.com',
+//   },
+//   {
+//     name: 'Documentation pages',
+//     desc: 'Typical real-world content',
+//     urls: 'https://docs.python.org/3/\nhttps://developer.mozilla.org/en-US/',
+//   },
 // ];
 
 // // ── URL extraction (regex-based — works with Android share-sheet content) ─────
@@ -1128,11 +1263,11 @@ export default function BatchJobs() {
 // };
 
 // const statusColor = (s) => ({
-//   completed:  'bg-green-100 text-green-800',
+//   completed:  'bg-emerald-100 text-emerald-800',
 //   processing: 'bg-blue-100 text-blue-800 animate-pulse',
 //   queued:     'bg-gray-100 text-gray-600',
 //   failed:     'bg-red-100 text-red-800',
-//   partial:    'bg-yellow-100 text-yellow-800',
+//   partial:    'bg-amber-100 text-amber-800',
 //   cancelled:  'bg-gray-100 text-gray-500',
 // }[s] || 'bg-gray-100 text-gray-600');
 
@@ -1152,26 +1287,26 @@ export default function BatchJobs() {
 //   const isActive = job.status === 'processing' || job.status === 'queued';
 
 //   return (
-//     <div className="mt-3 bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+//     <div className="mt-3 bg-gray-50 p-4 rounded-xl border border-gray-100">
 //       <div className="flex justify-between items-center mb-2">
 //         <span className="text-sm font-semibold text-gray-700">📸 Screenshots Progress</span>
 //         <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
 //           {job.completed} / {job.total}
 //         </span>
 //       </div>
-//       <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+//       <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
 //         <div
-//           className={`h-3 rounded-full transition-all duration-500 ease-out relative ${
+//           className={`h-2.5 rounded-full transition-all duration-500 ease-out ${
 //             job.failed > 0 && job.completed === 0
 //               ? 'bg-red-500'
 //               : job.failed > 0
-//               ? 'bg-gradient-to-r from-blue-500 to-yellow-500'
-//               : 'bg-gradient-to-r from-blue-500 via-blue-600 to-indigo-600'
+//               ? 'bg-gradient-to-r from-blue-500 to-amber-500'
+//               : 'bg-gradient-to-r from-blue-500 to-indigo-600'
 //           }`}
 //           style={{ width: `${pct}%` }}
 //         >
 //           {isActive && (
-//             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-20 animate-pulse" />
+//             <div className="h-full w-full bg-gradient-to-r from-transparent via-white to-transparent opacity-20 animate-pulse" />
 //           )}
 //         </div>
 //       </div>
@@ -1249,33 +1384,30 @@ export default function BatchJobs() {
 //   };
 
 //   return (
-//     <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-4">
+//     <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden mb-4">
 //       <div className="p-4 sm:p-5">
 
-//         {/* Row 1: Job ID + Format pill */}
 //         <div className="flex items-center justify-between gap-2 mb-2">
 //           <span
-//             className="font-mono text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded
+//             className="font-mono text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded-lg
 //                        truncate max-w-[60%] sm:max-w-none"
 //             title={job.id}
 //           >
 //             {job.id}
 //           </span>
-//           <span className="flex-shrink-0 px-2.5 py-0.5 rounded-full text-xs font-semibold
+//           <span className="flex-shrink-0 px-2.5 py-0.5 rounded-lg text-xs font-semibold
 //                            bg-indigo-100 text-indigo-800">
 //             {(job.format || 'png').toUpperCase()}
 //           </span>
 //         </div>
 
-//         {/* Row 2: Status badge */}
 //         <div className="mb-2">
-//           <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full
+//           <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-lg
 //                             text-xs font-semibold ${statusColor(job.status)}`}>
 //             {jobStatusLabel(job)}
 //           </span>
 //         </div>
 
-//         {/* Row 3: Timestamps */}
 //         <p className="text-xs text-gray-500 mb-3 leading-relaxed">
 //           Created: {new Date(job.created_at + 'Z').toLocaleString()}
 //           {job.completed_at && (
@@ -1283,13 +1415,12 @@ export default function BatchJobs() {
 //           )}
 //         </p>
 
-//         {/* Row 4: Action buttons */}
 //         <div className="flex flex-wrap items-center gap-2">
 //           {isActive && (
 //             <button
 //               onClick={handleCancel}
 //               disabled={cancelling}
-//               className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold
+//               className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold
 //                          bg-red-50 text-red-600 border border-red-200
 //                          hover:bg-red-100 active:bg-red-200
 //                          disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
@@ -1302,9 +1433,9 @@ export default function BatchJobs() {
 //             <button
 //               onClick={handleRetry}
 //               disabled={retrying}
-//               className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold
-//                          bg-yellow-50 text-yellow-700 border border-yellow-200
-//                          hover:bg-yellow-100 active:bg-yellow-200
+//               className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold
+//                          bg-amber-50 text-amber-700 border border-amber-200
+//                          hover:bg-amber-100 active:bg-amber-200
 //                          disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
 //             >
 //               {retrying ? '↺ Retrying...' : '↺ Retry Failed'}
@@ -1313,7 +1444,7 @@ export default function BatchJobs() {
 
 //           <button
 //             onClick={() => setExpanded(v => !v)}
-//             className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold
+//             className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold
 //                        bg-blue-50 text-blue-700 border border-blue-200
 //                        hover:bg-blue-100 active:bg-blue-200 transition-colors"
 //           >
@@ -1324,7 +1455,7 @@ export default function BatchJobs() {
 //             <button
 //               onClick={handleDelete}
 //               disabled={deleting}
-//               className="inline-flex items-center justify-center w-9 h-9 rounded-lg text-sm
+//               className="inline-flex items-center justify-center w-9 h-9 rounded-xl text-sm
 //                          bg-red-50 text-red-600 border border-red-200
 //                          hover:bg-red-100 active:bg-red-200
 //                          disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
@@ -1346,8 +1477,8 @@ export default function BatchJobs() {
 //               <div
 //                 key={item.idx}
 //                 className={`px-4 sm:px-5 py-3 ${
-//                   item.status === 'failed'    ? 'bg-red-50'      :
-//                   item.status === 'completed' ? 'bg-green-50/40' : ''
+//                   item.status === 'failed'    ? 'bg-red-50'         :
+//                   item.status === 'completed' ? 'bg-emerald-50/40'  : ''
 //                 }`}
 //               >
 //                 <div className="flex items-center gap-2 mb-1.5">
@@ -1355,8 +1486,8 @@ export default function BatchJobs() {
 //                     #{item.idx + 1}
 //                   </span>
 //                   <span className={`w-2 h-2 rounded-full flex-shrink-0 ${
-//                     item.status === 'completed'  ? 'bg-green-500' :
-//                     item.status === 'failed'     ? 'bg-red-500'   :
+//                     item.status === 'completed'  ? 'bg-emerald-500' :
+//                     item.status === 'failed'     ? 'bg-red-500'     :
 //                     item.status === 'processing' ? 'bg-blue-500 animate-pulse' :
 //                     'bg-gray-300'
 //                   }`} />
@@ -1375,7 +1506,7 @@ export default function BatchJobs() {
 //                   {item.processing_time && (
 //                     <span className="text-xs text-gray-400">⏱ {item.processing_time}s</span>
 //                   )}
-//                   <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusColor(item.status)}`}>
+//                   <span className={`px-2 py-0.5 rounded-lg text-xs font-medium ${statusColor(item.status)}`}>
 //                     {item.status}
 //                   </span>
 
@@ -1422,9 +1553,9 @@ export default function BatchJobs() {
 //   const [format,         setFormat]         = useState('png');
 //   const [width,          setWidth]          = useState(1920);
 //   const [height,         setHeight]         = useState(1080);
+//   const [activePreset,   setActivePreset]   = useState('desktop');   // ✅ NEW
 //   const [fullPage,       setFullPage]       = useState(false);
 
-//   // Advanced Options — parity with ScreenshotPage.js
 //   const [darkMode,       setDarkMode]       = useState(false);
 //   const [delay,          setDelay]          = useState(0);
 //   const [removeElements, setRemoveElements] = useState('');
@@ -1438,6 +1569,9 @@ export default function BatchJobs() {
 //   const [submittedJobId, setSubmittedJobId] = useState(null);
 //   const [loadingJobs,    setLoadingJobs]    = useState(false);
 
+//   // ✅ NEW (Aug 2026): scroll-to-top, matching History.js
+//   const [showScrollToTop, setShowScrollToTop] = useState(false);
+
 //   const pollRef    = useRef(null);
 //   const mountedRef = useRef(true);
 
@@ -1445,10 +1579,19 @@ export default function BatchJobs() {
 
 //   useEffect(() => {
 //     mountedRef.current = true;
+//     // ✅ NEW: same 400px threshold History.js uses, so the button appears at
+//     // the same point on both pages.
+//     const onScroll = () => setShowScrollToTop(window.scrollY > 400);
+//     window.addEventListener('scroll', onScroll);
 //     return () => {
 //       mountedRef.current = false;
+//       window.removeEventListener('scroll', onScroll);
 //       if (pollRef.current) clearInterval(pollRef.current);
 //     };
+//   }, []);
+
+//   const scrollToTop = useCallback(() => {
+//     window.scrollTo({ top: 0, behavior: 'smooth' });
 //   }, []);
 
 //   const tierLower = (tier || '').toLowerCase();
@@ -1458,14 +1601,18 @@ export default function BatchJobs() {
 //   const parsedUrls = extractUrls(urlText);
 //   const urlCount   = uploadedFile ? '(from file)' : parsedUrls.length;
 
-//   // ── Apply viewport preset with toast ───────────────────────────────────────
-//   const applyPreset = (preset) => {
+//   // ✅ UPDATED: records the active preset so the card can highlight, and drops
+//   // the toast — the visual active state now communicates it without an
+//   // interruption on every click.
+//   const applyPreset = (key, preset) => {
 //     setWidth(preset.w);
 //     setHeight(preset.h);
-//     toast.success(`Applied ${preset.label} (${preset.sub}) preset`);
+//     setActivePreset(key);
 //   };
 
-//   // ── Fetch all jobs ──────────────────────────────────────────────────────────
+//   const handleWidthChange  = (v) => { setWidth(v);  setActivePreset(''); };
+//   const handleHeightChange = (v) => { setHeight(v); setActivePreset(''); };
+
 //   const fetchJobs = useCallback(async (silent = false) => {
 //     if (!token) return;
 //     if (!silent) setLoadingJobs(true);
@@ -1483,7 +1630,6 @@ export default function BatchJobs() {
 //     }
 //   }, [token]);
 
-//   // ── Poll active job ─────────────────────────────────────────────────────────
 //   const pollJob = useCallback(async (jobId) => {
 //     if (!token || !jobId) return;
 //     try {
@@ -1525,7 +1671,6 @@ export default function BatchJobs() {
 
 //   useEffect(() => { if (isAuthenticated) fetchJobs(); }, [isAuthenticated, fetchJobs]);
 
-//   // ── File handling ───────────────────────────────────────────────────────────
 //   const handleFile = (file) => {
 //     if (!file) return;
 //     const name = (file.name || '').toLowerCase();
@@ -1545,26 +1690,18 @@ export default function BatchJobs() {
 //     if (file) handleFile(file);
 //   };
 
-//   // ── Submit batch ────────────────────────────────────────────────────────────
 //   const handleSubmit = async () => {
 //     if (!hasAccess) { toast.error('Batch processing requires a Pro plan or higher'); return; }
 //     setSubmitting(true);
 //     try {
 //       let res;
 
-//       // Parse remove_elements textbox → array (for JSON path)
-//       // Same parsing convention as ScreenshotPage.js: split on commas,
-//       // strip whitespace, drop empties.
 //       const parsedRemoveList = removeElements
 //         .split(',')
 //         .map(s => s.trim())
 //         .filter(Boolean);
 
 //       if (uploadedFile) {
-//         // ── File upload path (multipart form) ────────────────────────────────
-//         // Backend (batch.py) _parse_remove_elements_form accepts a
-//         // comma-separated string OR a JSON array. We send comma-separated
-//         // because it matches what the textbox already contains.
 //         const form = new FormData();
 //         form.append('file', uploadedFile);
 //         form.append('format', format);
@@ -1574,7 +1711,6 @@ export default function BatchJobs() {
 //         form.append('dark_mode', String(darkMode));
 //         form.append('delay',     String(delay || 0));
 //         if (removeElements.trim()) {
-//           // Send the raw textbox value — backend parses comma-separated
 //           form.append('remove_elements', removeElements.trim());
 //         }
 
@@ -1584,7 +1720,6 @@ export default function BatchJobs() {
 //           body: form,
 //         });
 //       } else {
-//         // ── JSON path ────────────────────────────────────────────────────────
 //         if (!parsedUrls.length) {
 //           toast.error('Please enter at least one valid URL (starting with http:// or https://)');
 //           setSubmitting(false);
@@ -1600,7 +1735,6 @@ export default function BatchJobs() {
 //           dark_mode: darkMode,
 //           delay:     delay || 0,
 //         };
-//         // Only include remove_elements when user actually entered something
 //         if (parsedRemoveList.length > 0) {
 //           payload.remove_elements = parsedRemoveList;
 //         }
@@ -1621,9 +1755,6 @@ export default function BatchJobs() {
 //       setSubmittedJobId(job.id);
 //       setUrlText('');
 //       setUploadedFile(null);
-//       // Note: we deliberately keep darkMode/delay/removeElements as-is so that
-//       // users submitting multiple batches don't have to re-check their
-//       // preferred settings every time. Same UX choice ScreenshotPage makes.
 //       toast.success(`🚀 Batch job submitted! Job ID: ${job.id}`, { duration: 5000 });
 //     } catch (err) {
 //       toast.error(`Submission failed: ${err.message}`, { duration: 6000 });
@@ -1641,10 +1772,11 @@ export default function BatchJobs() {
 //     }
 //   };
 
-//   // ── Render ──────────────────────────────────────────────────────────────────
+//   const submitDisabled = submitting || !hasAccess || (!parsedUrls.length && !uploadedFile);
+
 //   return (
-//     <div className="min-h-screen bg-gray-50">
-//       <header className="bg-white border-b border-gray-200">
+//     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-gray-100">
+//       <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-40">
 //         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 //           <div className="flex justify-between items-center h-16">
 //             <div className="cursor-pointer" onClick={() => navigate('/dashboard')}>
@@ -1653,14 +1785,14 @@ export default function BatchJobs() {
 //             <div className="flex items-center gap-3 sm:gap-4">
 //               <button
 //                 onClick={() => navigate('/dashboard')}
-//                 className="text-sm text-gray-600 hover:text-gray-900"
+//                 className="text-sm text-gray-600 hover:text-gray-900 transition-colors"
 //               >
 //                 ← Back
 //               </button>
 //               <button
 //                 onClick={() => navigate('/subscription')}
-//                 className="px-3 sm:px-4 py-2 bg-blue-600 text-white text-sm rounded-lg
-//                            hover:bg-blue-700 font-medium transition-colors"
+//                 className="px-4 py-2 bg-blue-600 text-white text-sm rounded-xl
+//                            hover:bg-blue-700 font-medium transition-colors shadow-sm"
 //               >
 //                 Manage Plan
 //               </button>
@@ -1670,192 +1802,208 @@ export default function BatchJobs() {
 //       </header>
 
 //       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-//         <div className="text-center mb-8">
+//         <div className="text-center mb-6">
 //           <div className="flex justify-center mb-4">
 //             <PixelPerfectLogo size={64} showText={false} />
 //           </div>
-//           <h1 className="text-3xl font-bold text-gray-900 mb-2">Batch Screenshot Jobs</h1>
+//           <h1 className="text-3xl font-bold text-gray-900 mb-2 tracking-tight">Batch Screenshot Jobs</h1>
 //           <p className="text-gray-600">
 //             Capture screenshots of multiple websites at once.
-//             Process up to {tierLimit} URLs per batch.
 //           </p>
 //           <p className="text-sm text-gray-500 mt-1">
 //             {hasAccess
-//               ? `${tier?.charAt(0).toUpperCase() + tier?.slice(1)} · up to ${tierLimit} URLs per batch`
+//               ? `${tier?.charAt(0).toUpperCase() + tier?.slice(1)} plan · up to ${tierLimit} URLs per batch`
 //               : 'Free plan · Batch not available'}
 //           </p>
 //         </div>
 
 //         {!hasAccess && (
-//           <div className="mb-6 bg-amber-50 border border-amber-200 rounded-xl p-5 text-center">
+//           <div className="mb-6 bg-white border border-amber-200 rounded-2xl p-6 text-center shadow-sm">
 //             <div className="text-3xl mb-2">🔒</div>
-//             <h3 className="font-semibold text-amber-800 mb-1">Pro Plan Required</h3>
-//             <p className="text-sm text-amber-700 mb-3">
-//               Batch processing is available on Pro and Business plans.
+//             <h3 className="font-bold text-amber-800 mb-1">Pro Plan Required</h3>
+//             <p className="text-sm text-amber-700 mb-4">
+//               Batch processing is available on Pro, Business and Premium plans.
 //             </p>
 //             <button
-//               onClick={() => navigate('/subscription')}
-//               className="px-5 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 text-sm font-medium"
+//               onClick={() => navigate('/pricing')}
+//               className="px-5 py-2.5 bg-amber-600 text-white rounded-xl hover:bg-amber-700 text-sm font-semibold transition-colors"
 //             >
-//               Upgrade Now
+//               See plans →
 //             </button>
 //           </div>
 //         )}
 
-//         <div className={`bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-8 ${!hasAccess ? 'opacity-60 pointer-events-none' : ''}`}>
-//           <div className="mb-6">
-//             <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-//               <span className="text-gray-400">📐</span> Screenshot Configuration
-//             </h2>
-//             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-//               <div>
-//                 <h3 className="text-sm font-medium text-gray-700 mb-3">Dimensions</h3>
-//                 <div className="space-y-3">
-//                   <div>
-//                     <label className="block text-xs text-gray-500 mb-1">Width (px)</label>
-//                     <input
-//                       type="number" value={width} min={320} max={7680}
-//                       onChange={e => setWidth(parseInt(e.target.value) || 1920)}
-//                       className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm
-//                                  focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-//                     />
-//                   </div>
-//                   <div>
-//                     <label className="block text-xs text-gray-500 mb-1">Height (px)</label>
-//                     <input
-//                       type="number" value={height} min={240} max={4320}
-//                       onChange={e => setHeight(parseInt(e.target.value) || 1080)}
-//                       className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm
-//                                  focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-//                     />
-//                   </div>
-
-//                   <div className="grid grid-cols-2 md:grid-cols-4 gap-2 pt-1">
-//                     {VIEWPORT_PRESETS.map(p => (
-//                       <button
-//                         key={p.label}
-//                         onClick={() => applyPreset(p)}
-//                         className="flex flex-col items-center px-2 py-2 bg-gray-100
-//                                    hover:bg-blue-50 hover:border-blue-300
-//                                    border border-transparent rounded-lg text-center
-//                                    transition-colors group"
-//                       >
-//                         <span className="text-xs font-semibold text-gray-700 group-hover:text-blue-700 leading-tight">
-//                           {p.label}
-//                         </span>
-//                         <span className="text-[10px] text-gray-400 group-hover:text-blue-500 mt-0.5 leading-tight">
-//                           {p.sub}
-//                         </span>
-//                       </button>
-//                     ))}
-//                   </div>
-//                 </div>
-//               </div>
-
-//               <div>
-//                 <h3 className="text-sm font-medium text-gray-700 mb-3">Format</h3>
-//                 <select
-//                   value={format}
-//                   onChange={e => setFormat(e.target.value)}
-//                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mb-3
-//                              focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+//         {/* ✅ NEW (Aug 2026): example batches — parity with the capture page.
+//             Each card is a single block with the title and description on
+//             separate lines, so they never run together. */}
+//         {hasAccess && (
+//           <div className="bg-white border border-emerald-200 rounded-2xl p-4 mb-6 shadow-sm">
+//             <h3 className="text-emerald-800 font-semibold mb-3 text-sm flex items-center gap-2">
+//               <span className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center text-xs">✓</span>
+//               Try an example batch
+//             </h3>
+//             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+//               {EXAMPLE_BATCHES.map(ex => (
+//                 <button
+//                   key={ex.name}
+//                   onClick={() => { setUrlText(ex.urls); setUploadedFile(null); }}
+//                   className="text-left p-3 rounded-xl border border-gray-200 hover:border-emerald-400 hover:bg-emerald-50 transition-all group"
 //                 >
-//                   <option value="png">PNG (lossless)</option>
-//                   <option value="jpeg">JPEG (compressed)</option>
-//                   <option value="webp">WebP (best ratio)</option>
-//                   <option value="pdf">PDF (document)</option>
-//                 </select>
-
-//                 <label className="flex items-center gap-2 cursor-pointer mb-2">
-//                   <input
-//                     type="checkbox" checked={fullPage}
-//                     onChange={e => setFullPage(e.target.checked)}
-//                     className="w-4 h-4 rounded border-gray-300 text-blue-600"
-//                   />
-//                   <span className="text-sm text-gray-700">Capture full page (scrolling)</span>
-//                 </label>
-//                 <label className="flex items-center gap-2 cursor-pointer mb-4">
-//                   <input
-//                     type="checkbox" checked={darkMode}
-//                     onChange={e => setDarkMode(e.target.checked)}
-//                     className="w-4 h-4 rounded border-gray-300 text-blue-600"
-//                   />
-//                   <span className="text-sm text-gray-700">Use dark mode</span>
-//                 </label>
-
-//                 <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-//                   <div className="flex justify-between items-center text-sm">
-//                     <span className="text-gray-600">URL Preview</span>
-//                     <span className={`font-semibold ${
-//                       typeof urlCount === 'number' && urlCount > tierLimit
-//                         ? 'text-red-600'
-//                         : 'text-green-600'
-//                     }`}>
-//                       {typeof urlCount === 'number' ? `${urlCount}/${tierLimit}` : urlCount}
-//                     </span>
+//                   <div className="block font-medium text-gray-800 text-sm group-hover:text-emerald-800">
+//                     {ex.name}
 //                   </div>
-//                   <p className="text-xs text-gray-500 mt-1">
-//                     {uploadedFile ? 'Previewing URLs from uploaded file.' : 'Previewing URLs from textarea.'}
-//                   </p>
-//                   {parsedUrls[0] && !uploadedFile && (
-//                     <p className="text-xs text-gray-400 mt-1 truncate">
-//                       Example: {parsedUrls[0]}
-//                     </p>
-//                   )}
-//                 </div>
-//               </div>
+//                   <div className="block text-xs text-gray-500 mt-0.5">{ex.desc}</div>
+//                 </button>
+//               ))}
+//             </div>
+//           </div>
+//         )}
+
+//         <div className={`bg-white rounded-2xl border border-gray-200 shadow-sm p-5 sm:p-6 mb-8 ${!hasAccess ? 'opacity-60 pointer-events-none' : ''}`}>
+//           <h2 className="text-lg font-bold text-gray-900 mb-5 flex items-center gap-2">
+//             <span className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center text-base">📐</span>
+//             Screenshot Configuration
+//           </h2>
+
+//           {/* Quick Presets — segmented cards with an active state */}
+//           <div className="mb-5">
+//             <label className="block text-sm font-semibold text-gray-700 mb-2.5">Quick Presets</label>
+//             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+//               {Object.entries(VIEWPORT_PRESETS).map(([key, p]) => {
+//                 const isActive = activePreset === key;
+//                 return (
+//                   <button
+//                     key={key}
+//                     onClick={() => applyPreset(key, p)}
+//                     className={`px-3 py-2.5 rounded-xl text-left transition-all border-2 ${
+//                       isActive
+//                         ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-500/20 shadow-sm'
+//                         : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
+//                     }`}
+//                   >
+//                     <div className="flex items-center gap-1.5">
+//                       <span className="text-sm">{p.icon}</span>
+//                       <span className={`text-sm font-semibold ${isActive ? 'text-blue-700' : 'text-gray-700'}`}>
+//                         {p.label}
+//                       </span>
+//                     </div>
+//                     <div className={`text-xs mt-0.5 font-mono ${isActive ? 'text-blue-500' : 'text-gray-400'}`}>
+//                       {p.sub}
+//                     </div>
+//                   </button>
+//                 );
+//               })}
 //             </div>
 //           </div>
 
-//           {/* ── Advanced Options section — parity with ScreenshotPage ── */}
-//           <div className="border-t border-gray-200 pt-4 mb-6">
-//             <h4 className="text-sm font-semibold text-gray-700 mb-3">Advanced Options</h4>
-//             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+//           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
+//             <div>
+//               <label className="block text-sm font-semibold text-gray-700 mb-2">Width (px)</label>
+//               <input
+//                 type="number" value={width} min={320} max={3840}
+//                 onChange={e => handleWidthChange(parseInt(e.target.value) || 1920)}
+//                 className="w-full border border-gray-300 rounded-xl px-3.5 py-2.5
+//                            focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+//               />
+//             </div>
+//             <div>
+//               <label className="block text-sm font-semibold text-gray-700 mb-2">Height (px)</label>
+//               <input
+//                 type="number" value={height} min={240} max={2160}
+//                 onChange={e => handleHeightChange(parseInt(e.target.value) || 1080)}
+//                 className="w-full border border-gray-300 rounded-xl px-3.5 py-2.5
+//                            focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+//               />
+//             </div>
+//           </div>
+
+//           <div className="mb-5">
+//             <label className="block text-sm font-semibold text-gray-700 mb-2">Format</label>
+//             <select
+//               value={format}
+//               onChange={e => setFormat(e.target.value)}
+//               className="w-full border border-gray-300 rounded-xl px-3.5 py-2.5 bg-white
+//                          focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+//             >
+//               <option value="png">PNG — lossless, larger file</option>
+//               <option value="jpeg">JPEG — lossy, smaller file</option>
+//               <option value="webp">WebP — best compression</option>
+//               <option value="pdf">PDF — document format</option>
+//             </select>
+//           </div>
+
+//           <div className="space-y-2 mb-5">
+//             {[
+//               { checked: fullPage, set: setFullPage, label: 'Capture full page (scroll entire page)' },
+//               { checked: darkMode, set: setDarkMode, label: 'Use dark mode' },
+//             ].map(o => (
+//               <label key={o.label} className="flex items-center gap-3 cursor-pointer p-2.5 rounded-xl hover:bg-gray-50 transition-colors">
+//                 <input type="checkbox" checked={o.checked} onChange={e => o.set(e.target.checked)}
+//                   className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500" />
+//                 <span className="text-sm text-gray-700">{o.label}</span>
+//               </label>
+//             ))}
+//           </div>
+
+//           {/* Advanced Options */}
+//           <div className="border-t border-gray-200 pt-5 mb-5">
+//             <h4 className="text-sm font-bold text-gray-700 mb-3">Advanced Options</h4>
+//             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 //               <div>
-//                 <label className="block text-sm text-gray-700 mb-1">Delay before capture (seconds)</label>
-//                 {/*
-//                   ✅ FIX (July 2026 — Delay UX parity with ScreenshotPage.js):
-//                   Changed from <input type="number"> to <select> with the
-//                   identical labelled options used on the single screenshot
-//                   page. A number input triggers the mobile numeric keyboard
-//                   (tap, type, dismiss — poor touch UX); a select gives a
-//                   native bottom-sheet picker on mobile and a clean dropdown
-//                   on desktop. Values 0–10 cover all real use cases.
-//                 */}
+//                 <label className="block text-sm text-gray-700 mb-1.5">Delay before capture (seconds)</label>
 //                 <select
 //                   value={delay}
 //                   onChange={e => setDelay(parseInt(e.target.value) || 0)}
-//                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white
-//                              focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+//                   className="w-full border border-gray-300 rounded-xl px-3.5 py-2.5 text-sm bg-white
+//                              focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
 //                 >
 //                   {DELAY_OPTIONS.map(opt => (
 //                     <option key={opt.value} value={opt.value}>{opt.label}</option>
 //                   ))}
 //                 </select>
-//                 <p className="text-xs text-gray-500 mt-1">
-//                   Wait time per URL to allow page to fully load (0–10s)
+//                 <p className="text-xs text-gray-500 mt-1.5">
+//                   Applied to every URL in the batch
 //                 </p>
 //               </div>
 //               <div>
-//                 <label className="block text-sm text-gray-700 mb-1">Remove elements (CSS selectors)</label>
+//                 <label className="block text-sm text-gray-700 mb-1.5">Remove elements (CSS selectors)</label>
 //                 <input
 //                   type="text"
 //                   value={removeElements}
 //                   onChange={e => setRemoveElements(e.target.value)}
 //                   placeholder=".cookie-banner, #popup, .ads"
-//                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm
-//                              focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+//                   className="w-full border border-gray-300 rounded-xl px-3.5 py-2.5 text-sm font-mono
+//                              focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
 //                 />
-//                 <p className="text-xs text-gray-500 mt-1">
-//                   Applied to every URL in the batch. Comma-separated.
+//                 <p className="text-xs text-gray-500 mt-1.5">
+//                   Applied to every URL. Comma-separated.
 //                 </p>
 //               </div>
 //             </div>
 //           </div>
 
+//           {/* URL count pill */}
+//           <div className="bg-gray-50 rounded-xl p-3.5 border border-gray-200 mb-5">
+//             <div className="flex justify-between items-center text-sm">
+//               <span className="text-gray-600 font-medium">URLs detected</span>
+//               <span className={`font-bold ${
+//                 typeof urlCount === 'number' && urlCount > tierLimit
+//                   ? 'text-red-600'
+//                   : 'text-emerald-600'
+//               }`}>
+//                 {typeof urlCount === 'number' ? `${urlCount} / ${tierLimit}` : urlCount}
+//               </span>
+//             </div>
+//             {parsedUrls[0] && !uploadedFile && (
+//               <p className="text-xs text-gray-400 mt-1 truncate font-mono">
+//                 First: {parsedUrls[0]}
+//               </p>
+//             )}
+//           </div>
+
 //           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
 //             <div>
-//               <label className="block text-sm font-medium text-gray-700 mb-2">
+//               <label className="block text-sm font-semibold text-gray-700 mb-2">
 //                 Website URLs (one per line)
 //               </label>
 //               <textarea
@@ -1863,16 +2011,16 @@ export default function BatchJobs() {
 //                 onChange={e => setUrlText(e.target.value)}
 //                 placeholder={'https://example.com\nhttps://another-site.com'}
 //                 rows={8}
-//                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono
-//                            focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-y"
+//                 className="w-full border border-gray-300 rounded-xl px-3.5 py-2.5 text-sm font-mono
+//                            focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all resize-y"
 //               />
-//               <p className="text-xs text-gray-500 mt-1">
-//                 Enter up to {tierLimit} URLs, one per line
+//               <p className="text-xs text-gray-500 mt-1.5">
+//                 Up to {tierLimit} URLs per batch
 //               </p>
 //             </div>
 
 //             <div>
-//               <label className="block text-sm font-medium text-gray-700 mb-2">
+//               <label className="block text-sm font-semibold text-gray-700 mb-2">
 //                 Upload File (CSV/TXT/TSV)
 //               </label>
 //               <div
@@ -1880,8 +2028,8 @@ export default function BatchJobs() {
 //                 onDragLeave={() => setDragOver(false)}
 //                 onDrop={handleDrop}
 //                 onClick={() => fileInputRef.current?.click()}
-//                 className={`relative border-2 border-dashed rounded-lg p-6 text-center cursor-pointer
-//                             transition-colors flex flex-col items-center justify-center min-h-[200px]
+//                 className={`relative border-2 border-dashed rounded-xl p-6 text-center cursor-pointer
+//                             transition-all flex flex-col items-center justify-center min-h-[210px]
 //                             ${dragOver
 //                               ? 'border-blue-400 bg-blue-50'
 //                               : 'border-gray-300 hover:border-gray-400 bg-gray-50'}`}
@@ -1896,14 +2044,14 @@ export default function BatchJobs() {
 //                 {uploadedFile ? (
 //                   <>
 //                     <div className="text-4xl mb-2">📄</div>
-//                     <p className="text-sm font-medium text-green-700">✓ {uploadedFile.name}</p>
+//                     <p className="text-sm font-medium text-emerald-700">✓ {uploadedFile.name}</p>
 //                     <p className="text-xs text-gray-500 mt-1">
-//                       Size: {(uploadedFile.size / 1024).toFixed(1)} KB · Max: 2.00 MB
+//                       {(uploadedFile.size / 1024).toFixed(1)} KB · Max 2.00 MB
 //                     </p>
 //                     <button
 //                       onClick={e => { e.stopPropagation(); setUploadedFile(null); }}
-//                       className="mt-3 px-3 py-1 bg-red-50 text-red-600 border border-red-200
-//                                  rounded text-xs hover:bg-red-100 transition-colors"
+//                       className="mt-3 px-3 py-1.5 bg-red-50 text-red-600 border border-red-200
+//                                  rounded-lg text-xs hover:bg-red-100 transition-colors"
 //                     >
 //                       Clear File
 //                     </button>
@@ -1911,14 +2059,13 @@ export default function BatchJobs() {
 //                 ) : (
 //                   <>
 //                     <div className="text-4xl mb-2 opacity-40">📄</div>
-//                     <p className="text-sm text-gray-600">Drag & drop a file here</p>
+//                     <p className="text-sm text-gray-600">Drag &amp; drop a file here</p>
 //                     <p className="text-xs text-gray-500">or tap to browse</p>
-//                     <button className="mt-3 px-3 py-1 bg-white border border-gray-300 rounded
-//                                        text-xs text-gray-700 hover:bg-gray-50 transition-colors">
-//                       Browse...
-//                     </button>
-//                     <p className="text-xs text-gray-400 mt-2">Supported: CSV, TXT, TSV</p>
-//                     <p className="text-xs text-gray-400">Max size: 2.00 MB</p>
+//                     <span className="mt-3 px-3 py-1.5 bg-white border border-gray-300 rounded-lg
+//                                      text-xs text-gray-700">
+//                       Browse…
+//                     </span>
+//                     <p className="text-xs text-gray-400 mt-2">CSV, TXT, TSV · max 2.00 MB</p>
 //                   </>
 //                 )}
 //               </div>
@@ -1927,11 +2074,13 @@ export default function BatchJobs() {
 
 //           <button
 //             onClick={handleSubmit}
-//             disabled={submitting || !hasAccess || (!parsedUrls.length && !uploadedFile)}
-//             className="w-full py-4 bg-blue-600 text-white font-semibold rounded-xl
-//                        hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed
-//                        transition-colors text-base
-//                        focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+//             disabled={submitDisabled}
+//             className={`w-full py-4 font-semibold rounded-xl text-base transition-all duration-200
+//                         focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+//               submitDisabled
+//                 ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+//                 : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30 focus:ring-blue-500'
+//             }`}
 //           >
 //             {submitting ? '⏳ Submitting...' : '🚀 Submit Batch Job'}
 //           </button>
@@ -1949,20 +2098,20 @@ export default function BatchJobs() {
 //             <button
 //               onClick={() => fetchJobs()}
 //               disabled={loadingJobs}
-//               className="px-3 py-1.5 bg-white border border-gray-300 text-gray-700 rounded-lg
-//                          text-sm hover:bg-gray-50 disabled:opacity-50 flex items-center gap-1.5"
+//               className="px-3.5 py-2 bg-white border border-gray-300 text-gray-700 rounded-xl
+//                          text-sm font-medium hover:bg-gray-50 disabled:opacity-50 transition-colors"
 //             >
 //               🔄 {loadingJobs ? 'Loading...' : 'Refresh'}
 //             </button>
 //           </div>
 
 //           {loadingJobs && jobs.length === 0 ? (
-//             <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
+//             <div className="bg-white rounded-2xl border border-gray-200 p-12 text-center">
 //               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-3" />
 //               <p className="text-gray-600">Loading your batch jobs...</p>
 //             </div>
 //           ) : jobs.length === 0 ? (
-//             <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
+//             <div className="bg-white rounded-2xl border border-gray-200 p-12 text-center">
 //               <div className="text-5xl mb-3">📦</div>
 //               <h3 className="text-lg font-semibold text-gray-900 mb-1">No batch jobs yet</h3>
 //               <p className="text-gray-600 text-sm">Submit a batch job above to get started.</p>
@@ -1979,10 +2128,25 @@ export default function BatchJobs() {
 //             ))
 //           )}
 //         </div>
+
+//         {/* ✅ NEW (Aug 2026): scroll-to-top — identical to History.js.
+//             Batch pages get long once several jobs with expanded item lists
+//             are open; there was previously no way back to the submit form. */}
+//         {showScrollToTop && (
+//           <button
+//             onClick={scrollToTop}
+//             className="fixed bottom-8 right-8 bg-blue-600 hover:bg-blue-700 text-white p-3
+//                        rounded-full shadow-lg transition-all duration-300 z-50 hover:scale-110"
+//             aria-label="Scroll to top"
+//           >
+//             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+//               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+//             </svg>
+//           </button>
+//         )}
 //       </div>
 //     </div>
 //   );
 // }
 
-// // // ======= END OF BatchJobs.js ======
-
+// // ======= END OF BatchJobs.js ======
