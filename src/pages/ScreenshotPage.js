@@ -2,6 +2,25 @@
 // UPDATED: August 2026
 //
 // ============================================================================
+// ✅ REMOVED (Aug 2026 — "Delay before capture" control)
+// ============================================================================
+//   The delay selector is gone from this form. It is NOT gone from the API.
+//
+//   Why it was there: before the navigation rewrite, a failing capture gave
+//   the user exactly one lever, and this was it. It rarely helped — the delay
+//   was added to a budget that already exceeded Render's request timeout, so
+//   raising it made heavy pages fail sooner rather than later.
+//
+//   Why it can go now: the settle window (bounded networkidle) and the
+//   lazy-load scroll pass cover what people were actually reaching for. A
+//   page that needs a moment to finish rendering gets one automatically.
+//
+//   ⚠️ The backend still accepts `delay` (0–10s, clamped by
+//   _sanitize_delay). API consumers, the RapidAPI listing and the docs are
+//   unaffected — this is a UI simplification only. If you ever want it back
+//   for a specific customer, it is one request field away.
+//
+// ============================================================================
 // ✅ FIX (Aug 2026 — Device Preset reported the wrong dimensions)
 // ============================================================================
 //   Reproduction: choose Quick Preset "Laptop (1366x768)", then choose Device
@@ -23,8 +42,7 @@
 //        and then the request fields.
 //     3. The UI now makes the override visible BEFORE capture: selecting a
 //        device dims the Quick Presets and the Width/Height inputs and shows
-//        an inline banner. The old behaviour let a user set 1366×768 with no
-//        signal that it would be ignored.
+//        an inline banner.
 //
 // ✅ FIX (Aug 2026 — Example cards ran together, second attempt):
 //   Each example-website button and each Quick Preset button is now a flex
@@ -34,18 +52,11 @@
 //   cards also became <span>s — <div> is not valid inside <button>.
 //
 // ✅ UI REFRESH (Aug 2026 — Screenshot Configuration):
-//   Quick Presets were flat grey buttons with no selected state — you could
-//   not tell which preset was active. They are now segmented cards with an
-//   explicit active state (blue ring + tint), an icon per device class, and
-//   the dimensions on a second line. Format select, section headers and the
-//   capture button were given matching treatment. No logic changed.
+//   Quick Presets are segmented cards with an explicit active state.
 //
 // Previous fixes (all retained):
 // ✅ FIX (July 2026 — "Resets on [date]" Not Displaying): resolveNextReset()
-//   checks next_reset, nextReset, reset_date, resetDate, current_period_end,
-//   currentPeriodEnd, usage.next_reset.
 // ✅ FIX (July 2026 — Mount effect runs on every navigation): dependency []
-// ✅ FIX (July 2026 — Billing cycle reset date display)
 // ✅ CONSISTENCY FIX (July 2026 — Tier badge colors)
 // ✅ FIX (May 2026 — Phase 2): Element Selection (Business+) with CSS crop
 // ✅ FIX (May 2026 — Phase 1): Device emulation, Custom JS, Wait for selector
@@ -129,9 +140,11 @@ function friendlyError(msg) {
   if (m.includes('err_connection_refused') || m.includes('connection refused')) {
     return 'The website refused the connection. The server may be down or blocking automated requests. Please try a different URL.';
   }
+  // ✅ UPDATED (Aug 2026): no longer suggests adding a delay — that control is
+  // gone from this form, and on the current backend it was never the fix.
   if (m.includes('err_connection_timed_out') || m.includes('err_timed_out') ||
       m.includes('timed out after all retry')) {
-    return 'The website took too long to respond. It may be slow or temporarily unavailable. Try adding a delay in Advanced Options, or try again later.';
+    return 'The website took too long to respond. It may be slow or temporarily unavailable. Please try again, or try a more specific page on the same site.';
   }
   if (m.includes('err_cert') || m.includes('ssl') || m.includes('certificate')) {
     return 'The website has an SSL certificate problem (expired or self-signed certificate). The site may not be publicly accessible.';
@@ -141,6 +154,9 @@ function friendlyError(msg) {
   }
   if (m.includes('element not found')) return msg;
   if (m.includes('zero size') || m.includes('zero width') || m.includes('zero height')) return msg;
+  // Backend now distinguishes a slow RENDER from a slow SITE — pass those
+  // messages through untouched rather than overwriting them with a guess.
+  if (m.includes('rendering the screenshot took longer')) return msg;
   if (m.includes('page.goto')) {
     const codeMatch = msg.match(/net::(ERR_[A-Z_]+)/);
     if (codeMatch) return `Failed to load the website (${codeMatch[1]}). Please check the URL is correct and the site is publicly accessible.`;
@@ -150,7 +166,7 @@ function friendlyError(msg) {
   return msg;
 }
 
-// ── Quick Presets — now carry an icon for the segmented card UI ──────────────
+// ── Quick Presets — carry an icon for the segmented card UI ──────────────────
 const VIEWPORT_PRESETS = {
   desktop:   { width: 1920, height: 1080, name: 'Desktop',   icon: '🖥️' },
   laptop:    { width: 1366, height: 768,  name: 'Laptop',    icon: '💻' },
@@ -160,12 +176,9 @@ const VIEWPORT_PRESETS = {
 };
 
 // ── Device Presets ───────────────────────────────────────────────────────────
-// ✅ FIX (Aug 2026): each preset now carries its REAL viewport. Previously the
+// ✅ FIX (Aug 2026): each preset carries its REAL viewport. Previously the
 // dimensions existed only inside the label string, so the UI had no way to
-// report what a device capture actually produced — it fell back to the
-// width/height inputs, which the device descriptor had already overridden.
-// These values match Playwright's device registry (see SUPPORTED_DEVICES in
-// screenshot_service.py). If Playwright updates a descriptor, update here too.
+// report what a device capture actually produced.
 const DEVICE_PRESETS = [
   { key: '',                  label: '— No device preset (use width/height) —', width: null, height: null, icon: '' },
   { key: 'iphone_13',         label: 'iPhone 13 (390×844, Safari)',              width: 390,  height: 844,  icon: '📱' },
@@ -204,11 +217,13 @@ export default function ScreenshotPage() {
   const [websiteUrl,     setWebsiteUrl]     = useState('');
   const [width,          setWidth]          = useState(1920);
   const [height,         setHeight]         = useState(1080);
-  const [activePreset,   setActivePreset]   = useState('desktop');   // ✅ NEW: selected-state tracking
+  const [activePreset,   setActivePreset]   = useState('desktop');
   const [format,         setFormat]         = useState('png');
   const [fullPage,       setFullPage]       = useState(false);
   const [darkMode,       setDarkMode]       = useState(false);
-  const [delay,          setDelay]          = useState(0);
+  // ✅ REMOVED (Aug 2026): `delay` state. The backend still accepts the
+  // parameter; this form simply no longer sends it, so captures use the
+  // backend default of 0.
   const [removeElements, setRemoveElements] = useState('');
 
   const [screenshotUrl,       setScreenshotUrl]       = useState('');
@@ -240,9 +255,8 @@ export default function ScreenshotPage() {
 
   const xUiValidUrl = isValidUrl(websiteUrl);
 
-  // ✅ NEW (Aug 2026): a device preset overrides width/height inside the
-  // browser context, so the UI treats it as the authoritative source and
-  // visibly disables the fields it supersedes.
+  // A device preset overrides width/height inside the browser context, so the
+  // UI treats it as authoritative and visibly disables what it supersedes.
   const selectedDevice   = useMemo(() => (device ? deviceByKey(device) : null), [device]);
   const deviceOverriding = Boolean(selectedDevice && selectedDevice.key);
 
@@ -370,14 +384,16 @@ export default function ScreenshotPage() {
 
       const beforeUsage = { screenshots: getUsed('screenshots') };
 
-      const payload = { url: websiteUrl, width, height, format, full_page: fullPage, dark_mode: darkMode, delay };
+      // ✅ REMOVED (Aug 2026): `delay` is no longer sent. The backend defaults
+      // it to 0 and still accepts it from API clients.
+      const payload = { url: websiteUrl, width, height, format, full_page: fullPage, dark_mode: darkMode };
       if (removeElements.trim()) payload.remove_elements = removeElements.split(',').map(s => s.trim()).filter(Boolean);
       if (device)                 payload.device            = device;
       if (customJs.trim())        payload.custom_js         = customJs.trim();
       if (waitForSelector.trim()) payload.wait_for_selector = waitForSelector.trim();
       if (targetElement.trim())   payload.target_element    = targetElement.trim();
 
-      const res = await fetch(`${API_BASE_URL}/api/v1/screenshot/`, {
+      const res = await fetch(`${API_BASE_URL}/api/v1/screenshot`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify(payload),
@@ -393,12 +409,7 @@ export default function ScreenshotPage() {
       if (data.element_selector) setElementCaptured(data.element_selector);
 
       // ✅ FIX (Aug 2026 — Device Preset dimensions):
-      // Resolution order for the dimensions we report back to the user:
-      //   1. The device preset's real viewport, when a device was used. The
-      //      descriptor overrides viewport/UA/DPR inside the browser context,
-      //      so the width/height inputs were never applied and must not be
-      //      shown. This is the case that was previously wrong — it displayed
-      //      the Quick Preset the user had also set.
+      //   1. The device preset's real viewport, when a device was used.
       //   2. Whatever the API reported.
       //   3. The requested width/height, as a last resort.
       const usedDevice = device ? deviceByKey(device) : null;
@@ -414,7 +425,6 @@ export default function ScreenshotPage() {
         format:      data.format,
         size:        data.size_bytes,
         created_at:  data.created_at,
-        // ✅ NEW: carried through so Details can name the device explicitly
         deviceKey:   usedDevice?.key   || '',
         deviceLabel: usedDevice?.label || '',
         deviceIcon:  usedDevice?.icon  || '',
@@ -447,15 +457,12 @@ export default function ScreenshotPage() {
     toast.success('💾 Screenshot downloaded!');
   };
 
-  // ✅ UPDATED: also records which preset is active so the card can highlight.
   const applyPreset = (key, preset) => {
     setWidth(preset.width);
     setHeight(preset.height);
     setActivePreset(key);
   };
 
-  // ✅ NEW: manual width/height edits clear the active preset highlight,
-  // so the UI never claims a preset is applied when it no longer matches.
   const handleWidthChange = (v) => { setWidth(v); setActivePreset(''); };
   const handleHeightChange = (v) => { setHeight(v); setActivePreset(''); };
 
@@ -571,14 +578,8 @@ export default function ScreenshotPage() {
             <span className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center text-xs">✓</span>
             Try these example websites
           </h3>
-          {/* ✅ FIX (Aug 2026, second attempt): each button is a FLEX COLUMN.
-              The previous fix set both lines to `block`, which should have
-              stacked them — but <button> carries a user-agent
-              `text-align: center` and its own display context, and the result
-              still rendered inline and centred. A flex column cannot put its
-              children on the same line, so the break holds regardless of what
-              the parent does. `items-start` also defeats the inherited
-              centring without relying on text-align winning the cascade. */}
+          {/* Each button is a FLEX COLUMN — a flex column cannot put its
+              children on the same line, so the two lines always break. */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {[
               { url: 'https://example.com', name: 'Example.com', desc: 'Simple test website' },
@@ -638,14 +639,6 @@ export default function ScreenshotPage() {
             Screenshot Configuration
           </h3>
 
-          {/*
-            ✅ FIX (Aug 2026 — Device Preset precedence, part 3 of 3):
-            When a device preset is active it overrides viewport entirely, so
-            the Quick Presets and Width/Height inputs are visibly disabled and
-            explained. Previously a user could set "Laptop 1366x768" AND a
-            device, with nothing indicating the first would be discarded — and
-            the result screen then reported the discarded value.
-          */}
           {deviceOverriding && (
             <div className="mb-5 flex items-start gap-3 bg-purple-50 border border-purple-200 rounded-xl px-4 py-3">
               <span className="text-lg leading-none mt-0.5">{selectedDevice.icon}</span>
@@ -672,8 +665,6 @@ export default function ScreenshotPage() {
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
               {Object.entries(VIEWPORT_PRESETS).map(([key, preset]) => {
                 const isActive = activePreset === key && !deviceOverriding;
-                // ✅ FIX (Aug 2026): flex column, same reason as the example
-                // cards — "Desktop1920×1080" was rendering on one line.
                 return (
                   <button
                     key={key}
@@ -761,22 +752,12 @@ export default function ScreenshotPage() {
             ))}
           </div>
 
-          {/* Standard Advanced Options */}
+          {/* Standard Advanced Options
+              ✅ REMOVED (Aug 2026): "Delay before capture". This section now
+              holds one control, so it no longer needs its own heading level or
+              a grid — the label carries it. */}
           <div className="border-t border-gray-200 pt-5">
             <h4 className="text-sm font-bold text-gray-700 mb-3">Advanced Options</h4>
-            <div className="mb-4">
-              <label className="block text-sm text-gray-700 mb-1.5">Delay before capture (seconds)</label>
-              <select value={delay} onChange={e => setDelay(parseInt(e.target.value) || 0)}
-                className="w-full border border-gray-300 rounded-xl px-3.5 py-2.5 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
-                <option value={0}>0 s — Capture immediately</option>
-                <option value={1}>1 s</option>
-                <option value={2}>2 s — Recommended for most sites</option>
-                <option value={3}>3 s</option>
-                <option value={5}>5 s — Recommended for heavy pages</option>
-                <option value={10}>10 s — Maximum</option>
-              </select>
-              <p className="text-xs text-gray-500 mt-1.5">Extra wait time after page load before capture begins</p>
-            </div>
             <div>
               <label className="block text-sm text-gray-700 mb-1.5">Remove elements (CSS selectors)</label>
               <input type="text" value={removeElements} onChange={e => setRemoveElements(e.target.value)}
@@ -833,6 +814,10 @@ export default function ScreenshotPage() {
                   </p>
                 </div>
 
+                {/* ✅ NOTE (Aug 2026): "Wait for CSS Selector" is now the
+                    precise replacement for the removed delay — it waits for a
+                    specific element instead of guessing at a duration, which
+                    is both faster and more reliable. */}
                 <div>
                   <label className="block text-sm text-gray-700 mb-1.5">
                     ⏳ Wait for CSS Selector <span className="text-xs text-purple-600 font-semibold">(Pro+)</span>
@@ -840,7 +825,10 @@ export default function ScreenshotPage() {
                   <input type="text" value={waitForSelector} onChange={e => setWaitForSelector(e.target.value)}
                     disabled={!isPro} placeholder="#main-content  or  .hero-section"
                     className={`w-full border border-gray-300 rounded-xl px-3.5 py-2.5 text-sm font-mono transition-all ${!isPro ? 'opacity-50 cursor-not-allowed bg-gray-50' : 'focus:ring-2 focus:ring-blue-500 focus:border-blue-500'}`} />
-                  <p className="text-xs text-gray-500 mt-1.5">Waits up to 10 seconds for this element to appear before capturing.</p>
+                  <p className="text-xs text-gray-500 mt-1.5">
+                    Waits up to 10 seconds for this element to appear before capturing —
+                    more precise than a fixed delay.
+                  </p>
                 </div>
 
                 <div>
@@ -972,14 +960,6 @@ export default function ScreenshotPage() {
               </div>
             )}
 
-            {/*
-              ✅ FIX (Aug 2026 — Device Preset dimensions, part 2 of 3):
-              Details now report the DEVICE viewport when a device preset was
-              used, and name the device explicitly. Previously this row showed
-              the Quick Preset's width/height, which the device descriptor had
-              already overridden and discarded — so the user was told 1366×768
-              for a capture actually taken at 1024×1366.
-            */}
             {screenshotData && (
               <div className="bg-gradient-to-r from-emerald-50 to-blue-50 p-4 rounded-xl mb-4 border border-emerald-200">
                 <div className="font-bold text-gray-800 mb-2 text-sm">
@@ -1071,6 +1051,8 @@ export default function ScreenshotPage() {
 
 // ===== END OF ScreenshotPage.js ==============
 
+//================================================================================
+// ***** IMPORTANT NOTE: DO NOT DELETE THIS FILE YET *****
 
 // // frontend/src/pages/ScreenshotPage.js — PixelPerfect Screenshot API
 // // UPDATED: August 2026
@@ -1100,11 +1082,12 @@ export default function ScreenshotPage() {
 // //        an inline banner. The old behaviour let a user set 1366×768 with no
 // //        signal that it would be ignored.
 // //
-// // ✅ FIX (Aug 2026 — Example cards ran together):
-// //   The two lines inside each example-website button rendered as
-// //   "Example.comSimple test website" with no separation. Both lines are now
-// //   explicit `block` elements with a margin between them. See the inline
-// //   comment at the Example websites section.
+// // ✅ FIX (Aug 2026 — Example cards ran together, second attempt):
+// //   Each example-website button and each Quick Preset button is now a flex
+// //   column (`flex flex-col items-start`), so its two lines cannot share a
+// //   line regardless of the surrounding cascade. The first attempt used
+// //   `block` spans and did not hold. The inner <div>s in the Quick Preset
+// //   cards also became <span>s — <div> is not valid inside <button>.
 // //
 // // ✅ UI REFRESH (Aug 2026 — Screenshot Configuration):
 // //   Quick Presets were flat grey buttons with no selected state — you could
@@ -1644,6 +1627,14 @@ export default function ScreenshotPage() {
 //             <span className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center text-xs">✓</span>
 //             Try these example websites
 //           </h3>
+//           {/* ✅ FIX (Aug 2026, second attempt): each button is a FLEX COLUMN.
+//               The previous fix set both lines to `block`, which should have
+//               stacked them — but <button> carries a user-agent
+//               `text-align: center` and its own display context, and the result
+//               still rendered inline and centred. A flex column cannot put its
+//               children on the same line, so the break holds regardless of what
+//               the parent does. `items-start` also defeats the inherited
+//               centring without relying on text-align winning the cascade. */}
 //           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
 //             {[
 //               { url: 'https://example.com', name: 'Example.com', desc: 'Simple test website' },
@@ -1652,17 +1643,13 @@ export default function ScreenshotPage() {
 //               <button
 //                 key={x.url}
 //                 onClick={() => setWebsiteUrl(x.url)}
-//                 className="text-left p-3 rounded-xl border border-gray-200 hover:border-emerald-400 hover:bg-emerald-50 transition-all group"
+//                 className="flex flex-col items-start text-left p-3 rounded-xl border border-gray-200
+//                            hover:border-emerald-400 hover:bg-emerald-50 transition-all group w-full"
 //               >
-//                 {/* ✅ FIX (Aug 2026): explicit block + margin. These rendered as
-//                     "Example.comSimple test website" with no separation in
-//                     full-page captures and at narrow widths. `block` and an
-//                     explicit top margin guarantee the break regardless of the
-//                     parent's display context. */}
-//                 <span className="block font-medium text-gray-800 text-sm group-hover:text-emerald-800">
+//                 <span className="font-medium text-gray-800 text-sm group-hover:text-emerald-800">
 //                   {x.name}
 //                 </span>
-//                 <span className="block text-xs text-gray-500 mt-0.5">
+//                 <span className="text-xs text-gray-500 mt-0.5">
 //                   {x.desc}
 //                 </span>
 //               </button>
@@ -1741,26 +1728,29 @@ export default function ScreenshotPage() {
 //             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
 //               {Object.entries(VIEWPORT_PRESETS).map(([key, preset]) => {
 //                 const isActive = activePreset === key && !deviceOverriding;
+//                 // ✅ FIX (Aug 2026): flex column, same reason as the example
+//                 // cards — "Desktop1920×1080" was rendering on one line.
 //                 return (
 //                   <button
 //                     key={key}
 //                     onClick={() => applyPreset(key, preset)}
 //                     disabled={deviceOverriding}
-//                     className={`px-3 py-2.5 rounded-xl text-left transition-all border-2 ${
+//                     className={`flex flex-col items-start text-left px-3 py-2.5 rounded-xl
+//                                 transition-all border-2 w-full ${
 //                       isActive
 //                         ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-500/20 shadow-sm'
 //                         : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
 //                     }`}
 //                   >
-//                     <div className="flex items-center gap-1.5">
+//                     <span className="flex items-center gap-1.5">
 //                       <span className="text-sm">{preset.icon}</span>
 //                       <span className={`text-sm font-semibold ${isActive ? 'text-blue-700' : 'text-gray-700'}`}>
 //                         {preset.name}
 //                       </span>
-//                     </div>
-//                     <div className={`text-xs mt-0.5 font-mono ${isActive ? 'text-blue-500' : 'text-gray-400'}`}>
+//                     </span>
+//                     <span className={`text-xs mt-0.5 font-mono ${isActive ? 'text-blue-500' : 'text-gray-400'}`}>
 //                       {preset.width}×{preset.height}
-//                     </div>
+//                     </span>
 //                   </button>
 //                 );
 //               })}
@@ -2137,68 +2127,3 @@ export default function ScreenshotPage() {
 
 // // ===== END OF ScreenshotPage.js ==============
 
-// import React from "react";
-// import { Link } from "react-router-dom";
-
-// export default function ScreenshotPage() {
-//   return (
-//     <div className="px-4 py-8 sm:px-6 sm:py-10 max-w-3xl mx-auto">
-//       <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">
-//         Capture Website Screenshot
-//       </h1>
-
-//       {/* Status Notice */}
-//       <div className="bg-red-50 border border-red-300 text-red-800 px-4 py-4 rounded-md mb-6">
-//         <h2 className="text-lg sm:text-xl font-semibold mb-1">
-//           Temporary Service Outage
-//         </h2>
-//         <p className="leading-relaxed text-sm sm:text-base">
-//           Our single‑screenshot capture service is currently experiencing a technical
-//           issue. We’re actively working on restoring full functionality as quickly
-//           as possible. Thank you for your patience — the feature will be available
-//           again very soon.
-//         </p>
-//       </div>
-
-//       {/* Explanation Box */}
-//       <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-5 sm:p-6 mb-8">
-//         <h3 className="text-lg font-semibold text-gray-800 mb-3">
-//           What’s Happening?
-//         </h3>
-//         <p className="text-gray-700 leading-relaxed text-sm sm:text-base mb-4">
-//           Our screenshot engine is undergoing maintenance due to unexpected instability
-//           detected earlier today. This affects single‑URL captures only — your dashboard,
-//           history, API keys, and account settings remain fully accessible.
-//         </p>
-
-//         <p className="text-gray-700 leading-relaxed text-sm sm:text-base">
-//           We will update this page the moment the service is restored.
-//         </p>
-//       </div>
-
-//       {/* Navigation Buttons */}
-//       <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-//         <Link
-//           to="/dashboard"
-//           className="inline-flex items-center justify-center px-5 py-3 rounded-md bg-blue-600 text-white font-medium hover:bg-blue-700 transition text-center"
-//         >
-//           Back to Dashboard
-//         </Link>
-
-//         <Link
-//           to="/history"
-//           className="inline-flex items-center justify-center px-5 py-3 rounded-md bg-gray-100 text-gray-800 font-medium hover:bg-gray-200 transition text-center"
-//         >
-//           View History
-//         </Link>
-
-//         <Link
-//           to="/activity"
-//           className="inline-flex items-center justify-center px-5 py-3 rounded-md bg-gray-100 text-gray-800 font-medium hover:bg-gray-200 transition text-center"
-//         >
-//           Recent Activity
-//         </Link>
-//       </div>
-//     </div>
-//   );
-// }
