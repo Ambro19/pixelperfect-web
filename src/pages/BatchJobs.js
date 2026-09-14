@@ -1108,7 +1108,6 @@ export default function BatchJobs() {
 // ======= END OF BatchJobs.js ======
 
 //================================================================================
-
 // ***** IMPORTANT NOTE: DO NOT DELETE THIS FILE YET *****
 //===============================================================================
 // // frontend/src/pages/BatchJobs.js — PixelPerfect Screenshot API
