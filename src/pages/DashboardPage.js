@@ -3,76 +3,63 @@
 // ============================================================================
 // File: frontend/src/pages/DashboardPage.js
 // Author: OneTechly
-// Updated: August 2026
+// Updated: September 2026
+//
+// ✅ FIX (Sep 2026 — usage over the limit rendered as "0 remaining"):
+//   ProdUser1 reached 51 batch requests against a limit of 50. UsageCard
+//   clamped the bar to 100% and printed "0 remaining", which reads like
+//   "exactly at the limit" — the one state it was NOT in. The card now has an
+//   explicit over-limit state: the count turns red and the footer says how far
+//   over it is.
+//
+//   ⚠️ This page only DISPLAYS. It was reporting the truth: 51 jobs really had
+//   been accepted. The enforcement hole was in backend/batch.py, which checked
+//   URLs-per-batch but never the per-period batch_requests quota. Fixed there.
+//   If this label ever appears again, the number is real — look at the backend,
+//   not at this file.
 //
 // ✅ FIX (Aug 2026 — Reset-date label was asserting something false):
-//   Two places on this page hard-coded the words "billing cycle":
+//   Two places hard-coded the words "billing cycle":
 //     1. "Usage resets on <date> (billing cycle)"
 //     2. The "(this billing cycle)" note on the Subscription Status header
-//   Both were printed unconditionally. Before the billing-anniversary work,
-//   the reset ALWAYS followed the calendar (1st of the month for everyone),
-//   so for any customer not billed on the 1st those labels contradicted
-//   their own Stripe receipt. ProdUser1 is billed on the 21st and was being
-//   told their "billing cycle" reset on September 1.
-//   The backend now returns `next_reset_basis` ("billing_cycle" |
-//   "calendar_month") from /subscription_status, and both labels read it
-//   instead of assuming. Paid users with a synced Stripe anchor see
-//   "billing cycle"; Free users — who have no subscription and therefore no
-//   anniversary — see "calendar month", which is what actually applies.
-//   See usage_accounting.py for how the period is resolved.
+//   Both were printed unconditionally. Before the billing-anniversary work the
+//   reset ALWAYS followed the calendar (1st of the month), so for any customer
+//   not billed on the 1st those labels contradicted their own Stripe receipt.
+//   ProdUser1 is billed on the 21st and was being told their "billing cycle"
+//   reset on September 1. The backend now returns `next_reset_basis`
+//   ("billing_cycle" | "calendar_month") from /subscription_status and both
+//   labels read it instead of assuming. See usage_accounting.py.
 //
 // ✅ FIX (Aug 2026 — "This Billing Cycle" clarification):
-//   Users reasonably asked why "Screenshots Used" on the Dashboard (period-
-//   scoped, resets monthly) doesn't match the total shown on the History
-//   page (all-time, never resets). Both numbers are correct — they answer
-//   different questions — but nothing on the Dashboard said so explicitly.
-//   Added a scope label directly on the Subscription Status header, next to
-//   the existing "Usage resets on [date]" line, so the scope is self-evident
-//   without anyone needing to ask. See RESET_LOGIC.md for the full
-//   documented explanation of this behavior.
+//   Users asked why "Screenshots Used" here (period-scoped) doesn't match the
+//   total on History (all-time). Both are correct — they answer different
+//   questions — but nothing said so. Scope label added to the Subscription
+//   Status header. See RESET_LOGIC.md.
 //   ⚠️ NOTE: RESET_LOGIC.md §2.2 and §5 describe a calendar-only reset and
-//   argue that Stripe-billed SaaS behaves that way. That is no longer how
-//   this system works for paid tiers, and the claim about Stripe was not
-//   accurate. Update that document alongside this change.
+//   argue that Stripe-billed SaaS behaves that way. That is no longer how this
+//   system works for paid tiers, and the claim about Stripe was not accurate.
+//   Update that document alongside this change.
 //
 // ✅ FIX (July 2026 — Dashboard Stays on FREE After Successful Stripe Checkout):
-//   Root cause: Stripe checkout redirects to /dashboard?checkout=success, but
-//   the mount refresh calls refreshSubscriptionStatus(false) — a fast DB-only
-//   read with NO Stripe sync (the Apr 2026 anti-flood fix). If the Stripe
-//   webhook hasn't been processed yet at that moment, the DB still says
-//   "free" and the dashboard renders stale FREE data. Nothing ever forces
-//   a sync, so the user sees FREE until they click "Refresh Usage".
-//   Fix: New checkout-verification effect. When ?checkout=success is present:
-//     1. Shows a "Confirming your upgrade…" banner immediately.
-//     2. Polls refreshSubscriptionStatus(true) — forceSync=true, which hits
-//        GET /subscription_status?sync=1 → sync_user_subscription_from_stripe.
-//        Up to 6 attempts, 2.5s apart (~15s window for webhook/Stripe lag).
-//     3. On tier change away from "free": green success banner (auto-dismisses).
-//     4. If still free after all attempts: yellow "payment received, still
-//        processing" banner with a manual verify button — never leaves the
-//        user staring at silent stale data.
-//     5. Strips ?checkout=success via history.replaceState (no re-render,
-//        no reload loop, no re-trigger on navigation).
-//   The forceSync anti-flood rule is preserved: forced syncs happen ONLY in
-//   this checkout flow and on the explicit manual refresh button.
+//   Stripe redirects to /dashboard?checkout=success, but the mount refresh
+//   calls refreshSubscriptionStatus(false) — a DB-only read with NO Stripe sync
+//   (the Apr 2026 anti-flood fix). If the webhook hasn't landed, the DB still
+//   says "free" and the dashboard renders stale FREE data until the user
+//   clicks Refresh. Fix: a checkout-verification effect that polls
+//   refreshSubscriptionStatus(true) up to 6 times, 2.5s apart, shows progress,
+//   success and pending banners, and strips ?checkout=success via
+//   history.replaceState. The anti-flood rule is preserved: forced syncs happen
+//   only in this flow and on the manual refresh button.
 //
 // ✅ FIX (July 2026 — Dashboard Shows Stale 0 After Screenshots Were Taken):
-//   Root cause: The mount useEffect had [isAuthenticated] as its dependency.
-//   In a React SPA, isAuthenticated doesn't change when navigating between
-//   pages — it stays true. So the mount refresh ONLY ran once at login and
-//   never again when the user navigated back to Dashboard.
-//   Fix: Changed dependency to [] (empty array). In React Router v6,
-//   navigating away and back causes a full component unmount + remount.
-//   With [], the effect runs on every mount = every navigation to Dashboard.
+//   The mount useEffect had [isAuthenticated], which never changes while
+//   navigating an SPA, so the refresh ran once at login and never again.
+//   Changed to [] — React Router v6 unmounts and remounts on navigation, so
+//   the effect now runs on every visit.
 //
-// ✅ FIX (July 2026 — Billing Cycle Reset Transparency):
-//   Added "Resets on [date]" display in the subscription status card.
-//
-// ✅ FIX (July 2026 — Tier Badge Color Inconsistency):
-//   PRO=blue, BUSINESS=purple — matches ScreenshotPage.js.
-//
-// ✅ FIX (July 2026 — FREE Tier Batch Requests Empty State):
-//   UsageCard now shows "Not available on this plan" for limit=0.
+// ✅ FIX (July 2026 — Billing Cycle Reset Transparency): "Resets on [date]".
+// ✅ FIX (July 2026 — Tier Badge Color Inconsistency): PRO=blue, BUSINESS=purple.
+// ✅ FIX (July 2026 — FREE Tier Batch Requests Empty State): limit=0 card.
 //
 // Previous fixes (retained):
 // ✅ FIX (May 2026 — Usage Field Name Mismatch)
@@ -119,17 +106,17 @@ function formatResetDate(isoString) {
   }
 }
 
-// ── ✅ NEW (Aug 2026): which rule produced the reset date ─────────────────
+// ── ✅ (Aug 2026): which rule produced the reset date ─────────────────────
 // The backend returns next_reset_basis on /subscription_status:
-//   "billing_cycle"  — paid tier with a synced Stripe anchor; the reset
-//                      falls on the subscription's monthly anniversary
+//   "billing_cycle"  — paid tier with a synced Stripe anchor; the reset falls
+//                      on the subscription's monthly anniversary
 //   "calendar_month" — Free tier, or a paid account whose Stripe period has
-//                      not been synced yet (usage_accounting falls back to
-//                      the calendar month rather than failing)
-// Defaulting to "calendar month" is deliberate: if the field is missing —
-// an older backend, or a response that predates this change — the calendar
-// is what the old code actually did, so the label stays true rather than
-// claiming a billing cycle we cannot verify.
+//                      not been synced yet (usage_accounting falls back to the
+//                      calendar month rather than failing)
+// Defaulting to "calendar month" is deliberate: if the field is missing — an
+// older backend, or a response predating this change — the calendar is what
+// the old code actually did, so the label stays true rather than claiming a
+// billing cycle we cannot verify.
 function resetBasisLabel(subscriptionStatus) {
   return subscriptionStatus?.next_reset_basis === "billing_cycle"
     ? "billing cycle"
@@ -138,8 +125,8 @@ function resetBasisLabel(subscriptionStatus) {
 
 // ── Checkout verification tuning ──────────────────────────────────────────
 // ~15 second window: 6 forced-sync attempts, 2.5s apart. Stripe webhooks
-// usually land within 1–5 seconds; the sync endpoint also pulls directly
-// from Stripe, so the first attempt succeeds in the common case.
+// usually land within 1–5 seconds; the sync endpoint also pulls directly from
+// Stripe, so the first attempt succeeds in the common case.
 const CHECKOUT_POLL_ATTEMPTS   = 6;
 const CHECKOUT_POLL_INTERVAL_MS = 2500;
 
@@ -158,7 +145,7 @@ export default function DashboardPage() {
   const [isOpeningPortal, setIsOpeningPortal] = useState(false);
 
   // ── Checkout verification state ───────────────────────────────────────────
-  // null       → no checkout in progress (normal dashboard)
+  // null        → no checkout in progress (normal dashboard)
   // "verifying" → polling Stripe for the new tier
   // "upgraded"  → tier confirmed, success banner (auto-dismisses)
   // "pending"   → payment likely succeeded but sync hasn't reflected it yet
@@ -180,7 +167,6 @@ export default function DashboardPage() {
   const debounceRef = useRef(null);
 
   // ── Was this navigation a Stripe checkout return? ─────────────────────────
-  // Read once per mount; the param is stripped after handling.
   const isCheckoutReturn = useMemo(() => {
     try {
       return new URLSearchParams(window.location.search).get("checkout") === "success";
@@ -190,24 +176,22 @@ export default function DashboardPage() {
   }, []);
 
   // ── Checkout verification — force Stripe sync until tier updates ─────────
-  // Runs when the user lands on /dashboard?checkout=success. Waits for auth
-  // to resolve, then polls with forceSync=true. This is the ONLY automatic
-  // path that forces a Stripe sync — the anti-flood rule for normal
-  // mount/focus refreshes (forceSync=false) is fully preserved.
+  // The ONLY automatic path that forces a Stripe sync; the anti-flood rule for
+  // normal mount/focus refreshes (forceSync=false) is fully preserved.
   //
-  // ✅ NOTE (Aug 2026): this flow now also matters for the reset date. The
-  // forced sync is what writes subscription_current_period_start on the
-  // backend, so until it completes a freshly upgraded user has no Stripe
-  // anchor and correctly shows "calendar month". It flips to "billing cycle"
-  // on the same poll that flips the tier.
+  // ✅ NOTE (Aug 2026): this flow also matters for the reset date. The forced
+  // sync is what writes subscription_current_period_start on the backend, so
+  // until it completes a freshly upgraded user has no Stripe anchor and
+  // correctly shows "calendar month". It flips to "billing cycle" on the same
+  // poll that flips the tier.
   useEffect(() => {
     if (!isCheckoutReturn) return;
     if (authLoading || !isAuthenticated || !refreshSubscriptionStatus) return;
     if (checkoutHandledRef.current) return;
     checkoutHandledRef.current = true;
 
-    // Strip ?checkout=success without a React Router navigation, so this
-    // effect isn't cancelled/re-run and a page refresh won't re-trigger it.
+    // Strip ?checkout=success without a React Router navigation, so this effect
+    // isn't cancelled/re-run and a page refresh won't re-trigger it.
     try {
       window.history.replaceState({}, "", "/dashboard");
     } catch {}
@@ -239,8 +223,8 @@ export default function DashboardPage() {
             return;
           }
           // Edge case: user was already paid and changed plans (e.g. Pro →
-          // Business). startingTier equals a paid tier; any non-free result
-          // after a forced sync is authoritative — accept it.
+          // Business). Any non-free result after a forced sync is
+          // authoritative — accept it.
           if (newTier !== "free" && startingTier !== "free") {
             setCheckoutState("upgraded");
             return;
@@ -254,9 +238,9 @@ export default function DashboardPage() {
           if (cancelled) return;
         }
       }
-      // All attempts exhausted and tier still free → show pending banner.
-      // Payment almost certainly succeeded (Stripe redirected here); the
-      // webhook or sync just hasn't landed. Give the user a clear path.
+      // All attempts exhausted and tier still free → pending banner. Payment
+      // almost certainly succeeded (Stripe redirected here); the webhook or
+      // sync just hasn't landed. Give the user a clear path.
       setCheckoutState("pending");
     };
 
@@ -468,11 +452,10 @@ export default function DashboardPage() {
   const resetDate  = formatResetDate(subscriptionStatus?.next_reset);
   const resetBasis = resetBasisLabel(subscriptionStatus);
 
-  // ✅ NEW (Aug 2026): the start of the window these numbers cover. The
-  // backend returns it inside `usage` (and duplicated at the top level).
-  // Shown as a tooltip on the reset line so anyone asking "used since when?"
-  // can see the exact window without opening a support ticket — the same
-  // question the "(this billing cycle)" note was added to pre-empt.
+  // ✅ (Aug 2026): the start of the window these numbers cover. The backend
+  // returns it inside `usage` (and duplicated at the top level). Shown as a
+  // tooltip on the reset line so anyone asking "used since when?" can see the
+  // exact window without opening a support ticket.
   const periodStart = formatResetDate(
     usage.period_start ?? subscriptionStatus?.period_start
   );
@@ -597,13 +580,12 @@ export default function DashboardPage() {
         {/* Subscription Status */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
           <div className="flex items-center justify-between mb-5">
-            {/* ✅ UPDATED (Aug 2026): this label clarifies the scope of the
-                three usage cards below — they are period-scoped, unlike the
-                all-time totals on History. It used to say "(this billing
-                cycle)" unconditionally, which was false for every user not
-                billed on the 1st. It now names the rule that actually
-                applies to THIS account: the Stripe billing anniversary for
-                paid tiers, the calendar month for Free. */}
+            {/* ✅ (Aug 2026): this label clarifies the scope of the three usage
+                cards below — they are period-scoped, unlike the all-time totals
+                on History. It used to say "(this billing cycle)"
+                unconditionally, which was false for every user not billed on
+                the 1st. It now names the rule that actually applies to THIS
+                account. */}
             <h3 className="text-lg sm:text-xl font-bold text-gray-900">
               📊 Subscription Status
               <span className="ml-2 text-xs font-normal text-gray-400 align-middle">
@@ -641,10 +623,6 @@ export default function DashboardPage() {
           </div>
 
           {/* Reset date */}
-          {/* ✅ UPDATED (Aug 2026): the parenthetical is no longer hard-coded
-              to "billing cycle". ProdUser1 is billed on the 21st and this
-              line was telling them their billing cycle reset on the 1st —
-              contradicting their own Stripe receipt. */}
           {resetDate && (
             <div
               className="flex items-center gap-1.5 text-xs text-gray-400 mb-4"
@@ -835,20 +813,36 @@ function UsageCard({ value, label, limit, valueClass, barClass }) {
     );
   }
 
-  const percent  = (!isUnlimited && numLimit > 0)
-    ? Math.min(100, (numValue / numLimit) * 100)
-    : 0;
+  const hasLimit = !isUnlimited && numLimit > 0;
 
-  const barColor = percent >= 90 ? "from-red-400 to-red-600"
-    : percent >= 70              ? "from-orange-400 to-orange-500"
+  // ✅ NEW (Sep 2026): over-limit is its own state.
+  //
+  // The bar was clamped to 100% and the footer read "0 remaining", which is
+  // what "exactly at the limit" looks like — so 51 of 50 was indistinguishable
+  // from 50 of 50. If a quota check is ever bypassed again, this card says so
+  // instead of quietly rounding the problem away.
+  const isOver   = hasLimit && numValue > numLimit;
+  const overBy   = isOver ? numValue - numLimit : 0;
+
+  const percent  = hasLimit ? Math.min(100, (numValue / numLimit) * 100) : 0;
+
+  const barColor = isOver      ? "from-red-500 to-red-700"
+    : percent >= 90            ? "from-red-400 to-red-600"
+    : percent >= 70            ? "from-orange-400 to-orange-500"
     : barClass;
 
   return (
-    <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-      <div className={`text-2xl sm:text-3xl font-bold mb-0.5 ${valueClass}`}>{numValue}</div>
+    <div
+      className={`rounded-xl p-4 border ${
+        isOver ? "bg-red-50 border-red-200" : "bg-gray-50 border-gray-100"
+      }`}
+    >
+      <div className={`text-2xl sm:text-3xl font-bold mb-0.5 ${isOver ? "text-red-600" : valueClass}`}>
+        {numValue}
+      </div>
       <div className="text-xs sm:text-sm text-gray-600 mb-3">{label}</div>
 
-      {!isUnlimited && numLimit > 0 && (
+      {hasLimit && (
         <>
           <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden mb-1.5">
             <div
@@ -856,9 +850,15 @@ function UsageCard({ value, label, limit, valueClass, barClass }) {
               style={{ width: `${percent}%` }}
             />
           </div>
-          <div className="flex justify-between text-xs text-gray-400">
-            <span>{Math.max(0, numLimit - numValue)} remaining</span>
-            <span>of {numLimit}</span>
+          <div className="flex justify-between text-xs">
+            {isOver ? (
+              <span className="font-semibold text-red-600">
+                {overBy} over the limit
+              </span>
+            ) : (
+              <span className="text-gray-400">{numLimit - numValue} remaining</span>
+            )}
+            <span className="text-gray-400">of {numLimit}</span>
           </div>
         </>
       )}
@@ -903,6 +903,7 @@ function InfoRow({ label, value }) {
 
 // ====== END OF DashboardPage.js =====
 
+
 // // ============================================================================
 // // DASHBOARD PAGE - PRODUCTION READY
 // // ============================================================================
@@ -910,15 +911,35 @@ function InfoRow({ label, value }) {
 // // Author: OneTechly
 // // Updated: August 2026
 // //
+// // ✅ FIX (Aug 2026 — Reset-date label was asserting something false):
+// //   Two places on this page hard-coded the words "billing cycle":
+// //     1. "Usage resets on <date> (billing cycle)"
+// //     2. The "(this billing cycle)" note on the Subscription Status header
+// //   Both were printed unconditionally. Before the billing-anniversary work,
+// //   the reset ALWAYS followed the calendar (1st of the month for everyone),
+// //   so for any customer not billed on the 1st those labels contradicted
+// //   their own Stripe receipt. ProdUser1 is billed on the 21st and was being
+// //   told their "billing cycle" reset on September 1.
+// //   The backend now returns `next_reset_basis` ("billing_cycle" |
+// //   "calendar_month") from /subscription_status, and both labels read it
+// //   instead of assuming. Paid users with a synced Stripe anchor see
+// //   "billing cycle"; Free users — who have no subscription and therefore no
+// //   anniversary — see "calendar month", which is what actually applies.
+// //   See usage_accounting.py for how the period is resolved.
+// //
 // // ✅ FIX (Aug 2026 — "This Billing Cycle" clarification):
 // //   Users reasonably asked why "Screenshots Used" on the Dashboard (period-
 // //   scoped, resets monthly) doesn't match the total shown on the History
 // //   page (all-time, never resets). Both numbers are correct — they answer
 // //   different questions — but nothing on the Dashboard said so explicitly.
-// //   Added a small "(this billing cycle)" label directly on the Subscription
-// //   Status header, next to the existing "Usage resets on [date]" line, so
-// //   the scope is self-evident without anyone needing to ask. See
-// //   RESET_LOGIC.md for the full documented explanation of this behavior.
+// //   Added a scope label directly on the Subscription Status header, next to
+// //   the existing "Usage resets on [date]" line, so the scope is self-evident
+// //   without anyone needing to ask. See RESET_LOGIC.md for the full
+// //   documented explanation of this behavior.
+// //   ⚠️ NOTE: RESET_LOGIC.md §2.2 and §5 describe a calendar-only reset and
+// //   argue that Stripe-billed SaaS behaves that way. That is no longer how
+// //   this system works for paid tiers, and the claim about Stripe was not
+// //   accurate. Update that document alongside this change.
 // //
 // // ✅ FIX (July 2026 — Dashboard Stays on FREE After Successful Stripe Checkout):
 // //   Root cause: Stripe checkout redirects to /dashboard?checkout=success, but
@@ -1004,6 +1025,23 @@ function InfoRow({ label, value }) {
 //   }
 // }
 
+// // ── ✅ NEW (Aug 2026): which rule produced the reset date ─────────────────
+// // The backend returns next_reset_basis on /subscription_status:
+// //   "billing_cycle"  — paid tier with a synced Stripe anchor; the reset
+// //                      falls on the subscription's monthly anniversary
+// //   "calendar_month" — Free tier, or a paid account whose Stripe period has
+// //                      not been synced yet (usage_accounting falls back to
+// //                      the calendar month rather than failing)
+// // Defaulting to "calendar month" is deliberate: if the field is missing —
+// // an older backend, or a response that predates this change — the calendar
+// // is what the old code actually did, so the label stays true rather than
+// // claiming a billing cycle we cannot verify.
+// function resetBasisLabel(subscriptionStatus) {
+//   return subscriptionStatus?.next_reset_basis === "billing_cycle"
+//     ? "billing cycle"
+//     : "calendar month";
+// }
+
 // // ── Checkout verification tuning ──────────────────────────────────────────
 // // ~15 second window: 6 forced-sync attempts, 2.5s apart. Stripe webhooks
 // // usually land within 1–5 seconds; the sync endpoint also pulls directly
@@ -1057,11 +1095,17 @@ function InfoRow({ label, value }) {
 //     }
 //   }, []);
 
-//   // ── ✅ NEW: Checkout verification — force Stripe sync until tier updates ──
+//   // ── Checkout verification — force Stripe sync until tier updates ─────────
 //   // Runs when the user lands on /dashboard?checkout=success. Waits for auth
 //   // to resolve, then polls with forceSync=true. This is the ONLY automatic
 //   // path that forces a Stripe sync — the anti-flood rule for normal
 //   // mount/focus refreshes (forceSync=false) is fully preserved.
+//   //
+//   // ✅ NOTE (Aug 2026): this flow now also matters for the reset date. The
+//   // forced sync is what writes subscription_current_period_start on the
+//   // backend, so until it completes a freshly upgraded user has no Stripe
+//   // anchor and correctly shows "calendar month". It flips to "billing cycle"
+//   // on the same poll that flips the tier.
 //   useEffect(() => {
 //     if (!isCheckoutReturn) return;
 //     if (authLoading || !isAuthenticated || !refreshSubscriptionStatus) return;
@@ -1326,8 +1370,18 @@ function InfoRow({ label, value }) {
 //     undefined
 //   );
 
-//   // ── Billing cycle reset date ──────────────────────────────────────────────
-//   const resetDate = formatResetDate(subscriptionStatus?.next_reset);
+//   // ── Reset date + the rule that produced it ────────────────────────────────
+//   const resetDate  = formatResetDate(subscriptionStatus?.next_reset);
+//   const resetBasis = resetBasisLabel(subscriptionStatus);
+
+//   // ✅ NEW (Aug 2026): the start of the window these numbers cover. The
+//   // backend returns it inside `usage` (and duplicated at the top level).
+//   // Shown as a tooltip on the reset line so anyone asking "used since when?"
+//   // can see the exact window without opening a support ticket — the same
+//   // question the "(this billing cycle)" note was added to pre-empt.
+//   const periodStart = formatResetDate(
+//     usage.period_start ?? subscriptionStatus?.period_start
+//   );
 
 //   return (
 //     <div className="min-h-screen bg-gray-50">
@@ -1449,14 +1503,17 @@ function InfoRow({ label, value }) {
 //         {/* Subscription Status */}
 //         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
 //           <div className="flex items-center justify-between mb-5">
-//             {/* ✅ NEW (Aug 2026): "(this billing cycle)" clarifies scope for
-//                 all three usage cards below — resets monthly on the calendar
-//                 boundary (see "Usage resets on..." line further down), not
-//                 on the account's signup date. See RESET_LOGIC.md. */}
+//             {/* ✅ UPDATED (Aug 2026): this label clarifies the scope of the
+//                 three usage cards below — they are period-scoped, unlike the
+//                 all-time totals on History. It used to say "(this billing
+//                 cycle)" unconditionally, which was false for every user not
+//                 billed on the 1st. It now names the rule that actually
+//                 applies to THIS account: the Stripe billing anniversary for
+//                 paid tiers, the calendar month for Free. */}
 //             <h3 className="text-lg sm:text-xl font-bold text-gray-900">
 //               📊 Subscription Status
 //               <span className="ml-2 text-xs font-normal text-gray-400 align-middle">
-//                 (this billing cycle)
+//                 (this {resetBasis})
 //               </span>
 //             </h3>
 //             <span className={`px-3 py-1 rounded-full text-xs font-semibold ${tierBadgeClass(tier)}`}>
@@ -1489,15 +1546,22 @@ function InfoRow({ label, value }) {
 //             />
 //           </div>
 
-//           {/* Billing cycle reset date */}
+//           {/* Reset date */}
+//           {/* ✅ UPDATED (Aug 2026): the parenthetical is no longer hard-coded
+//               to "billing cycle". ProdUser1 is billed on the 21st and this
+//               line was telling them their billing cycle reset on the 1st —
+//               contradicting their own Stripe receipt. */}
 //           {resetDate && (
-//             <div className="flex items-center gap-1.5 text-xs text-gray-400 mb-4">
+//             <div
+//               className="flex items-center gap-1.5 text-xs text-gray-400 mb-4"
+//               title={periodStart ? `Counting usage since ${periodStart}` : undefined}
+//             >
 //               <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 //                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
 //                   d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
 //               </svg>
 //               Usage resets on <span className="font-medium text-gray-500">{resetDate}</span>
-//               &nbsp;(billing cycle)
+//               &nbsp;({resetBasis})
 //             </div>
 //           )}
 
@@ -1589,6 +1653,10 @@ function InfoRow({ label, value }) {
 //           <div className="space-y-3">
 //             <InfoRow label="Username"     value={user?.username || "—"} />
 //             <InfoRow label="Email"        value={user?.email    || "—"} />
+//             {/* ⚠️ "Member Since" is the account creation date and has NOTHING
+//                 to do with the usage reset. Do not let anyone wire the reset
+//                 date to this field — that confusion is exactly what
+//                 RESET_LOGIC.md §2.2 was written to prevent. */}
 //             <InfoRow label="Member Since" value={memberSince ?? "Loading…"} />
 //             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-3">
 //               <span className="text-gray-600 font-medium mb-1 sm:mb-0">Account Status</span>
