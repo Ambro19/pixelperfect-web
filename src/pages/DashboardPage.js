@@ -5,6 +5,30 @@
 // Author: OneTechly
 // Updated: September 2026
 //
+// ✅ FIX (Sep 2026 — "usage resets Sep 22" vs "plan ends Sep 21"):
+//   One line apart, the page gave two dates for the same moment. For paid
+//   tiers next_reset is anchor + 1 month, where the anchor is Stripe's period
+//   start WITH its time of day, sent as naive UTC ("2026-09-22T01:30:00").
+//   new Date() reads a naive string as LOCAL time, so it showed Sep 22, while
+//   cancel_at — same instant, sent with +00:00 — correctly converted to
+//   9:30 PM Sep 21 in New York. Backend enforcement was always right (UTC
+//   throughout); this was display only.
+//
+//   Rule now, by basis:
+//     billing_cycle  → a Stripe INSTANT: parse as UTC, show the local date.
+//                      Matches cancel_at and the user's Stripe receipt.
+//     calendar_month → a DATE defined in UTC (00:00 on the 1st): show it in
+//                      UTC, so Free users see "October 1", not "September 30".
+//   The previous comment here claimed next_reset was always a naive calendar
+//   boundary to be read as-is. That was only true for Free.
+//
+// ✅ NEW (Sep 2026 — honest reset line while a cancellation is pending):
+//   "Usage resets on <date> (billing cycle)" stops being true once the plan
+//   is ending — there is no next Pro cycle. The line now says when Pro usage
+//   stops counting, and the notice explains what the Free period means for
+//   screenshots already taken this month (see usage_accounting.py: the Free
+//   period is the calendar month, so this month's Pro captures count toward it).
+//
 // ✅ NEW (Sep 2026 — pending cancellation is visible here):
 //   After ProdUser1 scheduled a cancellation in Account Settings, this page
 //   looked exactly like an ongoing subscription. It now reads
@@ -98,32 +122,43 @@ function tierBadgeClass(tier) {
   return TIER_BADGE_CLASSES[(tier || "free").toLowerCase()] ?? TIER_BADGE_CLASSES.free;
 }
 
-// ── Format a reset date for display ──────────────────────────────────────
-function formatResetDate(isoString) {
-  if (!isoString) return null;
-  try {
-    const d = new Date(isoString);
-    if (Number.isNaN(d.getTime())) return null;
-    return d.toLocaleDateString("en-US", {
-      month: "long",
-      day:   "numeric",
-      year:  "numeric",
-    });
-  } catch {
-    return null;
-  }
-}
-
-// ── ✅ NEW (Sep 2026): Stripe timestamps ─────────────────────────────────
-// /billing/subscription_state returns timezone-aware ISO strings. Deliberately
-// separate from formatResetDate(): next_reset is a naive calendar boundary and
-// must keep being read as-is, or it would shift a day west of UTC.
-function formatStripeDate(isoString) {
+// ── ✅ REWRITTEN (Sep 2026): server dates ───────────────────────────────
+// Every backend datetime is UTC. Some arrive with a zone suffix (Stripe
+// values via /billing/subscription_state), some without (next_reset,
+// period_start). Without a suffix, new Date() would read them as LOCAL time.
+function parseServerDate(isoString) {
   if (!isoString) return null;
   const s = /Z$|[+-]\d{2}:\d{2}$/.test(isoString) ? isoString : `${isoString}Z`;
   const d = new Date(s);
-  if (Number.isNaN(d.getTime())) return null;
-  return d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+const DATE_OPTS = { month: "long", day: "numeric", year: "numeric" };
+
+// An instant, shown on the user's own calendar (Stripe timestamps).
+function formatLocalDate(isoString) {
+  const d = parseServerDate(isoString);
+  return d ? d.toLocaleDateString("en-US", DATE_OPTS) : null;
+}
+
+// A date defined in UTC (calendar-month boundaries: 00:00 UTC on the 1st).
+function formatUtcDate(isoString) {
+  const d = parseServerDate(isoString);
+  return d ? d.toLocaleDateString("en-US", { ...DATE_OPTS, timeZone: "UTC" }) : null;
+}
+
+// next_reset / period_start: which of the two depends on the basis.
+function formatUsageDate(isoString, basis) {
+  return basis === "billing_cycle" ? formatLocalDate(isoString) : formatUtcDate(isoString);
+}
+
+// The first of the month after an instant, as a UTC calendar date — i.e. when
+// a Free-plan period that contains that instant next resets.
+function firstOfFollowingMonthUtc(isoString) {
+  const d = parseServerDate(isoString);
+  if (!d) return null;
+  const next = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1));
+  return next.toLocaleDateString("en-US", { ...DATE_OPTS, timeZone: "UTC" });
 }
 
 // ── ✅ (Aug 2026): which rule produced the reset date ─────────────────────
@@ -507,15 +542,21 @@ export default function DashboardPage() {
   );
 
   // ── Reset date + the rule that produced it ────────────────────────────────
-  const resetDate  = formatResetDate(subscriptionStatus?.next_reset);
+  const basisRaw   = subscriptionStatus?.next_reset_basis;
+  const resetDate  = formatUsageDate(subscriptionStatus?.next_reset, basisRaw);
   const resetBasis = resetBasisLabel(subscriptionStatus);
+
+  // ✅ NEW (Sep 2026): pending-cancellation dates, formatted consistently.
+  const cancelDate        = formatLocalDate(cancelAt);
+  const freeResumesOnDate = firstOfFollowingMonthUtc(cancelAt);
 
   // ✅ (Aug 2026): the start of the window these numbers cover. The backend
   // returns it inside `usage` (and duplicated at the top level). Shown as a
   // tooltip on the reset line so anyone asking "used since when?" can see the
   // exact window without opening a support ticket.
-  const periodStart = formatResetDate(
-    usage.period_start ?? subscriptionStatus?.period_start
+  const periodStart = formatUsageDate(
+    usage.period_start ?? subscriptionStatus?.period_start,
+    basisRaw,
   );
 
   return (
@@ -690,8 +731,18 @@ export default function DashboardPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                   d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
-              Usage resets on <span className="font-medium text-gray-500">{resetDate}</span>
-              &nbsp;({resetBasis})
+              {isPaidTier && cancelPending && cancelDate ? (
+                <>
+                  {(tier || "").toUpperCase()} usage counts until{" "}
+                  <span className="font-medium text-gray-500">{cancelDate}</span>
+                  &nbsp;— Free plan limits apply after that
+                </>
+              ) : (
+                <>
+                  Usage resets on <span className="font-medium text-gray-500">{resetDate}</span>
+                  &nbsp;({resetBasis})
+                </>
+              )}
             </div>
           )}
 
@@ -702,11 +753,18 @@ export default function DashboardPage() {
               <div className="text-sm text-amber-900">
                 <p className="font-semibold">
                   Your {(tier || "").toUpperCase()} plan is set to end
-                  {formatStripeDate(cancelAt) ? <> on {formatStripeDate(cancelAt)}</> : <> at the end of this billing period</>}.
+                  {cancelDate ? <> on {cancelDate}</> : <> at the end of this billing period</>}.
                 </p>
                 <p className="text-xs text-amber-800 mt-1">
                   You keep full access until then; after that your account moves to the Free plan.
-                  Changed your mind?{" "}
+                  {freeResumesOnDate && (
+                    <>
+                      {" "}The Free plan counts usage by calendar month, so screenshots already
+                      taken this month count toward its allowance — if you've used more than it
+                      allows, new captures resume on {freeResumesOnDate}.
+                    </>
+                  )}
+                  {" "}Changed your mind?{" "}
                   <button
                     onClick={handleManageBilling}
                     disabled={isOpeningPortal}
@@ -993,6 +1051,14 @@ function InfoRow({ label, value }) {
 // // Author: OneTechly
 // // Updated: September 2026
 // //
+// // ✅ NEW (Sep 2026 — pending cancellation is visible here):
+// //   After ProdUser1 scheduled a cancellation in Account Settings, this page
+// //   looked exactly like an ongoing subscription. It now reads
+// //   GET /billing/subscription_state (new in main.py, cached 5 min per user so
+// //   normal page loads don't hit Stripe) and shows the date access ends, with a
+// //   link to resume in the billing portal. The manual Refresh button passes
+// //   ?fresh=1 so a resume done in the portal shows up immediately.
+// //
 // // ✅ FIX (Sep 2026 — usage over the limit rendered as "0 remaining"):
 // //   ProdUser1 reached 51 batch requests against a limit of 50. UsageCard
 // //   clamped the bar to 100% and printed "0 remaining", which reads like
@@ -1094,6 +1160,18 @@ function InfoRow({ label, value }) {
 //   }
 // }
 
+// // ── ✅ NEW (Sep 2026): Stripe timestamps ─────────────────────────────────
+// // /billing/subscription_state returns timezone-aware ISO strings. Deliberately
+// // separate from formatResetDate(): next_reset is a naive calendar boundary and
+// // must keep being read as-is, or it would shift a day west of UTC.
+// function formatStripeDate(isoString) {
+//   if (!isoString) return null;
+//   const s = /Z$|[+-]\d{2}:\d{2}$/.test(isoString) ? isoString : `${isoString}Z`;
+//   const d = new Date(s);
+//   if (Number.isNaN(d.getTime())) return null;
+//   return d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+// }
+
 // // ── ✅ (Aug 2026): which rule produced the reset date ─────────────────────
 // // The backend returns next_reset_basis on /subscription_status:
 // //   "billing_cycle"  — paid tier with a synced Stripe anchor; the reset falls
@@ -1131,6 +1209,10 @@ function InfoRow({ label, value }) {
 //   const [isRefreshing,    setIsRefreshing]    = useState(false);
 //   const [lastUpdated,     setLastUpdated]     = useState(null);
 //   const [isOpeningPortal, setIsOpeningPortal] = useState(false);
+
+//   // ✅ NEW (Sep 2026): pending cancellation, from /billing/subscription_state
+//   const [cancelPending, setCancelPending] = useState(false);
+//   const [cancelAt,      setCancelAt]      = useState(null);
 
 //   // ── Checkout verification state ───────────────────────────────────────────
 //   // null        → no checkout in progress (normal dashboard)
@@ -1281,11 +1363,45 @@ function InfoRow({ label, value }) {
 //     // eslint-disable-next-line react-hooks/exhaustive-deps
 //   }, [isAuthenticated]);
 
+//   // ── ✅ NEW (Sep 2026): pending-cancellation state ─────────────────────────
+//   // Only paid tiers can have one. Fails quiet: if the endpoint is missing or
+//   // Stripe is unreachable, the page simply shows no notice.
+//   const loadCancellationState = async (fresh = false) => {
+//     const paid = (tierRef.current || "free").toLowerCase() !== "free";
+//     if (!paid) {
+//       setCancelPending(false);
+//       setCancelAt(null);
+//       return;
+//     }
+//     try {
+//       const token   = localStorage.getItem("auth_token") || sessionStorage.getItem("auth_token");
+//       const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8000";
+//       if (!token) return;
+//       const res = await fetch(
+//         `${API_URL}/billing/subscription_state${fresh ? "?fresh=1" : ""}`,
+//         { headers: { Authorization: `Bearer ${token}` } },
+//       );
+//       if (!res.ok) return;
+//       const data = await res.json();
+//       setCancelPending(Boolean(data.cancel_at_period_end));
+//       setCancelAt(data.cancel_at || null);
+//     } catch {}
+//   };
+
+//   // Re-check whenever the tier resolves or changes (the context starts at a
+//   // "free" placeholder before the first fetch returns).
+//   useEffect(() => {
+//     if (!isAuthenticated) return;
+//     loadCancellationState(false);
+//     // eslint-disable-next-line react-hooks/exhaustive-deps
+//   }, [isAuthenticated, tier]);
+
 //   // ── Manual refresh: explicit Stripe sync ─────────────────────────────────
 //   const handleManualRefresh = async () => {
 //     setIsRefreshing(true);
 //     try {
 //       await refreshSubscriptionStatus(true);
+//       await loadCancellationState(true);   // ✅ Sep 2026: bypass the 5-min cache
 //       setLastUpdated(new Date());
 //       if (
 //         checkoutState === "pending" &&
@@ -1622,6 +1738,30 @@ function InfoRow({ label, value }) {
 //               </svg>
 //               Usage resets on <span className="font-medium text-gray-500">{resetDate}</span>
 //               &nbsp;({resetBasis})
+//             </div>
+//           )}
+
+//           {/* ✅ NEW (Sep 2026): pending cancellation notice */}
+//           {isPaidTier && cancelPending && (
+//             <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3">
+//               <span className="text-lg leading-none mt-0.5">📅</span>
+//               <div className="text-sm text-amber-900">
+//                 <p className="font-semibold">
+//                   Your {(tier || "").toUpperCase()} plan is set to end
+//                   {formatStripeDate(cancelAt) ? <> on {formatStripeDate(cancelAt)}</> : <> at the end of this billing period</>}.
+//                 </p>
+//                 <p className="text-xs text-amber-800 mt-1">
+//                   You keep full access until then; after that your account moves to the Free plan.
+//                   Changed your mind?{" "}
+//                   <button
+//                     onClick={handleManageBilling}
+//                     disabled={isOpeningPortal}
+//                     className="underline font-semibold hover:text-amber-950 disabled:opacity-60"
+//                   >
+//                     Resume in the billing portal
+//                   </button>.
+//                 </p>
+//               </div>
 //             </div>
 //           )}
 
