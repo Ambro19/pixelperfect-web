@@ -6,7 +6,7 @@
 // Purpose: Mobile-first API documentation
 // ✅ FIXED: Corrected URL from cdn.pixelperfect.com to cdn.pixelperfectapi.net
 // ✅ ADDED: Copy button on all code blocks (consistent with BlogPost.jsx pattern)
-// Updated: August 2026
+// Updated: October 2026
 //
 // ✅ NEW (Aug 2026): Java example added to Code Examples section.
 //   API.js (the interactive playground) already had Java, PHP, Go, and C
@@ -40,6 +40,40 @@
 //   sets app.router.redirect_slashes = True, so /api/v1/screenshot/ answers
 //   with a 307 to the slashless path — which curl silently drops unless the
 //   caller passes -L. Documenting the exact registered path avoids that trap.
+//
+// ✅ FIX (Oct 2026): Support section card layout.
+//   The four cards rendered with the title and the description running
+//   together on one line and centred:
+//
+//       Help      Guides on API keys, batch processing, rate limits,
+//       Centerwebhooks and troubleshooting.
+//
+//   Root cause — and this codebase has hit it twice before: <div> is not
+//   valid content inside <button>. The HTML spec allows only phrasing content
+//   there, so the browser does not give those <div>s their normal block
+//   behaviour. A <button> also carries user-agent `text-align: center` and
+//   its own display context, which is why the text centred as well as ran
+//   together. BatchJobs.js hit this on the example-batch cards (Aug 2026).
+//   The same fix is applied here:
+//     1. The <button> itself is an explicit `flex flex-col items-start`.
+//        A flex column CANNOT put its children on the same line, whatever
+//        the surrounding cascade does.
+//     2. Every inner <div> and <p> is now a <span>, which IS valid phrasing
+//        content inside a button.
+//
+//   Also in this pass:
+//     • Equal card heights — cards are `h-full` inside `items-stretch`, so
+//       the row is even regardless of copy length.
+//     • Icon and title sit on a fixed first line, so a title that wraps
+//       pushes the description down rather than into itself.
+//     • `text-left` is explicit on each button, overriding the user-agent
+//       centring rather than relying on inheritance.
+//     • `type="button"` added. Without it a <button> inside a form defaults
+//       to type="submit" — harmless today, a real bug the day this section
+//       ends up inside one.
+//     • Visible focus ring for keyboard users; emoji icons are aria-hidden.
+//     • The four cards are now rendered from the SUPPORT_CARDS array below
+//       instead of four hand-copied blocks.
 
 import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -251,6 +285,38 @@ HttpResponse<String> response = client.send(
 
 System.out.println(response.body());`,
 };
+
+// ============================================================================
+// Support cards — data for the Support section grid.
+// ✅ NEW (Oct 2026): hoisted to module scope so the array is created once
+// rather than on every render.
+// ============================================================================
+const SUPPORT_CARDS = [
+  {
+    icon: '📚',
+    title: 'Help Center',
+    desc: 'Guides on API keys, batch processing, rate limits, webhooks and troubleshooting.',
+    to: '/help',
+  },
+  {
+    icon: '❓',
+    title: 'FAQ',
+    desc: 'Storage retention, plan limits, supported formats and billing questions.',
+    to: '/faq',
+  },
+  {
+    icon: '✉️',
+    title: 'Contact Support',
+    desc: 'Technical questions, billing, or enterprise enquiries. We reply within 24 hours.',
+    to: '/contact',
+  },
+  {
+    icon: '📡',
+    title: 'API Status',
+    desc: 'Live operational status. Check here first if requests are failing.',
+    to: '/api-status',
+  },
+];
 
 // ============================================================================
 // Main component
@@ -563,7 +629,8 @@ export default function Documentation() {
 
             {/* ✅ NEW (Aug 2026): Support section.
                 The sidebar linked to #support but no such anchor existed, so
-                the link was inert — the URL changed and the page did not move. */}
+                the link was inert — the URL changed and the page did not move.
+                ✅ FIX (Oct 2026): card layout — see the file header note. */}
             <div id="support" className="mb-8 sm:mb-12 scroll-mt-20">
               <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3 sm:mb-4">
                 Support
@@ -572,60 +639,35 @@ export default function Documentation() {
                 Stuck on something? Here's where to go, fastest route first.
               </p>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <button
-                  onClick={() => navigate('/help')}
-                  className="text-left border border-gray-200 rounded-xl p-4 hover:border-blue-400 hover:bg-blue-50 transition-all group"
-                >
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <span className="text-xl">📚</span>
-                    <span className="font-semibold text-gray-900 group-hover:text-blue-700">Help Center</span>
-                  </div>
-                  <p className="text-sm text-gray-600">
-                    Guides on API keys, batch processing, rate limits, webhooks and
-                    troubleshooting.
-                  </p>
-                </button>
+              {/* items-stretch + h-full on each card = even row heights */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-stretch">
+                {SUPPORT_CARDS.map((card) => (
+                  <button
+                    key={card.title}
+                    type="button"
+                    onClick={() => navigate(card.to)}
+                    className="flex flex-col items-start text-left h-full w-full
+                               border border-gray-200 rounded-xl p-4
+                               hover:border-blue-400 hover:bg-blue-50
+                               focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
+                               transition-all group"
+                  >
+                    {/* Title row — <span>, not <div>: valid inside <button> */}
+                    <span className="flex items-center gap-2 mb-1.5">
+                      <span className="text-xl leading-none" aria-hidden="true">
+                        {card.icon}
+                      </span>
+                      <span className="font-semibold text-gray-900 group-hover:text-blue-700">
+                        {card.title}
+                      </span>
+                    </span>
 
-                <button
-                  onClick={() => navigate('/faq')}
-                  className="text-left border border-gray-200 rounded-xl p-4 hover:border-blue-400 hover:bg-blue-50 transition-all group"
-                >
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <span className="text-xl">❓</span>
-                    <span className="font-semibold text-gray-900 group-hover:text-blue-700">FAQ</span>
-                  </div>
-                  <p className="text-sm text-gray-600">
-                    Storage retention, plan limits, supported formats and billing questions.
-                  </p>
-                </button>
-
-                <button
-                  onClick={() => navigate('/contact')}
-                  className="text-left border border-gray-200 rounded-xl p-4 hover:border-blue-400 hover:bg-blue-50 transition-all group"
-                >
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <span className="text-xl">✉️</span>
-                    <span className="font-semibold text-gray-900 group-hover:text-blue-700">Contact Support</span>
-                  </div>
-                  <p className="text-sm text-gray-600">
-                    Technical questions, billing, or enterprise enquiries. We reply within
-                    24 hours.
-                  </p>
-                </button>
-
-                <button
-                  onClick={() => navigate('/api-status')}
-                  className="text-left border border-gray-200 rounded-xl p-4 hover:border-blue-400 hover:bg-blue-50 transition-all group"
-                >
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <span className="text-xl">📡</span>
-                    <span className="font-semibold text-gray-900 group-hover:text-blue-700">API Status</span>
-                  </div>
-                  <p className="text-sm text-gray-600">
-                    Live operational status. Check here first if requests are failing.
-                  </p>
-                </button>
+                    {/* Description — block span so it always starts a new line */}
+                    <span className="block text-sm text-gray-600 leading-relaxed">
+                      {card.desc}
+                    </span>
+                  </button>
+                ))}
               </div>
 
               <div className="mt-5 bg-blue-50 border border-blue-200 rounded-xl p-4">
@@ -675,6 +717,8 @@ export default function Documentation() {
 
 // ============ END OF Documentation.jsx ========
 
+
+
 // // ========================================
 // // DOCUMENTATION PAGE - FULLY MOBILE RESPONSIVE
 // // ========================================
@@ -692,6 +736,31 @@ export default function Documentation() {
 // //   out of sync. Java example added here, reusing the exact same snippet
 // //   from API.js's codeExamples.java.screenshot for consistency across both
 // //   surfaces.
+// //
+// // ✅ NEW (Aug 2026): Support section (id="support").
+// //   The sidebar linked to #support but no element with that id existed, so
+// //   the link was inert — the URL changed to /docs#support and the page did
+// //   not move. Same for the mobile path, which calls handleNavClick('#support').
+// //   The anchor now exists, with scroll-mt-20 so the heading clears the
+// //   sticky header.
+// //
+// // ✅ FIX (Aug 2026): footer "Contact support" no longer points at
+// //   mailto:support@pixelperfectapi.net — that mailbox is not configured
+// //   (SMTP is onetechly@gmail.com, contact form posts to /contact), so mail
+// //   sent there would have bounced or vanished. Now routes to /contact.
+// //
+// // ✅ FIX (Aug 2026): documented endpoint paths corrected against main.py.
+// //   The docs advertised /v1/screenshot and /v1/batch/submit; the app registers
+// //   @app.post("/api/v1/screenshot") and @app.post("/api/v1/batch/submit").
+// //   Every published example therefore 404'd on the first run — the worst
+// //   possible first impression, since the cURL block is the first thing a
+// //   developer executes. Six occurrences updated: the four language snippets
+// //   (curl, JS, Python, Java) and the two <code> labels under API Endpoints.
+// //
+// //   Note on the trailing slash: the POST route has NO trailing slash. main.py
+// //   sets app.router.redirect_slashes = True, so /api/v1/screenshot/ answers
+// //   with a 307 to the slashless path — which curl silently drops unless the
+// //   caller passes -L. Documenting the exact registered path avoids that trap.
 
 // import React, { useState, useCallback } from 'react';
 // import { useNavigate } from 'react-router-dom';
@@ -775,10 +844,17 @@ export default function Documentation() {
 
 // // ============================================================================
 // // Code strings — extracted so CodeBlock receives a clean string (no JSX noise)
+// //
+// // ✅ VERIFIED (Aug 2026) against backend/main.py:
+// //    POST /api/v1/screenshot     — thin wrapper, keeps enforce_tier_concurrency
+// //    POST /api/v1/batch/submit   — Pro+ batch capture
+// //    Base host from CUSTOM_API_DOMAIN = https://api.pixelperfectapi.net,
+// //    so the full URL is https://api.pixelperfectapi.net/api/v1/screenshot.
+// //    Neither route has a trailing slash.
 // // ============================================================================
 // const SNIPPETS = {
 //   curlQuickStart:
-// `curl -X POST https://api.pixelperfectapi.net/v1/screenshot \\
+// `curl -X POST https://api.pixelperfectapi.net/api/v1/screenshot \\
 //   -H "Authorization: Bearer YOUR_API_KEY" \\
 //   -H "Content-Type: application/json" \\
 //   -d '{
@@ -827,7 +903,7 @@ export default function Documentation() {
 // `const axios = require('axios');
 
 // const screenshot = await axios.post(
-//   'https://api.pixelperfectapi.net/v1/screenshot',
+//   'https://api.pixelperfectapi.net/api/v1/screenshot',
 //   {
 //     url: 'https://example.com',
 //     width: 1920,
@@ -848,7 +924,7 @@ export default function Documentation() {
 // `import requests
 
 // response = requests.post(
-//     'https://api.pixelperfectapi.net/v1/screenshot',
+//     'https://api.pixelperfectapi.net/api/v1/screenshot',
 //     json={
 //         'url': 'https://example.com',
 //         'width': 1920,
@@ -885,7 +961,7 @@ export default function Documentation() {
 
 // HttpRequest request = HttpRequest.newBuilder()
 //     .uri(URI.create(
-//         "https://api.pixelperfectapi.net/v1/screenshot"))
+//         "https://api.pixelperfectapi.net/api/v1/screenshot"))
 //     .header("Authorization", "Bearer YOUR_API_KEY")
 //     .header("Content-Type", "application/json")
 //     .POST(HttpRequest.BodyPublishers.ofString(body))
@@ -1024,7 +1100,7 @@ export default function Documentation() {
 //           <main className="flex-1 min-w-0">
 
 //             {/* Getting Started */}
-//             <div id="getting-started" className="mb-8 sm:mb-12">
+//             <div id="getting-started" className="mb-8 sm:mb-12 scroll-mt-20">
 //               <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3 sm:mb-4">
 //                 Getting Started
 //               </h1>
@@ -1075,7 +1151,7 @@ export default function Documentation() {
 //             </div>
 
 //             {/* Authentication */}
-//             <div id="authentication" className="mb-8 sm:mb-12">
+//             <div id="authentication" className="mb-8 sm:mb-12 scroll-mt-20">
 //               <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3 sm:mb-4">
 //                 Authentication
 //               </h2>
@@ -1093,7 +1169,7 @@ export default function Documentation() {
 //             </div>
 
 //             {/* API Endpoints */}
-//             <div id="endpoints" className="mb-8 sm:mb-12">
+//             <div id="endpoints" className="mb-8 sm:mb-12 scroll-mt-20">
 //               <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3 sm:mb-4">
 //                 API Endpoints
 //               </h2>
@@ -1104,7 +1180,7 @@ export default function Documentation() {
 //                   <span className="bg-green-100 text-green-800 px-2.5 py-1 rounded font-mono text-xs sm:text-sm font-semibold">
 //                     POST
 //                   </span>
-//                   <code className="text-sm sm:text-lg font-mono break-all text-gray-900">/v1/screenshot</code>
+//                   <code className="text-sm sm:text-lg font-mono break-all text-gray-900">/api/v1/screenshot</code>
 //                 </div>
 //                 <p className="text-sm sm:text-base text-gray-700 mb-4">Capture a screenshot of any website.</p>
 
@@ -1121,7 +1197,7 @@ export default function Documentation() {
 //                   <span className="bg-green-100 text-green-800 px-2.5 py-1 rounded font-mono text-xs sm:text-sm font-semibold">
 //                     POST
 //                   </span>
-//                   <code className="text-sm sm:text-lg font-mono break-all text-gray-900">/v1/batch/submit</code>
+//                   <code className="text-sm sm:text-lg font-mono break-all text-gray-900">/api/v1/batch/submit</code>
 //                 </div>
 //                 <p className="text-sm sm:text-base text-gray-700 mb-4">
 //                   Capture multiple screenshots in one request (Pro+ only).
@@ -1133,7 +1209,7 @@ export default function Documentation() {
 //             </div>
 
 //             {/* Code Examples */}
-//             <div id="examples" className="mb-8 sm:mb-12">
+//             <div id="examples" className="mb-8 sm:mb-12 scroll-mt-20">
 //               <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3 sm:mb-4">
 //                 Code Examples
 //               </h2>
@@ -1156,7 +1232,7 @@ export default function Documentation() {
 //             </div>
 
 //             {/* Error Codes */}
-//             <div id="errors" className="mb-8 sm:mb-12">
+//             <div id="errors" className="mb-8 sm:mb-12 scroll-mt-20">
 //               <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3 sm:mb-4">
 //                 Error Codes
 //               </h2>
@@ -1172,9 +1248,11 @@ export default function Documentation() {
 //                   </thead>
 //                   <tbody className="bg-white divide-y divide-gray-200">
 //                     {[
-//                       { code: '400', desc: 'Bad Request - Invalid parameters' },
+//                       { code: '400', desc: 'Bad Request - Invalid parameters, unreachable URL, or width above your plan limit' },
 //                       { code: '401', desc: 'Unauthorized - Invalid or missing API key' },
-//                       { code: '429', desc: 'Too Many Requests - Rate limit exceeded' },
+//                       { code: '403', desc: 'Forbidden - Your plan does not include this feature (e.g. PDF format, batch capture, device emulation)' },
+//                       { code: '404', desc: 'Not Found - No screenshot with that ID, or it belongs to another account' },
+//                       { code: '429', desc: 'Too Many Requests - Monthly screenshot limit reached, or too many concurrent captures for your plan' },
 //                       { code: '500', desc: 'Internal Server Error - Something went wrong' },
 //                     ].map((e) => (
 //                       <tr key={e.code}>
@@ -1189,9 +1267,11 @@ export default function Documentation() {
 //               {/* Mobile cards */}
 //               <div className="sm:hidden space-y-3">
 //                 {[
-//                   { code: '400', desc: 'Bad Request - Invalid parameters' },
+//                   { code: '400', desc: 'Bad Request - Invalid parameters, unreachable URL, or width above your plan limit' },
 //                   { code: '401', desc: 'Unauthorized - Invalid or missing API key' },
-//                   { code: '429', desc: 'Too Many Requests - Rate limit exceeded' },
+//                   { code: '403', desc: 'Forbidden - Your plan does not include this feature (e.g. PDF format, batch capture, device emulation)' },
+//                   { code: '404', desc: 'Not Found - No screenshot with that ID, or it belongs to another account' },
+//                   { code: '429', desc: 'Too Many Requests - Monthly screenshot limit reached, or too many concurrent captures for your plan' },
 //                   { code: '500', desc: 'Internal Server Error - Something went wrong' },
 //                 ].map((e) => (
 //                   <div key={e.code} className="bg-white border border-gray-200 rounded-lg p-4">
@@ -1199,6 +1279,86 @@ export default function Documentation() {
 //                     <div className="text-sm text-gray-700">{e.desc}</div>
 //                   </div>
 //                 ))}
+//               </div>
+//             </div>
+
+//             {/* ✅ NEW (Aug 2026): Support section.
+//                 The sidebar linked to #support but no such anchor existed, so
+//                 the link was inert — the URL changed and the page did not move. */}
+//             <div id="support" className="mb-8 sm:mb-12 scroll-mt-20">
+//               <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3 sm:mb-4">
+//                 Support
+//               </h2>
+//               <p className="text-sm sm:text-base text-gray-700 mb-5">
+//                 Stuck on something? Here's where to go, fastest route first.
+//               </p>
+
+//               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+//                 <button
+//                   onClick={() => navigate('/help')}
+//                   className="text-left border border-gray-200 rounded-xl p-4 hover:border-blue-400 hover:bg-blue-50 transition-all group"
+//                 >
+//                   <div className="flex items-center gap-2 mb-1.5">
+//                     <span className="text-xl">📚</span>
+//                     <span className="font-semibold text-gray-900 group-hover:text-blue-700">Help Center</span>
+//                   </div>
+//                   <p className="text-sm text-gray-600">
+//                     Guides on API keys, batch processing, rate limits, webhooks and
+//                     troubleshooting.
+//                   </p>
+//                 </button>
+
+//                 <button
+//                   onClick={() => navigate('/faq')}
+//                   className="text-left border border-gray-200 rounded-xl p-4 hover:border-blue-400 hover:bg-blue-50 transition-all group"
+//                 >
+//                   <div className="flex items-center gap-2 mb-1.5">
+//                     <span className="text-xl">❓</span>
+//                     <span className="font-semibold text-gray-900 group-hover:text-blue-700">FAQ</span>
+//                   </div>
+//                   <p className="text-sm text-gray-600">
+//                     Storage retention, plan limits, supported formats and billing questions.
+//                   </p>
+//                 </button>
+
+//                 <button
+//                   onClick={() => navigate('/contact')}
+//                   className="text-left border border-gray-200 rounded-xl p-4 hover:border-blue-400 hover:bg-blue-50 transition-all group"
+//                 >
+//                   <div className="flex items-center gap-2 mb-1.5">
+//                     <span className="text-xl">✉️</span>
+//                     <span className="font-semibold text-gray-900 group-hover:text-blue-700">Contact Support</span>
+//                   </div>
+//                   <p className="text-sm text-gray-600">
+//                     Technical questions, billing, or enterprise enquiries. We reply within
+//                     24 hours.
+//                   </p>
+//                 </button>
+
+//                 <button
+//                   onClick={() => navigate('/api-status')}
+//                   className="text-left border border-gray-200 rounded-xl p-4 hover:border-blue-400 hover:bg-blue-50 transition-all group"
+//                 >
+//                   <div className="flex items-center gap-2 mb-1.5">
+//                     <span className="text-xl">📡</span>
+//                     <span className="font-semibold text-gray-900 group-hover:text-blue-700">API Status</span>
+//                   </div>
+//                   <p className="text-sm text-gray-600">
+//                     Live operational status. Check here first if requests are failing.
+//                   </p>
+//                 </button>
+//               </div>
+
+//               <div className="mt-5 bg-blue-50 border border-blue-200 rounded-xl p-4">
+//                 <h4 className="font-semibold text-gray-900 mb-1.5 text-sm">Before you write in</h4>
+//                 <p className="text-sm text-gray-700 mb-2">
+//                   Including these three things gets you a useful answer on the first reply:
+//                 </p>
+//                 <ul className="text-sm text-gray-700 space-y-1 list-disc list-inside">
+//                   <li>The <code className="bg-white px-1 rounded text-xs">screenshot_id</code> from the failing response</li>
+//                   <li>The target URL you were capturing</li>
+//                   <li>The full error message, not a paraphrase</li>
+//                 </ul>
 //               </div>
 //             </div>
 
@@ -1214,10 +1374,18 @@ export default function Documentation() {
 //               <PixelPerfectLogo size={28} showText={true} />
 //             </div>
 //             <p className="text-xs sm:text-sm text-gray-500">
+//               {/* ✅ FIX (Aug 2026): was mailto:support@pixelperfectapi.net, which is
+//                   not a configured mailbox — SMTP is onetechly@gmail.com and the
+//                   contact form posts to /contact. Emails to the old address would
+//                   have bounced or vanished. */}
 //               Need help?{' '}
-//               <a href="mailto:support@pixelperfectapi.net" className="text-blue-600 hover:text-blue-700">
+//               <button
+//                 type="button"
+//                 onClick={() => navigate('/contact')}
+//                 className="text-blue-600 hover:text-blue-700 font-medium"
+//               >
 //                 Contact support
-//               </a>
+//               </button>
 //             </p>
 //           </div>
 //         </div>
@@ -1226,5 +1394,4 @@ export default function Documentation() {
 //   );
 // }
 
-// // ============ END OF Documentation.js ========
-
+// // ============ END OF Documentation.jsx ========
