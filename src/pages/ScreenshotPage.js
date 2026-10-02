@@ -2,6 +2,36 @@
 // UPDATED: September 2026
 //
 // ============================================================================
+// ✅ NEW (Oct 2026 — result buttons name the format)
+// ============================================================================
+//   PDF already read "Download PDF" / "Open PDF"; every other format read a
+//   generic "Download" / "Open in New Tab". Now all four say what they are:
+//
+//       💾 Download PNG        🔗 Open PNG in New Tab
+//       💾 Download JPEG       🔗 Open JPEG in New Tab
+//       💾 Download WebP       🔗 Open WebP in New Tab
+//       📥 Download PDF        📄 Open PDF in New Tab
+//
+// ✅ FIX (Oct 2026 — the result card read the LIVE dropdown, not the capture)
+//
+//   Everything in the result card keyed off `format`, the current value of the
+//   Format select — not the format of the screenshot on screen. Capture a PNG,
+//   then change the dropdown to PDF without re-capturing, and the card swapped
+//   the <img> preview for a PDF <iframe> pointed at a .png file (blank frame),
+//   retitled the details block "PDF Details", and handleDownload() saved the
+//   PNG bytes as "screenshot_123.pdf" — a file the OS would refuse to open.
+//
+//   Naming the format on the buttons would have made that latent bug visible
+//   and wrong on screen, so it is fixed first: the card now derives everything
+//   from `capturedFormat` — what the API actually returned for the screenshot
+//   being displayed — falling back to the request format only if the response
+//   omitted it.
+//
+//   The download extension is now taken from the stored file's own URL where
+//   possible, because the backend writes JPEG captures as .jpg on one pipeline
+//   and .jpeg on another; trusting the URL avoids guessing wrong either way.
+//
+// ============================================================================
 // ✅ FIX (Sep 2026 — usage over the limit displayed as "100 / 100")
 // ============================================================================
 //   safeFormatUsage() clamped the used value to the limit:
@@ -120,6 +150,40 @@ const API_BASE_URL = resolveApiBase();
 
 // Full-page captures wider than this get an up-front memory notice.
 const WIDE_FULL_PAGE_WIDTH = 2560;
+
+// ── ✅ NEW (Oct 2026): format display names ──────────────────────────────────
+// Cased the way each format is normally written — "WebP", not "WEBP", and
+// "JPEG" for both the 'jpeg' and 'jpg' spellings the backend can return.
+const FORMAT_LABELS = {
+  png:  'PNG',
+  jpeg: 'JPEG',
+  jpg:  'JPEG',
+  webp: 'WebP',
+  pdf:  'PDF',
+};
+
+function formatLabel(fmt) {
+  const key = (fmt || '').toLowerCase().trim();
+  return FORMAT_LABELS[key] || (key ? key.toUpperCase() : 'File');
+}
+
+// ── ✅ NEW (Oct 2026): file extension for the download attribute ─────────────
+// Prefer the extension on the stored file's own URL. The backend is not
+// self-consistent about JPEG — the element-crop pipeline writes .jpg while the
+// direct pipeline writes .jpeg — so deriving from the URL is the only way to
+// name the saved file the same as the file actually being saved. Query strings
+// and signed-URL parameters are stripped by reading pathname.
+function extensionFromUrl(url, fallbackFormat) {
+  try {
+    const path = new URL(url, window.location.origin).pathname;
+    const match = path.match(/\.([a-z0-9]{2,5})$/i);
+    if (match) return match[1].toLowerCase();
+  } catch {
+    /* relative or malformed URL — fall through */
+  }
+  const f = (fallbackFormat || 'png').toLowerCase();
+  return f === 'jpeg' ? 'jpg' : f;
+}
 
 function friendlyError(msg) {
   if (!msg) return 'Screenshot capture failed. Please try again.';
@@ -252,6 +316,18 @@ export default function ScreenshotPage() {
   // ✅ NEW (Sep 2026): effective width for the wide full-page notice.
   const effectiveWidth = deviceOverriding ? selectedDevice.width : width;
   const isWideFullPage = fullPage && effectiveWidth > WIDE_FULL_PAGE_WIDTH && format !== 'pdf';
+
+  // ── ✅ NEW (Oct 2026): the format of the screenshot ON SCREEN ──────────────
+  //
+  // NOT the `format` state, which tracks the dropdown and can be changed after
+  // a capture without re-capturing. Every consumer in the result card below
+  // reads these three values; none of them should read `format` directly.
+  const capturedFormat = useMemo(
+    () => String(screenshotData?.format || format || 'png').toLowerCase(),
+    [screenshotData, format],
+  );
+  const capturedFormatLabel = useMemo(() => formatLabel(capturedFormat), [capturedFormat]);
+  const capturedIsPdf       = capturedFormat === 'pdf';
 
   const limits      = useMemo(() => subscriptionStatus?.limits || {}, [subscriptionStatus]);
   const usage       = useMemo(() => subscriptionStatus?.usage  || {}, [subscriptionStatus]);
@@ -448,13 +524,17 @@ export default function ScreenshotPage() {
 
   const handleDownload = () => {
     if (!screenshotUrl) return;
+    // ✅ FIX (Oct 2026): extension and toast follow the CAPTURED format, not
+    // the dropdown. Saving PNG bytes as "screenshot_123.pdf" produced a file
+    // the operating system refused to open.
+    const ext = extensionFromUrl(screenshotUrl, capturedFormat);
     const a = document.createElement('a');
     a.href     = screenshotUrl;
-    a.download = `screenshot_${Date.now()}.${format}`;
+    a.download = `screenshot_${Date.now()}.${ext}`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    toast.success('💾 Screenshot downloaded!');
+    toast.success(`💾 ${capturedFormatLabel} download started`);
   };
 
   const applyPreset = (key, preset) => {
@@ -472,8 +552,11 @@ export default function ScreenshotPage() {
       : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30 focus:ring-blue-500'
   }`;
 
+  // ✅ UPDATED (Oct 2026): min-width raised 190px → 210px. The labels grew
+  // ("Open in New Tab" → "Open JPEG in New Tab"), and min-width only sets the
+  // floor, so the pair still renders at matching widths on desktop.
   const resultActionBtnClass =
-    'w-full sm:w-auto sm:min-w-[190px] inline-flex items-center justify-center gap-2 ' +
+    'w-full sm:w-auto sm:min-w-[210px] inline-flex items-center justify-center gap-2 ' +
     'px-5 py-2.5 rounded-xl font-medium transition-colors shadow-sm ' +
     'focus:outline-none focus:ring-2 focus:ring-offset-2';
 
@@ -951,14 +1034,17 @@ export default function ScreenshotPage() {
         {screenshotUrl && (
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-5 sm:p-6 mb-6">
             <h2 className="text-xl font-bold mb-4 text-gray-900 flex items-center gap-2">
-              {format === 'pdf' ? '📄' : '🖼️'} Screenshot Result
+              {capturedIsPdf ? '📄' : '🖼️'} Screenshot Result
               {screenshotCompleted && (
                 <span className="ml-1 inline-flex items-center gap-1 text-emerald-700 text-xs font-semibold bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-lg">
                   ✅ Capture complete
                 </span>
               )}
             </h2>
-            {format === 'pdf' ? (
+            {/* ✅ FIX (Oct 2026): capturedIsPdf, not `format`. Keyed off the
+                dropdown, this rendered a PDF iframe over a .png file whenever
+                the user changed the format after capturing. */}
+            {capturedIsPdf ? (
               <div className="mb-4">
                 <div className="rounded-xl overflow-hidden border border-gray-300 shadow-lg bg-gray-100" style={{ height: '500px' }}>
                   <iframe src={screenshotUrl} title="PDF preview" className="w-full h-full" style={{ border: 'none' }} />
@@ -974,7 +1060,7 @@ export default function ScreenshotPage() {
             {screenshotData && (
               <div className="bg-gradient-to-r from-emerald-50 to-blue-50 p-4 rounded-xl mb-4 border border-emerald-200">
                 <div className="font-bold text-gray-800 mb-2 text-sm">
-                  {format === 'pdf' ? '📄 PDF Details' : '✅ Screenshot Details'}
+                  {capturedIsPdf ? '📄 PDF Details' : '✅ Screenshot Details'}
                 </div>
                 <dl className="space-y-1.5 text-sm">
                   <div className="flex gap-2">
@@ -1035,12 +1121,18 @@ export default function ScreenshotPage() {
               </div>
             )}
 
+            {/* ✅ NEW (Oct 2026): both buttons name the format of the file
+                they act on — "Download PNG", "Open WebP in New Tab" — so the
+                label is unambiguous when several captures are compared, and
+                the PDF wording is no longer a special case. The label comes
+                from capturedFormat, so it always describes the file on screen
+                rather than whatever the dropdown currently says. */}
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 max-w-sm sm:max-w-none mx-auto">
               <button
                 onClick={handleDownload}
                 className={`${resultActionBtnClass} bg-emerald-600 text-white hover:bg-emerald-700 focus:ring-emerald-500`}
               >
-                {format === 'pdf' ? '📥 Download PDF' : '💾 Download'}
+                {capturedIsPdf ? '📥' : '💾'} Download {capturedFormatLabel}
               </button>
               <a
                 href={screenshotUrl}
@@ -1048,7 +1140,7 @@ export default function ScreenshotPage() {
                 rel="noopener noreferrer"
                 className={`${resultActionBtnClass} bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500`}
               >
-                {format === 'pdf' ? '📄 Open PDF' : '🔗 Open in New Tab'}
+                {capturedIsPdf ? '📄' : '🔗'} Open {capturedFormatLabel} in New Tab
               </a>
             </div>
           </div>
@@ -1066,10 +1158,25 @@ export default function ScreenshotPage() {
   );
 }
 
-// ===== END OF ScreenshotPage.js ==============
+
+//===== END OF ScreenshotPage.js ==========
 
 // // frontend/src/pages/ScreenshotPage.js — PixelPerfect Screenshot API
 // // UPDATED: September 2026
+// //
+// // ============================================================================
+// // ✅ FIX (Sep 2026 — usage over the limit displayed as "100 / 100")
+// // ============================================================================
+// //   safeFormatUsage() clamped the used value to the limit:
+// //       Math.min(used, limit) / limit
+// //   So when ProdUser1 dropped from Pro to Free carrying 559 captures against
+// //   a 100 limit, this page read "100 / 100 · 0 remaining · 100.0% used" while
+// //   the Dashboard correctly read "559 · 459 over the limit". Same number, two
+// //   pages, two answers — and this one understated it.
+// //
+// //   Clamping the BAR at 100% is right (a bar cannot exceed its track).
+// //   Clamping the NUMBER hides the fact. The count is now shown as captured,
+// //   with an explicit over-limit state matching UsageCard in DashboardPage.js.
 // //
 // // ============================================================================
 // // ✅ FIX (Sep 2026 — raw capture-engine errors shown to users)
@@ -1320,10 +1427,14 @@ export default function ScreenshotPage() {
 //     return getUsed(k) >= Number(lim);
 //   };
 
+//   // ✅ FIX (Sep 2026): report what was actually used. The old
+//   // Math.min(used, limit) turned "559 of 100" into "100 / 100", which reads
+//   // as "exactly at the limit" — the one state it is not in. This happens
+//   // whenever a paid account drops to Free mid-period carrying its paid usage.
 //   const safeFormatUsage = (k) => {
 //     const u = getUsed(k), l = getLimit(k);
 //     if (isUnlimited(l)) return `${u} / ∞`;
-//     return `${Math.min(Number(u || 0), Number(l || 0))} / ${l ?? 0}`;
+//     return `${Number(u || 0)} / ${l ?? 0}`;
 //   };
 
 //   const xUiPrimaryDisabled = isLoading || !xUiValidUrl || atLimit('screenshots');
@@ -1386,11 +1497,20 @@ export default function ScreenshotPage() {
 //     return Math.min(100, (screenshotsUsed / lim) * 100);
 //   }, [screenshotsLimit, screenshotsUsed]);
 
+//   // ✅ NEW (Sep 2026): over-limit is its own state, as on the Dashboard.
+//   const screenshotsOverLimit = useMemo(() => {
+//     if (isUnlimited(screenshotsLimit)) return false;
+//     const lim = Number(screenshotsLimit ?? 0);
+//     if (!lim || Number.isNaN(lim)) return false;
+//     return screenshotsUsed > lim;
+//   }, [screenshotsLimit, screenshotsUsed]);
+
 //   const screenshotsRemainingLabel = useMemo(() => {
 //     if (isUnlimited(screenshotsLimit)) return 'Unlimited screenshots';
 //     const lim = Number(screenshotsLimit ?? 0);
 //     if (!lim || Number.isNaN(lim)) return '0 remaining';
-//     return `${Math.max(0, lim - screenshotsUsed)} remaining`;
+//     if (screenshotsUsed > lim) return `${screenshotsUsed - lim} over the limit`;
+//     return `${lim - screenshotsUsed} remaining`;
 //   }, [screenshotsLimit, screenshotsUsed]);
 
 //   const screenshotsPercentLabel = useMemo(() => {
@@ -1592,18 +1712,26 @@ export default function ScreenshotPage() {
 //             <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
 //               <div className="flex justify-between items-center mb-2">
 //                 <span className="text-sm font-semibold text-gray-700">📸 Screenshots Used This Month</span>
-//                 <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+//                 <span className={`text-2xl font-bold ${
+//                   screenshotsOverLimit
+//                     ? 'text-red-600'
+//                     : 'bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent'
+//                 }`}>
 //                   {safeFormatUsage('screenshots')}
 //                 </span>
 //               </div>
 //               <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
 //                 <div
-//                   className="bg-gradient-to-r from-blue-500 to-indigo-600 h-2.5 rounded-full transition-all duration-500 ease-out"
+//                   className={`h-2.5 rounded-full transition-all duration-500 ease-out bg-gradient-to-r ${
+//                     screenshotsOverLimit ? 'from-red-500 to-red-700' : 'from-blue-500 to-indigo-600'
+//                   }`}
 //                   style={{ width: `${screenshotsPercent}%` }}
 //                 />
 //               </div>
 //               <div className="flex justify-between items-center mt-2">
-//                 <span className="text-xs text-gray-500">{screenshotsRemainingLabel}</span>
+//                 <span className={`text-xs ${screenshotsOverLimit ? 'text-red-600 font-semibold' : 'text-gray-500'}`}>
+//                   {screenshotsRemainingLabel}
+//                 </span>
 //                 <span className="text-xs font-medium text-gray-600">{screenshotsPercentLabel}</span>
 //               </div>
 //               {resetDateLabel && (
