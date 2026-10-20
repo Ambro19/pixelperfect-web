@@ -255,7 +255,7 @@ const About = () => {
               ))}
             </div>
             <p className="text-xs text-gray-500 mt-5 text-center">
-              Capture speed depends on the page. Simple pages return in under 3 seconds; large
+              Capture speed depends on the page. Simple pages return in about 3 seconds; large
               full-page captures take longer.
             </p>
           </section>
