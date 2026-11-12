@@ -285,11 +285,18 @@ export default function AccountSettings() {
         logout();
         navigate('/');
       } else {
+        // ✅ Nov 2026: the server's own message is shown. Since the billing-safe
+        // deletion release, a 503 means Stripe could not confirm the
+        // subscription was cancelled, so NOTHING was deleted and the user
+        // should try again in a minute; the message says exactly that.
         const data = await response.json().catch(() => ({}));
-        throw new Error(data.detail || 'Failed to delete account');
+        const detail = typeof data.detail === 'string' ? data.detail : null;
+        throw new Error(detail || 'Failed to delete account');
       }
     } catch (err) {
-      toast.error(err.message || 'Failed to delete account');
+      // Longer than the default 4 s: the "nothing was deleted, try again"
+      // message is two sentences and must be readable.
+      toast.error(err.message || 'Failed to delete account', { duration: 10000 });
     }
   };
 

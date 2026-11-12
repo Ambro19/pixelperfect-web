@@ -677,8 +677,8 @@ int main(void) {
             {
               icon:  '⚡',
               bg:    'bg-blue-100',
-              title: 'Lightning Fast',
-              desc:  'Capture screenshots in under 3 seconds with our optimized infrastructure.',
+              title: 'Fast by Default',
+              desc:  'Most captures finish in under 10 seconds, and simple pages in about 3.',
             },
             {
               icon:  '🎨',
@@ -689,8 +689,8 @@ int main(void) {
             {
               icon:  '🔒',
               bg:    'bg-purple-100',
-              title: 'Enterprise Ready',
-              desc:  '99.9% uptime SLA, secure API, and dedicated support for enterprise customers.',
+              title: 'Secure by Design',
+              desc:  'HTTPS everywhere, encrypted storage, and API keys you can rotate at any time.',
             },
           ].map((feature) => (
             <div key={feature.title} className="border border-gray-200 rounded-lg p-5 sm:p-6 bg-white">

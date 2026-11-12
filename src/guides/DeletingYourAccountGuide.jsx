@@ -228,16 +228,21 @@ const DeletingYourAccountGuide = () => {
       {/* What happens behind the scenes */}
       <h2 className="text-2xl font-bold text-gray-900 mt-8 mb-4">What Happens When You Click Permanently Delete Account</h2>
       <p className="text-gray-700 leading-relaxed mb-4">
-        The deletion cascade runs in this order. If any step fails, we still try to complete
-        the rest — partial cleanup is better than no cleanup. Failures get logged for review:
+        The deletion cascade runs in this order. Billing comes first and must succeed: if we
+        cannot confirm with Stripe that your subscription is cancelled, nothing is deleted and
+        you are asked to try again. After that, if a cleanup step fails, we still complete the
+        rest, and the failure is logged for review:
       </p>
 
       <div className="space-y-3 my-6">
         <div className="bg-white border border-gray-200 rounded-lg p-4">
           <h4 className="font-semibold text-gray-900 mb-1 text-sm">1. Subscription cancellation</h4>
           <p className="text-sm text-gray-700 mb-0">
-            We call Stripe to cancel your active subscription. No further charges. Stripe
-            sends you a final cancellation email.
+            We call Stripe to cancel every subscription on your account that could still
+            bill you. No further charges. Stripe sends you a final cancellation email. If
+            Stripe cannot be reached at that moment, deletion stops before anything is
+            removed, and you see a message asking you to try again in a minute. This way
+            you can never end up with a deleted account that is still being charged.
           </p>
         </div>
         <div className="bg-white border border-gray-200 rounded-lg p-4">

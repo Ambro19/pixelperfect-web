@@ -109,7 +109,7 @@ REACT_APP_STRIPE_PUBLISHABLE_KEY=pk_live_...
 
 ## License
 
-Copyright © 2026 [OneTechly](https://onetechly.com)  
+Copyright © 2026 [OneTechly, LLC](https://pixelperfectapi.net/about)  
 All rights reserved.
 
 This is proprietary software. Unauthorized copying, modification, or distribution is strictly prohibited.
