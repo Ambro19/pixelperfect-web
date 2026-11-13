@@ -111,8 +111,8 @@ const DeletingYourAccountGuide = () => {
           <p className="text-sm text-gray-700 mb-2">
             <strong>Request the export first, then delete.</strong> Once your account is gone,
             we cannot reconstruct it from backups. Email{' '}
-            <a href="mailto:onetechly@gmail.com?subject=Data export request" className="text-blue-600 hover:underline">
-              onetechly@gmail.com
+            <a href="mailto:privacy@pixelperfectapi.net?subject=Data export request" className="text-blue-600 hover:underline">
+              privacy@pixelperfectapi.net
             </a>{' '}
             with subject "Data export request" — we'll send you a JSON dump within 30 days.
             Then come back here to delete.
@@ -380,8 +380,8 @@ const DeletingYourAccountGuide = () => {
           <h4 className="font-semibold text-gray-900 mb-2">"I need a paper trail showing my data was deleted"</h4>
           <p className="text-sm text-gray-700">
             For regulated environments where you need documentation: email us at{' '}
-            <a href="mailto:onetechly@gmail.com?subject=Account deletion confirmation request" className="text-blue-600 hover:underline">
-              onetechly@gmail.com
+            <a href="mailto:privacy@pixelperfectapi.net?subject=Account deletion confirmation request" className="text-blue-600 hover:underline">
+              privacy@pixelperfectapi.net
             </a>{' '}
             within 7 days of the deletion, and we'll send you a written confirmation
             including the deletion timestamp and a summary of what was removed.

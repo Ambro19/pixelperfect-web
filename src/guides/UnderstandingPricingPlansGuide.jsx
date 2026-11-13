@@ -347,8 +347,8 @@ const UnderstandingPricingPlansGuide = () => {
           <h4 className="font-semibold text-gray-900 mb-2">"I want to gift PixelPerfect to a colleague"</h4>
           <p className="text-sm text-gray-700">
             Not currently a self-serve flow. Email{' '}
-            <a href="mailto:onetechly@gmail.com?subject=Gift subscription" className="text-blue-600 hover:underline">
-              onetechly@gmail.com
+            <a href="mailto:support@pixelperfectapi.net?subject=Gift subscription" className="text-blue-600 hover:underline">
+              support@pixelperfectapi.net
             </a>{' '}
             and we'll set it up manually.
           </p>

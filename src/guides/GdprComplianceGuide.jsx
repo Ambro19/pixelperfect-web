@@ -135,8 +135,8 @@ const GdprComplianceGuide = () => {
 
       <p className="text-gray-700 leading-relaxed mt-3">
         For all email-based requests, write to{' '}
-        <a href="mailto:onetechly@gmail.com?subject=GDPR data subject request" className="text-blue-600 hover:underline">
-          onetechly@gmail.com
+        <a href="mailto:privacy@pixelperfectapi.net?subject=GDPR data subject request" className="text-blue-600 hover:underline">
+          privacy@pixelperfectapi.net
         </a>{' '}
         with subject "GDPR data subject request" or use the{' '}
         <a href="/contact" className="text-blue-600 hover:underline">contact form</a>.
@@ -407,8 +407,8 @@ const GdprComplianceGuide = () => {
         </li>
         <li>
           <strong>If they don't respond or you can't identify them,</strong> email us at{' '}
-          <a href="mailto:onetechly@gmail.com?subject=Third-party data request" className="text-blue-600 hover:underline">
-            onetechly@gmail.com
+          <a href="mailto:privacy@pixelperfectapi.net?subject=Third-party data request" className="text-blue-600 hover:underline">
+            privacy@pixelperfectapi.net
           </a>{' '}
           with subject "Third-party data request". Provide as much information as you can: the
           URL that was captured, an approximate timeframe, and any context about which third
@@ -431,8 +431,8 @@ const GdprComplianceGuide = () => {
       </p>
       <p className="text-gray-700 leading-relaxed mt-3">
         <strong>Process:</strong> email the document (PDF, spreadsheet, or web form link) to{' '}
-        <a href="mailto:onetechly@gmail.com?subject=Procurement questionnaire" className="text-blue-600 hover:underline">
-          onetechly@gmail.com
+        <a href="mailto:legal@pixelperfectapi.net?subject=Procurement questionnaire" className="text-blue-600 hover:underline">
+          legal@pixelperfectapi.net
         </a>. Typical turnaround is 2&ndash;5 business days depending on the questionnaire's length
         and depth.
       </p>
@@ -451,8 +451,8 @@ const GdprComplianceGuide = () => {
       <div className="bg-gray-50 border border-gray-200 rounded-lg p-5 my-4">
         <p className="text-sm text-gray-700 mb-2">
           <strong>Email:</strong>{' '}
-          <a href="mailto:onetechly@gmail.com" className="text-blue-600 hover:underline">
-            onetechly@gmail.com
+          <a href="mailto:privacy@pixelperfectapi.net" className="text-blue-600 hover:underline">
+            privacy@pixelperfectapi.net
           </a>
         </p>
         <p className="text-sm text-gray-700 mb-2">

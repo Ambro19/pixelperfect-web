@@ -229,7 +229,7 @@ export const organizationLd = {
   contactPoint: {
     '@type': 'ContactPoint',
     contactType: 'customer support',
-    email: 'onetechly@gmail.com',
+    email: 'support@pixelperfectapi.net',
     url: `${ORIGIN}/contact`,
   },
 };

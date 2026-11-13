@@ -258,8 +258,8 @@ const ManagingPaymentMethodsGuide = () => {
           <p className="text-sm text-gray-700">
             Not currently. We accept the credit and debit cards that Stripe Checkout supports.
             If you have a procurement requirement that demands ACH or invoicing, email{' '}
-            <a href="mailto:onetechly@gmail.com?subject=Alternative payment method" className="text-blue-600 hover:underline">
-              onetechly@gmail.com
+            <a href="mailto:support@pixelperfectapi.net?subject=Alternative payment method" className="text-blue-600 hover:underline">
+              support@pixelperfectapi.net
             </a>{' '}
             and we'll see what we can do on a case-by-case basis.
           </p>

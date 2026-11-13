@@ -440,7 +440,7 @@ const ScreenshotQualityIssuesGuide = () => {
         </li>
       </ul>
       <p className="text-gray-700 leading-relaxed mt-3">
-        Email <a href="mailto:onetechly@gmail.com?subject=Screenshot quality issue" className="text-blue-600 hover:underline">onetechly@gmail.com</a> with: the URL, your full request body, the screenshot URL we returned, and a description (or screenshot) of how the result differs from what you expected.
+        Email <a href="mailto:support@pixelperfectapi.net?subject=Screenshot quality issue" className="text-blue-600 hover:underline">support@pixelperfectapi.net</a> with: the URL, your full request body, the screenshot URL we returned, and a description (or screenshot) of how the result differs from what you expected.
       </p>
 
       {/* Next Steps */}

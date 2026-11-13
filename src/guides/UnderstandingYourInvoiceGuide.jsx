@@ -239,8 +239,8 @@ Net     = Charge − Credit`}
         Customer Portal from your dashboard and edit your billing details. Invoices that are
         already paid can't be edited; they keep the details they were issued with. If you need
         something on a past invoice for your records, email{' '}
-        <a href="mailto:onetechly@gmail.com?subject=Question about a past invoice" className="text-blue-600 hover:underline">
-          onetechly@gmail.com
+        <a href="mailto:support@pixelperfectapi.net?subject=Question about a past invoice" className="text-blue-600 hover:underline">
+          support@pixelperfectapi.net
         </a>{' '}
         with the invoice number and we'll help however we can.
       </p>
@@ -338,8 +338,8 @@ Net     = Charge − Credit`}
       {/* When to contact support */}
       <h2 className="text-2xl font-bold text-gray-900 mt-8 mb-4">When to Contact Support</h2>
       <p className="text-gray-700 leading-relaxed">
-        Email <a href="mailto:onetechly@gmail.com?subject=Invoice question" className="text-blue-600 hover:underline">
-          onetechly@gmail.com
+        Email <a href="mailto:support@pixelperfectapi.net?subject=Invoice question" className="text-blue-600 hover:underline">
+          support@pixelperfectapi.net
         </a>{' '}
         if any of the following are true:
       </p>

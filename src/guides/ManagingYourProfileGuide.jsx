@@ -370,8 +370,8 @@ const ManagingYourProfileGuide = () => {
             This usually means the Stripe sync step failed silently. Check your Settings page —
             does your Email Address show the new value? If yes, but Stripe still shows the
             old one, contact us at{' '}
-            <a href="mailto:onetechly@gmail.com?subject=Stripe email out of sync" className="text-blue-600 hover:underline">
-              onetechly@gmail.com
+            <a href="mailto:support@pixelperfectapi.net?subject=Stripe email out of sync" className="text-blue-600 hover:underline">
+              support@pixelperfectapi.net
             </a>{' '}
             and we'll resync the Stripe customer record manually.
           </p>

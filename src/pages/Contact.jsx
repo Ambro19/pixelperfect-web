@@ -28,7 +28,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import PixelPerfectLogo from '../components/PixelPerfectLogo';
 
 // ── Single source of truth for the support email ──────────────────────────────
-const SUPPORT_EMAIL = 'onetechly@gmail.com';
+const SUPPORT_EMAIL = 'support@pixelperfectapi.net';
 
 // ── Subject → category mapping ────────────────────────────────────────────────
 // When a Features.jsx CTA deep-links with ?subject=feature-request-*,

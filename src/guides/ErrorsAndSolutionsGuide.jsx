@@ -465,7 +465,7 @@ Content-Type: application/json
         </li>
         <li className="flex items-start gap-2">
           <span className="text-blue-600 font-bold mt-0.5">&bull;</span>
-          <span>If you see 500s repeatedly on the same URL, it may be triggering a bug &mdash; email <a href="mailto:onetechly@gmail.com?subject=Repeated 500 errors" className="text-blue-600 hover:underline">onetechly@gmail.com</a> with the URL and timestamp</span>
+          <span>If you see 500s repeatedly on the same URL, it may be triggering a bug &mdash; email <a href="mailto:support@pixelperfectapi.net?subject=Repeated 500 errors" className="text-blue-600 hover:underline">support@pixelperfectapi.net</a> with the URL and timestamp</span>
         </li>
         <li className="flex items-start gap-2">
           <span className="text-blue-600 font-bold mt-0.5">&bull;</span>
@@ -523,8 +523,8 @@ Content-Type: application/json
       <p className="text-gray-700 leading-relaxed">
         Most error codes are self-explanatory once you read the <code className="font-mono">detail</code>{' '}
         field. Email{' '}
-        <a href="mailto:onetechly@gmail.com?subject=API error help" className="text-blue-600 hover:underline">
-          onetechly@gmail.com
+        <a href="mailto:support@pixelperfectapi.net?subject=API error help" className="text-blue-600 hover:underline">
+          support@pixelperfectapi.net
         </a>{' '}
         if any of the following are true:
       </p>

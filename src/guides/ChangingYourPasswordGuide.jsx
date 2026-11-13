@@ -304,7 +304,7 @@ const ChangingYourPasswordGuide = () => {
               with your account is different from what you're checking, or (3) your email
               provider is blocking us. For #1 or #2, retry with the correct address. For #3,
               email{' '}
-              <a href="mailto:onetechly@gmail.com?subject=Password reset email not delivered" className="text-blue-700 underline">
+              <a href="mailto:support@pixelperfectapi.net?subject=Password reset email not delivered" className="text-blue-700 underline">
                 support
               </a>{' '}
               from a different address — we can manually trigger a reset.

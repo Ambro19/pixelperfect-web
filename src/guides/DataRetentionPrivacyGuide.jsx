@@ -341,8 +341,8 @@ const DataRetentionPrivacyGuide = () => {
           <p className="text-sm text-gray-700 mb-0">
             Your dashboard shows everything we store about you: account details, API keys,
             screenshot history. For a machine-readable export of all your data, email{' '}
-            <a href="mailto:onetechly@gmail.com?subject=Data export request" className="text-blue-600 hover:underline">
-              onetechly@gmail.com
+            <a href="mailto:privacy@pixelperfectapi.net?subject=Data export request" className="text-blue-600 hover:underline">
+              privacy@pixelperfectapi.net
             </a>{' '}
             with subject "Data export request" — we'll respond within 30 days with a JSON dump.
           </p>
@@ -402,8 +402,8 @@ const DataRetentionPrivacyGuide = () => {
       <p className="text-gray-700 leading-relaxed">
         If you believe you've found a security vulnerability — in our service, our website, or
         the way we handle data — please email{' '}
-        <a href="mailto:onetechly@gmail.com?subject=Security report" className="text-blue-600 hover:underline">
-          onetechly@gmail.com
+        <a href="mailto:support@pixelperfectapi.net?subject=Security report" className="text-blue-600 hover:underline">
+          support@pixelperfectapi.net
         </a>{' '}
         with the subject "Security report". We'll acknowledge within 48 hours and work with you
         on disclosure timing. We don't currently have a formal bug bounty program, but we
@@ -456,8 +456,8 @@ const DataRetentionPrivacyGuide = () => {
       <h2 className="text-2xl font-bold text-gray-900 mt-8 mb-4">Privacy Questions?</h2>
       <p className="text-gray-700 leading-relaxed">
         Email{' '}
-        <a href="mailto:onetechly@gmail.com?subject=Privacy question" className="text-blue-600 hover:underline">
-          onetechly@gmail.com
+        <a href="mailto:privacy@pixelperfectapi.net?subject=Privacy question" className="text-blue-600 hover:underline">
+          privacy@pixelperfectapi.net
         </a>{' '}
         with the subject "Privacy question" or use the{' '}
         <a href="/contact" className="text-blue-600 hover:underline">contact form</a>.

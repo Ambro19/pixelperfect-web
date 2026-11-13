@@ -293,13 +293,14 @@ const ManagingYourSubscriptionGuide = () => {
         <li className="flex items-start gap-2">
           <span className="text-orange-600 font-bold mt-0.5">&bull;</span>
           <span>
-            <strong>Refund requests</strong> &mdash; email{' '}
-            <a href="mailto:onetechly@gmail.com" className="text-blue-600 hover:underline">onetechly@gmail.com</a>.
-            We do not offer automatic refunds. We encourage all users to start with the
-            Free tier (100 screenshots/month, no card required) to evaluate the service before
-            upgrading. Once you subscribe to a paid plan, that subscription fee is non-refundable.
-            Requests for exceptions are considered case by case &mdash; email us if you believe your
-            situation warrants one.
+            {/* Nov 2026: matches Terms §4.4 exactly. The old "exceptions are
+                considered case by case" promise was removed. */}
+            <strong>Refunds</strong> &mdash; we do not offer refunds. Subscription fees are
+            non-refundable, and no partial or prorated refunds are issued, unless the law
+            requires one (see section 4.4 of our <a href="/terms" className="text-blue-600 hover:underline">Terms of Service</a>).
+            That's why every account starts on the Free tier (100 screenshots/month, no card
+            required), so you can evaluate the service before upgrading. Billing questions:{' '}
+            <a href="mailto:support@pixelperfectapi.net" className="text-blue-600 hover:underline">support@pixelperfectapi.net</a>.
           </span>
         </li>
         <li className="flex items-start gap-2">
@@ -366,10 +367,13 @@ const ManagingYourSubscriptionGuide = () => {
         <div className="bg-white border border-gray-200 rounded-lg p-5">
           <h4 className="font-semibold text-gray-900 mb-2">"I signed up for the wrong tier by mistake"</h4>
           <p className="text-sm text-gray-700">
-            Email <a href="mailto:onetechly@gmail.com?subject=Wrong tier at signup" className="text-blue-600 hover:underline">onetechly@gmail.com</a> as
-            soon as possible explaining what happened. We don't guarantee a refund &mdash; our policy
-            is no refunds &mdash; but we'll review each situation individually and do our best to help.
-            The fastest prevention is to start on the Free tier and upgrade once you've confirmed
+            Open the Billing Portal (Settings &rarr; Subscription Management &rarr; Open Billing
+            Portal) and switch to the tier you meant. A downgrade takes effect at the start of
+            your next billing period; until then you keep the tier you paid for. The fee
+            already paid is not refunded (our policy is no refunds unless the law requires one).
+            If you need help making the change, email{' '}
+            <a href="mailto:support@pixelperfectapi.net?subject=Wrong tier at signup" className="text-blue-600 hover:underline">support@pixelperfectapi.net</a>.
+            The best prevention is to start on the Free tier and upgrade once you've confirmed
             the service meets your needs.
           </p>
         </div>
@@ -430,7 +434,7 @@ const ManagingYourSubscriptionGuide = () => {
               or Dashboard → 💳 Manage Subscription &amp; Billing), and cancel (Settings →
               Subscription Management → Cancel Subscription → type CANCEL MY SUBSCRIPTION →
               service continues until period ends, no refunds). If you run into trouble, email
-              onetechly@gmail.com with your Stripe receipt ID.
+              support@pixelperfectapi.net with your Stripe receipt ID.
             </p>
           </div>
         </div>
