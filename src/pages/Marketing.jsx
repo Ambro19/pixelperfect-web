@@ -79,13 +79,33 @@ const DEMO_RESPONSE = [
 function HeroApiDemo({ onSignUp }) {
   const [copied, setCopied] = React.useState(false);
 
+  // Nov 2026: navigator.clipboard only exists on HTTPS pages (and localhost),
+  // so on a plain-http address such as http://10.x.x.x:3000 the old version
+  // did nothing. Fall back to the older execCommand('copy') path there.
   const copyRequest = async () => {
+    let ok = false;
     try {
-      await navigator.clipboard.writeText(DEMO_REQUEST);
+      if (window.isSecureContext && navigator.clipboard) {
+        await navigator.clipboard.writeText(DEMO_REQUEST);
+        ok = true;
+      }
+    } catch { /* fall through to the fallback below */ }
+    if (!ok) {
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = DEMO_REQUEST;
+        ta.setAttribute('readonly', '');
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        ok = document.execCommand('copy');
+        document.body.removeChild(ta);
+      } catch { ok = false; }
+    }
+    if (ok) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    } catch {
-      /* clipboard blocked (http, old browser): the code is still selectable */
     }
   };
 

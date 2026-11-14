@@ -39,6 +39,7 @@ import React, {
 } from 'react';
 import { useAuth } from './AuthContext';
 import { currentApiBase as currentApiBaseFn } from '../lib/api';
+import { PAID_PLANS_PAUSED, PAUSED_NOTICE } from '../config/billingStatus'; // Nov 2026
 
 const SubscriptionContext = createContext(null);
 
@@ -282,6 +283,8 @@ export function SubscriptionProvider({ children }) {
     const authed = authRef.current;
 
     if (!t || !authed) throw new Error('Authentication required');
+    // Nov 2026: paid plans paused (config/billingStatus.js)
+    if (PAID_PLANS_PAUSED) throw new Error(PAUSED_NOTICE);
 
     const base = getApiBase();
     debugLog('💳 Starting checkout for plan:', planType);

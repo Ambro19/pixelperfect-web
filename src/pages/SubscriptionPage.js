@@ -37,6 +37,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { useSubscription } from '../contexts/SubscriptionContext';
 import PixelPerfectLogo from '../components/PixelPerfectLogo';
 import { currentApiBase as currentApiBaseFn } from '../lib/api';
+import { PAID_PLANS_PAUSED, PAUSED_NOTICE, PAUSED_BUTTON_LABEL } from '../config/billingStatus'; // Nov 2026
+import PaidPlansPausedNotice from '../components/PaidPlansPausedNotice';
 
 export default function SubscriptionPage() {
   const navigate  = useNavigate();
@@ -110,6 +112,11 @@ export default function SubscriptionPage() {
     }
     if (planId === 'free' || planId === currentTier) {
       toast('You are already on this plan', { icon: 'ℹ️' });
+      return;
+    }
+    // Nov 2026: paid plans paused (config/billingStatus.js)
+    if (PAID_PLANS_PAUSED) {
+      toast(PAUSED_NOTICE, { icon: '⏸️', duration: 8000 });
       return;
     }
 
@@ -248,6 +255,9 @@ export default function SubscriptionPage() {
 
         {/* ── Pricing Cards ──────────────────────────────────────────────────── */}
         {/* ✅ UPDATED: Same colored-border design as Pricing.js */}
+        {/* Nov 2026: shown only while paid plans are paused */}
+        <PaidPlansPausedNotice />
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
           {plans.map((plan) => {
             const price       = yearly ? plan.yearlyPrice  : plan.monthlyPrice;
@@ -332,6 +342,12 @@ export default function SubscriptionPage() {
                     <button disabled
                       className="w-full py-3 bg-gray-100 text-gray-500 rounded-lg font-semibold cursor-not-allowed mt-auto">
                       Free Plan
+                    </button>
+                  ) : PAID_PLANS_PAUSED ? (
+                    <button disabled
+                      title={PAUSED_NOTICE}
+                      className="w-full py-3 bg-gray-100 text-gray-500 rounded-lg font-semibold cursor-not-allowed mt-auto">
+                      {PAUSED_BUTTON_LABEL}
                     </button>
                   ) : (
                     <button

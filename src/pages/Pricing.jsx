@@ -50,6 +50,8 @@ import SEO, { PAGE_SEO, faqLd } from "../components/SEO";   // ✅ NEW
 import { useAuth } from "../contexts/AuthContext";
 import { PRICING_CONFIG } from "../config/pricing";
 import { currentApiBase as currentApiBaseFn } from "../lib/api";
+import { PAID_PLANS_PAUSED, PAUSED_NOTICE, PAUSED_BUTTON_LABEL } from "../config/billingStatus"; // Nov 2026
+import PaidPlansPausedNotice from "../components/PaidPlansPausedNotice";
 
 // Tier ranking used to decide upgrade vs. downgrade direction
 const TIER_ORDER = { free: 0, pro: 1, business: 2, premium: 3 };
@@ -130,6 +132,11 @@ export default function Pricing() {
   }, [isAuthenticated, token]);
 
   async function startCheckout(planId) {
+    // Nov 2026: paid plans paused (config/billingStatus.js)
+    if (PAID_PLANS_PAUSED) {
+      toast(PAUSED_NOTICE, { icon: "⏸️", duration: 8000 });
+      return;
+    }
     if (!isAuthenticated) {
       navigate(`/register?plan=${encodeURIComponent(planId)}`);
       return;
@@ -280,6 +287,9 @@ export default function Pricing() {
           )}
         </div>
 
+        {/* Nov 2026: shown only while paid plans are paused */}
+        <PaidPlansPausedNotice />
+
         {/* ── Pricing Cards ──────────────────────────────────────────────────── */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
           {tiers.map((tier) => {
@@ -389,6 +399,12 @@ export default function Pricing() {
                       className="w-full py-3 rounded-lg font-semibold transition-all mt-auto border-2 border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Manage in Billing
+                    </button>
+                  ) : PAID_PLANS_PAUSED && tier.id !== "free" ? (
+                    <button disabled
+                      title={PAUSED_NOTICE}
+                      className="w-full py-3 bg-gray-100 text-gray-500 rounded-lg font-semibold cursor-not-allowed mt-auto">
+                      {PAUSED_BUTTON_LABEL}
                     </button>
                   ) : (
                     <button
