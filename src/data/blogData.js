@@ -51,7 +51,7 @@ curl -X POST https://api.pixelperfectapi.net/v1/screenshot \\
   }'
 \`\`\`
 
-Ready to see what your users actually see? [Start your free trial →](/register)
+Ready to see what your users actually see? [Start free →](/register)
 `.trim(),
   },
 

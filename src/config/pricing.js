@@ -150,7 +150,7 @@ export const PRICING_CONFIG = {
         'Unlimited screenshots',
         'All Business features',
         'White-label options',
-        'Custom SLA',
+        'Custom SLA terms on request',
         'Dedicated account manager',
       ],
       cta:         'Contact Sales',
@@ -257,7 +257,9 @@ export const FEATURE_COMPARISON = {
   'White-label options':   { free: '❌', pro: '❌',   business: '❌',   premium: '✅'      },
   'Support':               { free: 'Community', pro: 'Priority', business: 'Dedicated', premium: 'Account Manager' },
   'Rate limits':           { free: '10/min', pro: '100/min', business: '500/min', premium: 'Custom' },
-  'SLA':                   { free: '❌', pro: '99% uptime', business: '99.9% uptime', premium: '99.99% custom SLA' },
+  // Nov 2026: no uptime percentages are promised until there is a measured
+  // history; every plan can see live status at status.pixelperfectapi.net.
+  'Uptime & status':       { free: 'Public status page', pro: 'Public status page', business: 'Public status page', premium: 'Custom SLA on request' },
 };
 
 // ─── Marketing copy per tier (used by landing page sections if needed) ────────
@@ -273,9 +275,11 @@ export const TIER_MARKETING = {
 
 export const PRICING_FAQ = [
   { question: 'Can I change my plan anytime?',           answer: 'Yes! Upgrades take effect immediately with prorated charges. Downgrades take effect at the start of your next billing cycle.' },
-  { question: 'What happens if I exceed my limit?',      answer: "You'll be charged $0.002 per additional screenshot (minimum $5). Premium plans include unlimited screenshots." },
+  // Nov 2026: overage billing is not implemented; the API stops at the limit.
+  { question: 'What happens if I exceed my limit?',      answer: "New captures are paused with a clear message until your allowance resets at the start of your next billing period, or until you upgrade. You're never charged extra. Premium plans include unlimited screenshots." },
   { question: 'Do you offer annual billing?',            answer: 'Yes — save 16% by paying annually. Pro: $490/yr, Business: $1,990/yr, Premium: $4,990/yr.' },
-  { question: 'Is there a free trial?',                  answer: 'Pro and Business include a 14-day free trial. No credit card required for the Free plan.' },
+  // Nov 2026: checkout has no trial period, so no trial is promised.
+  { question: 'Is there a free trial?',                  answer: "Paid plans don't have a trial. Instead, the Free plan is free forever (100 screenshots a month, no credit card), so you can test PixelPerfect before upgrading." },
   { question: 'Can I get a refund?',                     answer: "We do not offer refunds. Start with the Free tier to evaluate all features before upgrading." },
   { question: 'What payment methods do you accept?',     answer: 'All major credit cards via Stripe. Enterprise customers can arrange invoice billing.' },
   { question: 'Do unused screenshots roll over?',        answer: 'No — allowances reset monthly and do not roll over.' },

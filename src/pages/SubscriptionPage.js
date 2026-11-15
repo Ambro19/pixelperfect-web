@@ -97,7 +97,7 @@ export default function SubscriptionPage() {
       monthlyPrice: 499,
       yearlyPrice:  4990,
       yearlySavings: 'Save $998/year',
-      features: ['Unlimited screenshots', 'All Business features', 'White-label options', 'Custom SLA', 'Dedicated account manager'],
+      features: ['Unlimited screenshots', 'All Business features', 'White-label options', 'Custom SLA terms on request', 'Dedicated account manager'],
     },
   ];
 

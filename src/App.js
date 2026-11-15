@@ -5,7 +5,11 @@
 // Author: OneTechly
 // Updated: November 2026
 //
-// ✅ CHANGES IN THIS VERSION (November 2026):
+// ✅ CHANGES IN THIS VERSION (November 2026, status release):
+//   - /status and /api-status redirect to https://status.pixelperfectapi.net
+//     (ApiStatus.js removed: it displayed fixed, unmeasured uptime figures)
+//
+// ✅ Earlier November 2026:
 //   - Added /onetechly-blog route → OneTechlyBlog.jsx "being updated" page
 //     (linked from the Marketing.jsx footer, under "PixelPerfect Blog")
 //
@@ -37,7 +41,8 @@ import Features     from './pages/Features';
 import Pricing      from './pages/Pricing';
 import Guides       from './pages/Guides';
 import GuideDetail  from './pages/GuideDetail';
-import ApiStatus    from './pages/ApiStatus';
+// ✅ Nov 2026: ApiStatus page retired; /status and /api-status now open the
+// real, independently monitored status page (Better Stack). See below.
 import HelpCenter   from './pages/HelpCenter';
 import ArticleDetail from './pages/ArticleDetail';
 import CategoryView  from './pages/CategoryView';
@@ -99,6 +104,16 @@ function LoadingSpinner({ label = 'Loading...' }) {
       </div>
     </div>
   );
+}
+
+// ✅ Nov 2026: public status page (Better Stack monitors the API and site).
+export const STATUS_PAGE_URL = 'https://status.pixelperfectapi.net/';
+
+// Sends the browser to another site, replacing the current history entry so
+// the Back button does not bounce the visitor straight back here.
+function ExternalRedirect({ to, label }) {
+  useEffect(() => { hardReplace(to); }, [to]);
+  return <LoadingSpinner label={label} />;
 }
 
 function hardReplace(path) {
@@ -184,8 +199,10 @@ function App() {
         <Route path="/documentation" element={<Documentation />} />
         <Route path="/guides/:guideId" element={<GuideDetail />} />
         <Route path="/guides"          element={<Guides />} />
-        <Route path="/status"     element={<ApiStatus />} />
-        <Route path="/api-status" element={<ApiStatus />} />
+        {/* ✅ Nov 2026: the old in-app status page showed fixed uptime figures.
+            Both paths now open the live status page, measured by Better Stack. */}
+        <Route path="/status"     element={<ExternalRedirect to={STATUS_PAGE_URL} label="Opening status page..." />} />
+        <Route path="/api-status" element={<ExternalRedirect to={STATUS_PAGE_URL} label="Opening status page..." />} />
 
         {/* Support & Help Center */}
         <Route path="/help"                       element={<HelpCenter />} />

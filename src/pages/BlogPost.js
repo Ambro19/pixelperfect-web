@@ -496,7 +496,7 @@ const BlogPost = () => {
               onClick={() => navigate('/register')}
               className="px-8 py-3 bg-white text-blue-600 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
             >
-              Start Free Trial
+              Start Free
             </button>
             <button
               onClick={() => navigate('/docs')}
