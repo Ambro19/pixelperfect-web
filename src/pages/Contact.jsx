@@ -2,7 +2,7 @@
 // CONTACT PAGE - PIXELPERFECT
 // ========================================
 // Author: OneTechly
-// Updated: May 2026
+// Updated: Nov 2026 (Web Release 7: sidebar lists only real contact channels)
 //
 // ✅ PRODUCTION READY
 // ✅ Real email submission via backend /contact endpoint
@@ -29,6 +29,15 @@ import PixelPerfectLogo from '../components/PixelPerfectLogo';
 
 // ── Single source of truth for the support email ──────────────────────────────
 const SUPPORT_EMAIL = 'support@pixelperfectapi.net';
+
+// ── Who to write to (Web Release 7) ──────────────────────────────────────────
+// Every address forwards to the same OneTechly inbox; separate addresses keep
+// privacy and legal requests easy to find.
+const CONTACT_CHANNELS = [
+  { label: 'Support & billing', email: SUPPORT_EMAIL,                desc: 'Account, API and payment questions' },
+  { label: 'Privacy',           email: 'privacy@pixelperfectapi.net', desc: 'Data access and deletion requests' },
+  { label: 'Legal',             email: 'legal@pixelperfectapi.net',   desc: 'Terms, notices and legal matters' },
+];
 
 // ── Subject → category mapping ────────────────────────────────────────────────
 // When a Features.jsx CTA deep-links with ?subject=feature-request-*,
@@ -298,70 +307,47 @@ const Contact = () => {
           </div>
 
           {/* Sidebar */}
+          {/* Web Release 7 (Nov 2026): only channels that exist. Live chat,
+              phone support and per-plan response times were removed: there is
+              no chat or phone line, and replies are by email. */}
           <div className="space-y-6">
             <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Support Channels</h3>
-              <div className="space-y-4">
-                <div>
-                  <div className="flex items-center gap-3 mb-1">
-                    <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center"><span className="text-xl">📧</span></div>
-                    <div>
-                      <div className="font-medium text-gray-900">Email</div>
-                      <a href={`mailto:${SUPPORT_EMAIL}`} className="text-sm text-blue-600 hover:underline">{SUPPORT_EMAIL}</a>
-                    </div>
-                  </div>
-                  <p className="text-sm text-gray-600 pl-13">Response time: Within 24 hours</p>
-                </div>
-                <div>
-                  <div className="flex items-center gap-3 mb-1">
-                    <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center"><span className="text-xl">💬</span></div>
-                    <div>
-                      <div className="font-medium text-gray-900">Live Chat</div>
-                      <div className="text-sm text-gray-600">Available for Pro+ customers</div>
-                    </div>
-                  </div>
-                  <p className="text-sm text-gray-600 pl-13">Mon–Fri, 9am–5pm EST</p>
-                </div>
-                <div>
-                  <div className="flex items-center gap-3 mb-1">
-                    <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center"><span className="text-xl">📱</span></div>
-                    <div>
-                      <div className="font-medium text-gray-900">Phone</div>
-                      <div className="text-sm text-blue-600">Enterprise customers only</div>
-                    </div>
-                  </div>
-                  <p className="text-sm text-gray-600 pl-13">Dedicated support line</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Office</h3>
-              <div className="text-gray-600 space-y-1">
-                <p className="font-medium text-gray-900">PixelPerfect API</p>
-                <p>OneTechly</p>
-                <p>Albany, NY</p>
-                <p>United States</p>
-              </div>
-            </div>
-
-            <div className="bg-blue-50 rounded-xl border border-blue-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Response Times</h3>
-              <ul className="space-y-3 text-sm">
-                {[
-                  { plan: 'Free',     time: 'Within 72 hours' },
-                  { plan: 'Pro',      time: 'Within 4 hours (weekdays)' },
-                  { plan: 'Business', time: 'Within 2 hours (weekdays)' },
-                  { plan: 'Premium',  time: 'Within 1 hour (24/7)' },
-                ].map(({ plan, time }) => (
-                  <li key={plan} className="flex items-start gap-2">
-                    <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
-                    <span><strong>{plan}:</strong> {time}</span>
+              <h3 className="text-lg font-semibold text-gray-900 mb-1">Email us directly</h3>
+              <p className="text-sm text-gray-600 mb-5">We aim to reply within one business day.</p>
+              <ul className="space-y-4">
+                {CONTACT_CHANNELS.map(({ label, desc, email }) => (
+                  <li key={email}>
+                    <div className="text-sm font-medium text-gray-900">{label}</div>
+                    <a href={`mailto:${email}`} className="text-sm text-blue-600 hover:underline break-all">{email}</a>
+                    <p className="text-xs text-gray-500 mt-0.5">{desc}</p>
                   </li>
                 ))}
               </ul>
+            </div>
+
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-3">Company</h3>
+              <p className="text-gray-900 font-medium">OneTechly, LLC</p>
+              <p className="text-sm text-gray-600">Albany, New York, USA</p>
+              <p className="text-sm text-gray-600 mt-3">
+                PixelPerfect is built and run by OneTechly, a small independent software company.
+              </p>
+              <button onClick={() => navigate('/about')} className="mt-3 text-sm text-blue-600 font-medium hover:underline">
+                About us →
+              </button>
+            </div>
+
+            <div className="bg-blue-50 rounded-xl border border-blue-200 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Something not working?</h3>
+              <p className="text-sm text-gray-700">
+                Check the status page first: if there is an outage, it shows what is affected and when it is fixed.
+              </p>
+              <button onClick={() => navigate('/status')} className="mt-3 text-sm text-blue-600 font-medium hover:underline">
+                View system status →
+              </button>
+              <p className="text-sm text-gray-700 mt-4">
+                When you write to us about an API error, include the request URL, the time it happened and the error message.
+              </p>
             </div>
           </div>
         </div>

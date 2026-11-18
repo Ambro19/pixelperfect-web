@@ -88,7 +88,7 @@ export const PRICING_CONFIG = {
         'Batch processing',
         'Priority support',
       ],
-      cta:         'Start Pro Trial',
+      cta:         'Upgrade to Pro',
       highlighted: true,
       limits: {
         screenshotsPerMonth: 5000,
@@ -120,7 +120,7 @@ export const PRICING_CONFIG = {
         'Webhooks & change detection',
         'Dedicated support',
       ],
-      cta:         'Start Business Trial',
+      cta:         'Upgrade to Business',
       highlighted: false,
       limits: {
         screenshotsPerMonth: 50000,
@@ -266,9 +266,9 @@ export const FEATURE_COMPARISON = {
 
 export const TIER_MARKETING = {
   free:     { headline: 'Get started for free',     subheadline: 'Perfect for testing and small projects',          benefits: ['No credit card required', 'Full API access', 'Community support'] },
-  pro:      { headline: 'Best for professionals',   subheadline: 'Everything you need to build great products',     benefits: ['5,000 screenshots per month', 'Priority support', 'Advanced features', '14-day free trial'] },
-  business: { headline: 'Scale with confidence',    subheadline: 'For teams that need enterprise features',         benefits: ['50,000 screenshots per month', 'Webhooks & monitoring', 'Dedicated support', '99.9% uptime SLA', '14-day free trial'] },
-  premium:  { headline: 'Enterprise-grade power',   subheadline: 'For organizations with mission-critical needs',   benefits: ['Unlimited screenshots', 'White-label options', 'Custom SLA up to 99.99%', 'Dedicated account manager', 'Priority feature requests'] },
+  pro:      { headline: 'Best for professionals',   subheadline: 'Everything you need to build great products',     benefits: ['5,000 screenshots per month', 'Priority support', 'Advanced features'] },
+  business: { headline: 'Scale with confidence',    subheadline: 'For teams that need enterprise features',         benefits: ['50,000 screenshots per month', 'Webhooks & monitoring', 'Dedicated support', 'Public status page'] },
+  premium:  { headline: 'Enterprise-grade power',   subheadline: 'For organizations with mission-critical needs',   benefits: ['Unlimited screenshots', 'White-label options', 'Custom SLA on request', 'Dedicated account manager', 'Priority feature requests'] },
 };
 
 // ─── FAQ data (kept for reference — rendered by FAQ.js, NOT by Pricing.js) ───
