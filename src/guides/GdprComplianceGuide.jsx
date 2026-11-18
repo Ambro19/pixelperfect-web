@@ -192,7 +192,11 @@ const GdprComplianceGuide = () => {
         </li>
         <li className="flex items-start gap-2">
           <span className="text-blue-600 font-bold mt-0.5">&bull;</span>
-          <span><strong>Google (Gmail SMTP)</strong> (US) &mdash; transactional email delivery</span>
+          <span><strong>Resend</strong> (US) &mdash; transactional email delivery</span>
+        </li>
+        <li className="flex items-start gap-2">
+          <span className="text-blue-600 font-bold mt-0.5">&bull;</span>
+          <span><strong>Google (Gmail)</strong> (US) &mdash; our support mailbox</span>
         </li>
       </ul>
       <p className="text-gray-700 leading-relaxed mt-3">
@@ -222,7 +226,7 @@ const GdprComplianceGuide = () => {
       <h2 className="text-2xl font-bold text-gray-900 mt-8 mb-4">International Data Transfers</h2>
       <p className="text-gray-700 leading-relaxed">
         We are US-based, and the bulk of our infrastructure is US-based (Render in Oregon,
-        Stripe with US legal entity, Gmail/Google in the US). For EU users, this means your
+        Stripe with US legal entity, Resend and Google in the US). For EU users, this means your
         data is transferred outside the EU.
       </p>
       <p className="text-gray-700 leading-relaxed mt-3">

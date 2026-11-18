@@ -106,7 +106,7 @@ const DataRetentionPrivacyGuide = () => {
             </tr>
             <tr>
               <td className="p-3 border-r border-gray-200"><strong>Support emails</strong></td>
-              <td className="p-3 border-r border-gray-200">Gmail (onetechly@gmail.com)</td>
+              <td className="p-3 border-r border-gray-200">Our support mailbox (support@pixelperfectapi.net, hosted by Google)</td>
               <td className="p-3">Indefinitely (until manually purged)</td>
             </tr>
           </tbody>
@@ -312,9 +312,15 @@ const DataRetentionPrivacyGuide = () => {
               <td className="p-3">US / EU</td>
             </tr>
             <tr>
-              <td className="p-3 border-r border-gray-200"><strong>Google (Gmail SMTP)</strong></td>
+              <td className="p-3 border-r border-gray-200"><strong>Resend</strong></td>
               <td className="p-3 border-r border-gray-200">Transactional email delivery</td>
               <td className="p-3 border-r border-gray-200">Email recipient + email body (in transit)</td>
+              <td className="p-3">US</td>
+            </tr>
+            <tr>
+              <td className="p-3 border-r border-gray-200"><strong>Google (Gmail)</strong></td>
+              <td className="p-3 border-r border-gray-200">Support mailbox</td>
+              <td className="p-3 border-r border-gray-200">Messages you send to our support, privacy or legal addresses</td>
               <td className="p-3">US</td>
             </tr>
           </tbody>
@@ -322,8 +328,8 @@ const DataRetentionPrivacyGuide = () => {
       </div>
 
       <p className="text-gray-700 leading-relaxed">
-        We're working on migrating transactional email from Gmail SMTP to a dedicated provider
-        (SendGrid or AWS SES). The rest of the stack is intentional — Render and Cloudflare in
+        In November 2026 we moved transactional email (password resets, username reminders)
+        from Gmail SMTP to Resend, a dedicated email provider. The rest of the stack is intentional — Render and Cloudflare in
         particular are well-regarded for security, and Stripe is the standard for payment
         processing. Each provider's data handling is governed by their own terms; we recommend
         reviewing them as part of your procurement process.
@@ -445,10 +451,6 @@ const DataRetentionPrivacyGuide = () => {
         <li className="flex items-start gap-2">
           <span className="text-blue-600 font-bold mt-0.5">•</span>
           <span><strong>Data Processing Agreement (DPA) template</strong> — being drafted for EU customers. Until it ships, email us and we'll work through your requirements.</span>
-        </li>
-        <li className="flex items-start gap-2">
-          <span className="text-blue-600 font-bold mt-0.5">•</span>
-          <span><strong>Migration off Gmail SMTP</strong> — to a dedicated transactional email provider for stronger reliability and audit trail.</span>
         </li>
       </ul>
 

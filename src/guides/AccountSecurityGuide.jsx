@@ -342,7 +342,9 @@ Password forgotten:
           <h4 className="font-semibold text-gray-900 mb-1 text-sm">Watch for phishing emails</h4>
           <p className="text-sm text-gray-700 mb-0">
             Legitimate emails from us come from{' '}
-            <span className="font-mono">onetechly@gmail.com</span>. We won't ask you for your
+            <span className="font-mono">noreply@pixelperfectapi.net</span> (account emails) or{' '}
+            <span className="font-mono">support@pixelperfectapi.net</span> (replies from our team).
+            We won't ask you for your
             password by email. We won't ask you to log in via a link to a domain other than{' '}
             <span className="font-mono">pixelperfectapi.net</span>. If something feels off,
             navigate to the dashboard manually instead of clicking the link.

@@ -257,10 +257,11 @@ const ChangingYourPasswordGuide = () => {
             <h4 className="font-semibold text-gray-900 mb-0">Check your inbox</h4>
           </div>
           <p className="text-sm text-gray-700 mb-0 ml-9">
-            We send the reset email immediately via Gmail SMTP. The subject line is{' '}
+            We send the reset email immediately. The subject line is{' '}
             <strong>"Reset your PixelPerfect password"</strong> and the sender is{' '}
-            <span className="font-mono">onetechly@gmail.com</span>. If you don't see it within
-            a minute, check your spam folder.
+            <span className="font-mono">noreply@pixelperfectapi.net</span>. If you don't see it
+            within a minute, check your spam folder. For your protection, we send at most three
+            reset emails per hour to the same address.
           </p>
         </div>
 
